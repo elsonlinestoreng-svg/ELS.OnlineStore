@@ -1,0 +1,47 @@
+[debug] [2026-05-03T18:31:34.306Z] ----------------------------------------------------------------------
+[debug] [2026-05-03T18:31:34.319Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\HP\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init hosting
+[debug] [2026-05-03T18:31:34.320Z] CLI Version:   15.16.0
+[debug] [2026-05-03T18:31:34.320Z] Platform:      win32
+[debug] [2026-05-03T18:31:34.320Z] Node Version:  v24.15.0
+[debug] [2026-05-03T18:31:34.320Z] Time:          Sun May 03 2026 19:31:34 GMT+0100 (West Africa Time)
+[debug] [2026-05-03T18:31:34.321Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\HP\.vscode\ELS.online store
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[info] i  If you want to create a project in a Google Cloud organization or folder, please use "firebase projects:create" instead, and return to this command when you've created the project. 
+[debug] [2026-05-03T18:32:10.522Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-03T18:32:10.523Z] > authorizing via signed-in user (sundayjosephng@gmail.com)
+[debug] [2026-05-03T18:33:00.257Z] Checked if tokens are valid: true, expires at: 1777834988302
+[debug] [2026-05-03T18:33:00.258Z] Checked if tokens are valid: true, expires at: 1777834988302
+[debug] [2026-05-03T18:33:00.260Z] >>> [apiv2][query] POST https://firebase.googleapis.com/v1/projects:checkProjectId [none]
+[debug] [2026-05-03T18:33:00.260Z] >>> [apiv2][body] POST https://firebase.googleapis.com/v1/projects:checkProjectId {"proposedId":"els.onlinestore"}
+[debug] [2026-05-03T18:33:01.025Z] <<< [apiv2][status] POST https://firebase.googleapis.com/v1/projects:checkProjectId 400
+[debug] [2026-05-03T18:33:01.025Z] <<< [apiv2][body] POST https://firebase.googleapis.com/v1/projects:checkProjectId {"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT"}}
+[debug] [2026-05-03T18:33:01.027Z] Couldn't check if project ID els.onlinestore is available. Original error: FirebaseError: Failed to check if project ID is available. See firebase-debug.log for more info.
+[debug] [2026-05-03T18:33:14.444Z] Checked if tokens are valid: true, expires at: 1777834988302
+[debug] [2026-05-03T18:33:14.444Z] Checked if tokens are valid: true, expires at: 1777834988302
+[debug] [2026-05-03T18:33:14.444Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects [none]
+[debug] [2026-05-03T18:33:14.445Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects {"projectId":"els.onlinestore","name":"els.onlinestore"}
+[debug] [2026-05-03T18:33:15.784Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects 400
+[debug] [2026-05-03T18:33:15.784Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects {"error":{"code":400,"message":"Request contains an invalid argument.","status":"INVALID_ARGUMENT","details":[{"@type":"type.googleapis.com/google.rpc.BadRequest","fieldViolations":[{"field":"project_id","description":"project_id contains invalid characters"},{"field":"display_name","description":"project display name contains invalid characters"}]},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"url":"https://cloud.google.com/resource-manager/reference/rest/v1/projects"}]}]}}
+[debug] [2026-05-03T18:33:15.809Z] FirebaseError: Request to https://cloudresourcemanager.googleapis.com/v1/projects had HTTP Error: 400, Request contains an invalid argument.
+    at responseToError (C:\Users\HP\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\HP\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:333:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to create project. See firebase-debug.log for more info.

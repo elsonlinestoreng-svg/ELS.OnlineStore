@@ -1,0 +1,2328 @@
+<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELS.OnlineStore</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <!--
+    Optional: For Firebase Storage uploads, set `window.FIREBASE_CONFIG` before the app script runs.
+    Example (development only - keep secrets out of public repos):
+
+    <script>
+      window.FIREBASE_CONFIG = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "your-project.firebaseapp.com",
+        projectId: "your-project-id",
+        storageBucket: "your-project-id.appspot.com",
+        messagingSenderId: "0123456789",
+        appId: "1:0123456789:web:abcdef123456"
+      };
+    </script>
+
+    You can paste this object into the browser console while testing, or add it to the page
+    before the main script. The demo will call `uploadToFirebaseStorage()` when this is present.
+  -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
+  <style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Outfit', sans-serif; }
+.page { display: none; transition: opacity 0.4s ease, transform 0.3s ease; }
+.page.active { display: block; animation: pageIn 0.4s ease; }
+@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
+.sidebar-overlay.open { display: block; }
+.sidebar { position: fixed; left: -300px; top: 0; bottom: 0; width: 280px; z-index: 50; transition: left 0.3s ease; }
+.sidebar.open { left: 0; }
+.fade-in { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.pulse { animation: pulse 2s ease-in-out infinite; }
+.slide-up { animation: slideUp 0.6s ease forwards; }
+.slide-up-d1 { animation: slideUp 0.6s 0.1s ease forwards; opacity: 0; }
+.slide-up-d2 { animation: slideUp 0.6s 0.2s ease forwards; opacity: 0; }
+.slide-up-d3 { animation: slideUp 0.6s 0.3s ease forwards; opacity: 0; }
+.product-card { transition: transform 0.2s, box-shadow 0.2s; }
+.product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
+.toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 200; font-weight: 500; animation: fadeIn 0.3s ease; }
+input:focus, textarea:focus, select:focus { outline: none; }
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+  .image-upload-area { border: 2px dashed #e5e5e5; border-radius: 12px; transition: all 0.2s; position: relative; }
+  .image-upload-area #image-preview-section { max-height: 220px; overflow:auto; padding-top:12px; }
+  .image-upload-area #image-gallery img { height: 72px; }
+  .new-highlight { box-shadow: 0 10px 30px rgba(233,69,96,0.25); border-radius: 14px; outline: 3px solid rgba(233,69,96,0.12); transition: box-shadow 360ms ease; }
+.image-upload-area.drag-over { border-color: #e94560; background: rgba(233,69,96,0.05); }
+.message-bubble { animation: fadeIn 0.3s ease; }
+.message-bubble.sent { text-align: right; }
+.message-bubble.sent > div { background: #e94560; color: white; margin-left: auto; }
+.message-bubble.received > div { background: #f0f0f0; color: #1a1a2e; margin-right: auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner { border: 2px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; width: 14px; height: 14px; display: inline-block; vertical-align: middle; animation: spin 1s linear infinite; }
+/* Home background carousel */
+#home-bg-carousel { position: absolute; inset: 0; z-index: -20; overflow: hidden; pointer-events: none; }
+#home-bg-carousel .bg-track { display: flex; height: 100%; align-items: center; }
+.bg-carousel-item { flex: 0 0 auto; width: 33.3333%; height: 100%; background-size: cover; background-position: center; }
+@keyframes carousel-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+#home-bg-carousel .bg-track { animation-name: carousel-scroll; animation-timing-function: linear; animation-iteration-count: infinite; }
+  </style>
+  <style>
+  /* Hero carousel visuals and CTA */
+  #home-bg-carousel { opacity: 0.95; }
+  #home-bg-carousel .bg-track { will-change: transform; }
+  .bg-carousel-item { min-width: 33.3333%; height: 100vh; background-size: cover; background-position: center; }
+  /* Hero CTA style */
+  .hero-cta { transition: transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 240ms ease, background-color 180ms ease; }
+  .hero-cta:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.28); }
+  .hero-cta:active { transform: translateY(-2px) scale(0.995); }
+  @media (max-width: 640px) {
+    .bg-carousel-item { min-width: 80%; }
+    #home-bg-carousel .bg-track { animation-duration: 36s !important; }
+  }
+  /* Pause carousel animation on hover/focus for accessibility */
+  #home-bg-carousel:hover .bg-track, #home-bg-carousel:focus-within .bg-track { animation-play-state: paused !important; }
+  </style>
+  <style>
+  /* Auth button enhanced interaction */
+  .auth-cta {
+    transition: transform 180ms cubic-bezier(.2,.9,.3,1), box-shadow 220ms ease, filter 160ms ease;
+    will-change: transform, box-shadow;
+    cursor: pointer;
+    transform-origin: center bottom;
+  }
+  .auth-cta:hover {
+    transform: translateY(-6px) scale(1.035);
+    box-shadow: 0 18px 40px rgba(16,24,40,0.18), 0 6px 18px rgba(233,69,96,0.12);
+    filter: saturate(1.06) contrast(1.02);
+  }
+  .auth-cta:active {
+    transform: translateY(-2px) scale(0.995);
+    box-shadow: 0 8px 18px rgba(16,24,40,0.12);
+  }
+  .auth-cta:focus-visible {
+    outline: 3px solid rgba(233,69,96,0.18);
+    outline-offset: 3px;
+  }
+  /* Slightly different accent for login vs register if needed */
+  #login-form .auth-cta { background-image: linear-gradient(180deg,#2b2578 0%, #170a5f 100%); }
+  #register-form .auth-cta { background-image: linear-gradient(180deg,#5b85ff 0%, #4571e9 100%); }
+  /* brief touch/mouse contact animation for better feedback */
+  .button-touch-anim { animation: touchPop 360ms cubic-bezier(.2,.9,.3,1); }
+  @keyframes touchPop {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-8px) scale(1.06); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full">
+  <div id="app" class="h-full w-full overflow-auto" style="background:s#6497aca1;">
+   <!-- AUTH SCREEN -->
+   <div id="auth-screen" class="h-full w-full flex items-center justify-center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+   background-image: url('Ecommerceimg.jpg');">
+    <div class="w-full max-w-md mx-4 fade-in">
+     <div class="text-center mb-6" id="auth-branding">
+      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3" >
+        <img src="els.logo2.png" alt="ELS Logo" class="w-12 h-12 rounded" style="filter: drop-shadow(0 0 5px rgba(233,69,96,0.7));">
+      </div>
+      <h1 id="auth-site-name" class="text-2xl md:text-3xl font-bold text-white" style="font-family:'Playfair Display',serif;">Welcome to ELS</h1>
+      <p id="auth-tagline" class="text-gray-300 mt-1 text-sm">Shop with confidence, sell with ease.</p>
+     </div>
+     <div class="rounded-2xl p-8" style="background:rgba(255,255,255,0.07); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1);">
+      <div class="flex mb-6 rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05);" role="tablist" aria-label="Authentication tabs">
+       <button id="login-tab" onclick="switchAuthTab('login')" class="flex-1 py-3 text-sm font-semibold" aria-pressed="true" role="tab">Login</button>
+       <button id="register-tab" onclick="switchAuthTab('register')" class="flex-1 py-3 text-sm font-semibold text-gray-400" aria-pressed="false" role="tab">Register</button>
+      </div>
+      <!-- Login Form -->
+      <form id="login-form" onsubmit="handleLogin(event)"
+      >
+       <div class="mb-4">
+        <label for="login-email" class="block text-gray-300 text-sm mb-1">Email</label> 
+        <input id="login-email" type="email" required placeholder="you@email.com"
+         class="w-full px-4 py-3 rounded-xl text-white"
+          style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+       </div>
+       <div class="mb-6">
+        <label for="login-pass"
+         class="block text-gray-300 text-sm mb-1">Password</label> 
+          <input id="login-pass" type="password" required placeholder="••••••••" 
+          class="w-full px-4 py-3 rounded-xl text-white"
+           style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+       </div>
+       <button type="submit"
+        class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
+         style="background:#170a5f8f; box-shadow: #4571e9;">Sign In</button>
+       <p class="text-center text-gray-500 text-xs mt-4"> Login with email / password works</p>
+      </form>
+      <!-- Register Form -->
+      <div id="register-logo" class="hidden text-center mb-4">
+        <img src="els.logo2.png" alt="ELS logo" class="w-24 h-24 mx-auto rounded-lg shadow-md">
+      </div>
+      <form id="register-form" class="hidden" onsubmit="handleRegister(event)" aria-hidden="true">
+       <div class="mb-4">
+        <label for="reg-name" class="block text-gray-300 text-sm mb-1">Full Name</label> 
+         <input id="reg-name" 
+         type="text" required placeholder="John Doe" 
+         class="w-full px-4 py-3 rounded-xl text-white" 
+         style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+       </div>
+       <div class="mb-4">
+        <label for="reg-email" class="block text-gray-300 text-sm mb-1">Email</label> 
+        <input id="reg-email" type="email" required placeholder="you@email.com" 
+        class="w-full px-4 py-3 rounded-xl text-white" 
+        style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+       </div>
+       <div class="mb-6">
+        <label for="reg-pass" class="block text-gray-300 text-sm mb-1">Password</label>
+         <input id="reg-pass" type="password" required placeholder="••••••••"
+          class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
+           border:1px solid rgba(255,255,255,0.15);">
+      
+       </div>
+       <div class="mb-6">
+        <label for="reg-dob" class="block text-gray-300 text-sm mb-1">Date Of Birth </label>
+        <input id="reg-dob" type="date" required placeholder="Date of Birth"
+          class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
+           border:1px solid rgba(255,255,255,0.15);">
+        </button> 
+       </div>
+       <button type="submit"
+        class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
+         style="background:#4571e9;">Create Account</button>
+       <p class="text-center text-gray-500 text-xs mt-4">Demo: registration is simulated</p>
+
+      </form>
+     </div>
+    </div>
+   </div><!-- MAIN APP (hidden until login) -->
+   <div id="main-app" class="hidden h-full w-full">
+    <!-- TOP NAV -->
+    <header id="topnav" class="sticky top-0 z-30 w-full" style="background:#547f97; border-bottom:1px solid rgba(255,255,255,0.08);">
+     <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+      <div class="flex items-center gap-3">
+       <button onclick="toggleSidebar()" class="text-white p-2 rounded-lg hover:bg-white/10 transition"><i data-lucide="menu" class="w-5 h-5"></i></button>
+       <h1 id="nav-site-name" class="text-lg font-bold text-white cursor-pointer" onclick="goTo('home')" style="font-family:'Playfair Display',serif;">ELS.OnlineStore</h1>
+      </div>
+      <nav class="hidden md:flex items-center gap-1">
+       <button onclick="goTo('home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="home">Home</button> <button onclick="goTo('shop')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="shop">Shop</button> <button onclick="goTo('open-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="open-store">Open Store</button> <button onclick="goTo('messages')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="messages">Messages</button> <button onclick="goTo('about')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="about">About</button> <button onclick="goTo('contact')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="contact">Contact</button>
+      </nav>
+      <div class="flex items-center gap-2">
+       <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders"> <i data-lucide="package" class="w-5 h-5"></i> </button><button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition"> <i data-lucide="shopping-cart" class="w-5 h-5"></i> 
+        <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" 
+        style="background:#e94560;">0</span> </button> <button onclick="goTo('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm" 
+        style="background:#e94560;" id="user-avatar">J</button>
+      </div>
+     </div>
+    </header>
+    <!-- SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <!-- SIDEBAR -->
+    <nav id="sidebar" class="sidebar flex flex-col" style="background:#47475a;">
+     <div class="p-5 flex items-center justify-between" style="border-bottom:1px solid rgba(43, 26, 26, 0.377);">
+      <span class="text-white font-bold text-lg" style="font-family:'Playfair Display',serif;">Menu</span> 
+      <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i></button>
+     </div>
+     <div class="flex-1 py-4 px-3 flex flex-col gap-1 overflow-auto">
+      <button onclick="goTo('home');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="home"><i data-lucide="home" class="w-4 h-4"></i>Home</button> <button onclick="goTo('shop');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="shop"><i data-lucide="shopping-bag" class="w-4 h-4"></i>Shop</button>
+       <button onclick="goTo('open-store');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="open-store"><i data-lucide="store" class="w-4 h-4"></i>Open Store</button> <button onclick="goTo('cart');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="cart"><i data-lucide="shopping-cart" class="w-4 h-4"></i>Cart</button> <button onclick="goTo('orders');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="orders"><i data-lucide="package" class="w-4 h-4"></i>Orders</button> <button onclick="goTo('logistics');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="logistics"><i data-lucide="truck" class="w-4 h-4"></i>Logistics</button> <button onclick="goTo('messages');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="messages"><i data-lucide="message-circle" class="w-4 h-4"></i>Messages</button> <button onclick="goTo('payment');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="payment"><i data-lucide="credit-card" class="w-4 h-4"></i>Payment</button> <button onclick="goTo('about');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="about"><i data-lucide="info" class="w-4 h-4"></i>About</button> <button onclick="goTo('contact');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="contact"><i data-lucide="mail" class="w-4 h-4"></i>Contact</button>
+     </div>
+     <div class="p-4" style="border-top:1px solid rgba(255,255,255,0.08);">
+      <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-sm font-medium"><i data-lucide="log-out" class="w-4 h-4"></i>Sign Out</button>
+     </div>
+    </nav>
+    <!-- PAGES -->
+    <main class="w-full">
+     <!-- HOME PAGE -->
+     <section id="page-home" class="page active">
+       <div class="relative overflow-hidden py-20 px-6 text-center" style="background: linear-gradient(135deg, rgba(10,10,20,0.6), rgba(8,12,30,0.4));">
+         <div id="home-bg-carousel"></div>
+         <div class="max-w-3xl mx-auto relative z-10">
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold text-white mb-4 slide-up" style="background:rgba(233,69,96,0.3); border:1px solid rgba(233,69,96,0.5);">  Welcome to ELS.OnlineStore</span>
+        <h2 id="hero-heading" class="text-4xl md:text-6xl font-extrabold text-white mb-6 slide-up-d1" style="font-family:'Playfair Display',serif; line-height:1.1;">Discover What You Love</h2>
+        <p class="text-gray-300 text-lg mb-8 max-w-xl mx-auto slide-up-d2">Buy unique products from independent sellers or open your own store and start selling today.</p>
+        <div class="flex flex-wrap gap-3 justify-center slide-up-d3">
+         <button onclick="goTo('shop')" class="px-8 py-3 rounded-xl font-semibold text-white hero-cta" style="background:#2c4872a4;">Browse Shop</button>
+         <button onclick="goTo('open-store')" class="px-8 py-3 rounded-xl font-semibold text-white hero-cta" 
+         style="background:rgba(118, 126, 172, 0.445); border:1px solid rgba(110, 91, 196, 0.596);">Open a Store</button>
+        </div>
+       </div>
+       <div class="absolute inset-0 opacity-10"
+        style="background: radial-gradient(circle at 30% 50%, #2d3f7ab6 0%, transparent 60%), radial-gradient(circle at 70% 80%, #0f3460 0%, transparent 50%);"></div>
+      </div>
+      <!-- Featured Categories -->
+      <div class="max-w-6xl mx-auto px-4 py-16">
+       <h3 class="text-2xl font-bold mb-8 text-center" style="color:#1a1a2e;">Shop by Category</h3>
+       <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div onclick="filterShopCategory('Electronics')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
+         <span class="text-4xl block mb-3"><img src="gadgets.jpg" alt="Electronics">
+
+         </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Electronics</span>
+        </div>
+        <div onclick="filterShopCategory('Fashion')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
+         <span class="text-4xl block mb-3">
+            <img src="fashion.jpg" alt="Fashion" style="border-radius:8px; width:250px; height:250px;">
+         </span>
+          <span class="font-semibold text-sm" style="color:#1a1a2e;">Fashion</span>
+        </div>
+        <div onclick="filterShopCategory('Home')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
+         <span class="text-4xl block mb-3"> 
+          <img src="home.jpg" alt="Home" style="border-radius:8px; width:250px; height:250px;">
+</span>
+         </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Home</span>
+        </div>
+        <div onclick="filterShopCategory('Sports')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
+         <span class="text-4xl block mb-3">
+            <img src="sport.jpg" alt="Sports" style="border-radius:8px; width:250px; height:250px;">
+         </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Sports</span>
+        </div>
+       </div>
+      </div><!-- Dashboard - Recently Added Products -->
+      <div class="max-w-6xl mx-auto px-4 pb-16">
+       <h3 class="text-2xl font-bold mb-8 text-center" style="color:#38384b6c;">📊 Dashboard - Recently Listed</h3>
+       <div id="home-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="col-span-full text-center py-12">
+         <p class="text-gray-400 text-lg"
+         imag src="produc.jpg">
+          No products yet.</p>
+         <p class="text-gray-500 text-sm mt-2">Be the first to <button onclick="goTo('open-store')" class="underline font-semibold" style="color:#e94560;">open a store</button> and list something!</p>
+        </div>
+       </div>
+      </div>
+     </section><!-- SHOP PAGE -->
+     <section id="page-shop" class="page">
+      <div class="max-w-6xl mx-auto px-4 py-8">
+       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <h2 class="text-3xl font-bold" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Shop</h2>
+        <div class="flex gap-2 flex-wrap">
+         <button onclick="filterShopCategory('All')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:#e94560; color:white;">All</button> <button onclick="filterShopCategory('Electronics')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Electronics</button> <button onclick="filterShopCategory('Fashion')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Fashion</button> <button onclick="filterShopCategory('Home')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Home</button> <button onclick="filterShopCategory('Sports')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Sports</button> <button onclick="filterShopCategory('Other')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Other</button>
+        </div>
+       </div>
+       <div class="mb-6">
+        <input id="shop-search" type="text" placeholder="Search products..." oninput="renderShop()" class="w-full md:w-80 px-4 py-3 rounded-xl" style="background:white; border:1px solid #e5e5e5;">
+       </div>
+       <div id="shop-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <p class="col-span-full text-center text-gray-400 py-16">No products available yet. <button onclick="goTo('open-store')" class="underline font-semibold" style="color:#e94560;">Open a store</button> to start listing!</p>
+       </div>
+      </div>
+     </section>
+    <!-- CONTACT THANK YOU PAGE -->
+    <section id="page-contact-thanks" class="page">
+      <div class="max-w-2xl mx-auto px-4 py-20 text-center">
+        <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
+          <h2 class="text-3xl font-bold mb-4" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Thank you!</h2>
+          <p class="text-gray-600 mb-6">We've received your message and will get back to you shortly.</p>
+          <div class="flex gap-3 justify-center">
+            <button onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Return Home</button>
+            <button onclick="goTo('contact')" class="px-6 py-3 rounded-xl font-semibold text-gray-700" style="background:#f3f4f6;">Send Another</button>
+          </div>
+        </div>
+      </div>
+    </section>
+     <!-- OPEN STORE PAGE -->
+     <section id="page-open-store" class="page">
+      <div class="max-w-4xl mx-auto px-4 py-8">
+       <div class="text-center mb-10">
+        <span class="text-5xl block mb-4"> <center><img src="timesetup.png" width="100" height="100"
+          > </center></span>
+        <h2 class="text-3xl font-bold mb-2" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Open Your Store</h2>
+        <p class="text-gray-500">Start selling in minutes. List your products and reach customers worldwide.</p>
+       </div>
+       <!-- Store Benefits -->
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+        <div class="rounded-2xl p-6 text-center" style="background:white;">
+         <span class="text-3xl block mb-2"><center>
+          <img src="setupimg.png" width="100" height="100"></center>
+         </span>
+         <h4 class="font-bold mb-1" style="color:#1a1a2e;">Quick Setup</h4>
+         <p class="text-gray-500 text-sm">List a product in under a minute</p>
+        </div>
+        <div class="rounded-2xl p-6 text-center" style="background:white;">
+         <span class="text-3xl block mb-2"
+         style="image-orientation: 0deg;"><center>
+          <img src="globe.png" width="100"height="100" ></center>
+         </span>
+         <h4 class="font-bold mb-1" style="color:#1a1a2e;">Global Reach</h4>
+         <p class="text-gray-500 text-sm">Your products visible to everyone</p>
+        </div>
+        <div class="rounded-2xl p-6 text-center" style="background:white;">
+         <span class="text-3xl block mb-2"> <center>
+          <img src="feeimg.png" width="100" height="100"></center>
+         </span>
+         <h4 class="font-bold mb-1" style="color:#1a1a2e;">Zero Fees</h4>
+         <p class="text-gray-500 text-sm">No listing or commission fees</p>
+        </div>
+       </div>
+       <!-- Add Product Form -->
+       <div class="rounded-2xl p-8" style="background:white;">
+        <h3 class="text-xl font-bold mb-6" style="color:#1a1a2e;">List a New Product</h3>
+        <form id="add-product-form" onsubmit="handleAddProduct(event)">
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+           <label for="prod-name" class="block text-sm font-medium mb-1"
+            style="color:#1a1a2e;">Product Name</label>
+             <input id="prod-name" type="text" required placeholder="e.g. Wireless Headphones"
+              class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+              <p id="err-prod-name" class="hidden text-sm text-red-500 mt-1"></p>
+          </div>
+          <div>
+           <label for="prod-price" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Price ($)</label> <input id="prod-price" type="number" step="0.01" min="0.01" required placeholder="29.99" class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+             <p id="err-prod-price" class="hidden text-sm text-red-500 mt-1"></p>
+          </div>
+         </div>
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+           <label for="prod-category" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Category</label> <select id="prod-category" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"> <option value="">Select category</option> <option value="Electronics">Electronics</option> <option value="Fashion">Fashion</option> <option value="Home">Home</option> <option value="Sports">Sports</option> <option value="Other">Other</option> </select>
+           <p id="err-prod-category" class="hidden text-sm text-red-500 mt-1"></p>
+          </div>
+         </div>
+         <div class="mb-4">
+          <label for="prod-image" class="block text-sm font-medium mb-2" 
+          style="color:#1a1a2e;">Product Image</label>
+          <div id="image-upload-area" class="image-upload-area p-6 text-center cursor-pointer"
+           style="border:2px dashed #e5e5e5;">
+             <input id="prod-image" type="file" accept="image/*" class="hidden" multiple onchange="handleImageUpload(event)">
+            <p class="text-sm text-gray-500">Click or drop images here.</p>
+            <input id="product-image-replace-input" type="file" accept="image/*" class="hidden" onchange="handleProductImageReplace(event)">
+            <div class="flex flex-col items-center gap-2">
+            <i data-lucide="upload-cloud" class="w-6 h-6" style="color:#999;"></i>
+            <button type="button" onclick="document.getElementById('prod-image').click()" class="text-sm font-medium" style="color:#1a1a2e; background:transparent; border:none; cursor:pointer;">
+              Click or drag image here
+            </button>
+            <p class="text-xs text-gray-500">JPG, PNG, WebP • Max 5MB • Recommended: 500×500px</p>
+           </div>
+           <!-- image previews appear inside the upload box -->
+           <div id="image-preview-section" class="hidden mt-4 w-full">
+             <div id="image-gallery" class="grid grid-cols-3 gap-3"></div>
+             <div class="flex items-center justify-between mt-2">
+               <div id="image-info" class="text-xs text-gray-500"></div>
+               <div class="flex items-center gap-2">
+                  <label class="text-xs text-gray-600">Optimize</label>
+                  <input id="optimize-image" type="checkbox" checked />
+                  <label class="text-xs text-gray-600 ml-4">Public</label>
+                  <input id="prod-public" type="checkbox" checked />
+               </div>
+             </div>
+             <button type="button" onclick="clearAllImages()"
+              class="mt-2 text-sm text-red-500 hover:text-red-700 font-medium">Clear Images</button>
+          </div>
+          </div>
+         </div>
+         <div class="mb-6">
+          <label for="prod-desc" 
+          class="block text-sm font-medium mb-1"
+           style="color:#1a1a2e;">Description</label> 
+           <textarea id="prod-desc" rows="3" required placeholder="Describe your product..."
+            class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"></textarea>
+             <p id="err-prod-desc" class="hidden text-sm text-red-500 mt-1"></p>
+         </div><button id="add-product-btn" type="submit" data-publish="true"
+         disabled
+         class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90"
+          style="background:#e94560;"> <span id="add-prod-text">List & Publish</span>
+           <span id="add-prod-loading" class="hidden">Listing...</span> 
+          </button>
+         <p id="store-limit-msg" 
+         class="hidden text-center text-red-500 text-sm mt-3 font-medium">Maximum product limit reached (999). Please remove some products first.</p>
+        </form>
+
+        <!-- My Products -->
+       <div class="mt-10">
+        <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">My Listed Products</h3>
+        <div id="my-products" class="space-y-3">
+         <p class="text-gray-400 text-center py-8">You haven't listed any products yet.</p>
+        </div>
+       </div>
+      </div>
+     </section>
+     <!-- ORDERS PAGE -->
+     <section id="page-orders" class="page">
+      <div class="max-w-6xl mx-auto px-4 py-8">
+       <h2 class="text-3xl font-bold mb-8" 
+       style="color:#1a1a2e; font-family:'Playfair Display',serif;">📦 Order Tracking</h2>
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="rounded-2xl p-6" style="background:white;">
+         <div class="text-center">
+          <p class="text-4xl font-bold" style="color:#e94560;" id="total-orders">0</p>
+          <p class="text-gray-500 text-sm mt-2">Total Orders</p>
+         </div>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;">
+         <div class="text-center">
+          <p class="text-4xl font-bold" style="color:#0f3460;" id="in-transit-count">0</p>
+          <p class="text-gray-500 text-sm mt-2">In Transit</p>
+         </div>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;">
+         <div class="text-center">
+          <p class="text-4xl font-bold" style="color:#27ae60;" id="delivered-count">0</p>
+          <p class="text-gray-500 text-sm mt-2">Delivered</p>
+         </div>
+        </div>
+       </div>
+       <div class="rounded-2xl p-6" style="background:white;">
+        <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">Your Orders</h3>
+        <div id="orders-list" class="space-y-3">
+         <p class="text-gray-400 text-center py-8">No orders yet.
+          
+          <button onclick="goTo('shop')" class="underline font-semibold" 
+          style="color:#39468d;">Start shopping!</button></p>
+        </div>
+       </div>
+      </div>
+     </section>
+     <!-- LOGISTICS PAGE -->
+
+     <section id="page-logistics" class="page">
+      <div class="max-w-6xl mx-auto px-4 py-8">
+       <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+        <h2 class="text-3xl font-bold" 
+        style="color:#1a1a2e; font-family:'Playfair Display',serif;">🚚 Logistics Dashboard</h2>
+        <button onclick="toggleLogisticsRole()" 
+        class="px-6 py-3 rounded-xl font-semibold text-white transition hover:opacity-90"
+         style="background:#0f3460;" id="logistics-role-btn">Switch to Seller View</button>
+       </div>
+       <!-- Seller View -->
+       <div id="seller-logistics-view" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div class="rounded-2xl p-6" style="background:white;">
+          <p class="text-gray-500 text-sm mb-1">Your Balance</p>
+          <p class="text-3xl font-bold" style="color:#27ae60;" id="seller-balance">$0.00</p>
+          <p class="text-xs text-gray-400 mt-2">From completed deliveries</p>
+         </div>
+         <div class="rounded-2xl p-6" style="background:white;">
+          <p class="text-gray-500 text-sm mb-1">Pending Shipments</p>
+          <p class="text-3xl font-bold" style="color:#e94560;" id="pending-shipments">0</p>
+         </div>
+         <div class="rounded-2xl p-6" style="background:white;">
+          <p class="text-gray-500 text-sm mb-1">Completed Orders</p>
+          <p class="text-3xl font-bold" style="color:#0f3460;" id="completed-seller-orders">0</p>
+         </div>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;">
+         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">📤 Orders Awaiting Logistics Booking</h3>
+         <div id="seller-pending-orders" class="space-y-3">
+          <p class="text-gray-400 text-center py-8">No pending orders to ship.</p>
+         </div>
+        </div>
+       </div><!-- Logistics View (Provider) -->
+       <div id="logistics-provider-view" class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div class="rounded-2xl p-6" style="background:white;">
+          <p class="text-gray-500 text-sm mb-1">Logistics Balance</p>
+          <p class="text-3xl font-bold" style="color:#27ae60;" id="logistics-balance">$0.00</p>
+          <p class="text-xs text-gray-400 mt-2">Earned from deliveries</p>
+         </div>
+         <div class="rounded-2xl p-6" style="background:white;">
+          <p class="text-gray-500 text-sm mb-1">Active Shipments</p>
+          <p class="text-3xl font-bold" style="color:#0f3460;" id="active-shipments">0</p>
+         </div>
+         <div class="rounded-2xl p-6" style="background:white;">
+          <p class="text-gray-500 text-sm mb-1">Completed Deliveries</p>
+          <p class="text-3xl font-bold" style="color:#27ae60;" id="completed-deliveries">0</p>
+         </div>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;">
+         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">shpping Available Shipments to Accept</h3>
+         <div id="available-shipments" class="space-y-3">
+          <p class="text-gray-400 text-center py-8">No pending shipments available.</p>
+         </div>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;">
+         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;"> Your Active Deliveries</h3>
+         <div id="active-deliveries" class="space-y-3">
+          <p class="text-gray-400 text-center py-8">No active deliveries.</p>
+         </div>
+        </div>
+       </div>
+      </div>
+     </section><!-- MESSAGES PAGE -->
+     <section id="page-messages" class="page">
+      <div class="max-w-4xl mx-auto px-4 py-8 h-full flex flex-col">
+       <h2 class="text-3xl font-bold mb-6" 
+       style="color:#1a1a2e; font-family:'Playfair Display',serif;">💬 Direct Messaging</h2>
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
+        <!-- Conversations List -->
+        <div class="rounded-2xl p-4" 
+        style="background:white; border:1px solid #e5e5e5; overflow-y:auto;">
+
+        </div>
+         <h3 class="font-bold mb-4" style="color:#1a1a2e;">Conversations</h3>
+         <div id="conversations-list" class="space-y-2">
+          <p class="text-gray-400 text-sm text-center py-8">No conversations yet. Click a product to message the seller!</p>
+        </div>
+        <!-- Chat Area -->
+        <div class="md:col-span-2 rounded-2xl p-6 flex flex-col"
+         style="background:white; border:1px solid #e5e5e5;">
+         <div id="chat-header" class="pb-4 mb-4"
+          style="border-bottom:1px solid #e5e5e5;">
+          <p class="text-gray-400 text-center">Select a conversation to start chatting</p>
+         </div>
+         <div id="messages-container" class="flex-1 overflow-y-auto mb-4 space-y-3 min-h-0"></div>
+         <div id="chat-input-area" class="hidden flex gap-2 items-center">
+          <input id="message-input" type="text" placeholder="Type your message..." 
+          class="flex-1 px-4 py-2 rounded-xl" style="border:1px solid #e5e5e5;"> 
+          <button id="send-btn" type="button" onclick="sendMessage()" disabled
+            class="inline-flex items-center justify-center px-4 py-2 rounded-xl text-white transition-all duration-200 hover:opacity-95 active:scale-95 focus:outline-none focus:ring-2 focus:ring-[#30618f]/50"
+            style="background-color: rgba(48, 97, 143, 0.9);">
+            <i data-lucide="send" class="w-5 h-5"></i>
+          </button>
+         </div>
+        </div>
+       </div>
+      </div>
+     </section><!-- CART PAGE -->
+     <section id="page-cart" class="page">
+      <div class="max-w-4xl mx-auto px-4 py-8">
+       <h2 class="text-3xl font-bold mb-8" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Your Cart</h2>
+       <div id="cart-items" class="space-y-4 mb-8">
+        <p class="text-gray-400 text-center py-16">Your cart is empty. <button onclick="goTo('shop')" 
+          class="underline font-semibold" style="color:#e94560;">Start shopping!</button></p>
+       </div>
+       <div id="cart-summary" class="hidden rounded-2xl p-6"
+        style="background:white;">
+        <div class="flex justify-between items-center mb-4">
+         <span class="text-lg font-semibold" style="color:#1a1a2e;">Total</span> <span id="cart-total" class="text-2xl font-bold" style="color:#e94560;">$0.00</span>
+        </div><button onclick="goTo('payment')" 
+        class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90"
+         style="background:#e94560;">Proceed to Payment</button>
+       </div>
+      </div>
+     </section><!-- PAYMENT PAGE -->
+     <section id="page-payment" class="page">
+      <div class="max-w-xl mx-auto px-4 py-8">
+       <h2 class="text-3xl font-bold mb-2"
+        style="color:#41416e; font-family:'Playfair Display',serif;">Payment</h2>
+       <p class="text-gray-500 mb-8">Complete your order securely.</p>
+       <div class="rounded-2xl p-1 mb-6" 
+       style="background:linear-gradient(135deg, #e94560, #0f3460); 
+       border-radius:16px;">
+        <div class="rounded-2xl p-4 text-center"
+         style="background:#1a1a2e;">
+         <p class="text-xs text-gray-400 mb-1">SAMPLE PAYMENT</p>
+         <p class="text-white font-bold text-sm">
+          This is a demo checkout — no real payment is processed</p>
+        </div>
+       </div>
+       <div class="rounded-2xl p-6 mb-4" style="background:white;">
+        <h3 class="font-bold mb-4" style="color:#1a1a2e;">Order Summary</h3>
+        <div id="payment-items" class="space-y-2 mb-4 text-sm" style="color:#666;"></div>
+        <div class="flex justify-between font-medium text-sm mb-2 pt-2">
+         <span style="color:#666;">Subtotal</span> <span id="payment-subtotal" style="color:#1a1a2e;">$0.00</span>
+        </div>
+        <div class="flex justify-between font-medium text-sm pb-3" style="border-bottom:1px solid #eee;">
+         <span style="color:#666;">Logistics Fee</span> <span id="payment-logistics-fee" style="color:#e94560;">$5.00</span>
+        </div>
+        <div class="flex justify-between font-bold text-lg pt-3">
+         <span style="color:#1a1a2e;">Total</span> <span id="payment-total" style="color:#e94560;">$0.00</span>
+        </div>
+       </div>
+       <h3 class="font-bold mb-4" style="color:#1a1a2e;">Shipping &amp; Delivery</h3>
+       <div class="mb-4">
+        <label for="delivery-method"
+         class="block text-sm font-medium mb-1" 
+         style="color:#1a1a2e;">Preferred Delivery Method</label>
+          <select id="delivery-method" onchange="updateLogisticsFee()"
+           class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+            <option value="Standard">Standard Delivery (5-7 days) - $5.00</option> <option value="Express">Express Delivery (2-3 days) - $12.00</option> <option value="Overnight">Overnight Delivery - $25.00</option> <option value="Pickup">Local Pickup - Free</option> </select>
+       </div>
+       <div class="mb-6 p-3 rounded-xl"
+        style="background:#f0f0f0;">
+        <div class="flex justify-between items-center">
+         <span class="text-sm font-medium" 
+         style="color:#1a1a2e;">Logistics Fee</span> 
+         <span id="logistics-fee-display" style="color:#e94560;" 
+         class="font-bold">$5.00</span>
+        </div>
+       </div>
+       <h3 class="font-bold mb-4" style="color:#1a1a2e;">Shipping Info</h3>
+       <div class="mb-4">
+        <label for="pay-name" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Full Name</label> <input id="pay-name" type="text" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+       </div>
+       <div class="mb-4">
+        <label for="pay-address" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Address</label> <input id="pay-address" type="text" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+       </div>
+       <div class="mb-6">
+        <label for="pay-email" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Email</label> <input id="pay-email" type="email" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+       </div><button type="submit" onclick="handlePayment(event)" class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90" style="background:#e94560;">Place Order (Demo)</button>
+      </div>
+     </section>
+     <!-- ABOUT PAGE -->
+     <section id="page-about" class="page">
+      <div class="max-w-4xl mx-auto px-4 py-12"ss>
+       <div class="text-center mb-12">
+        <span class="text-5xl block mb-4">
+           <center><img src="els.logo2.png"width="105" height="105"
+            style="border-radius: 10px;"> </center>
+        </span>
+        <h2 class="text-4xl font-bold mb-4"
+         style="color:#1a1a2e; font-family:'Playfair Display',serif;">ELS.OnlineStore</h2>
+        <p class="text-gray-500 text-lg max-w-2xl mx-auto">A next-generation marketplace where buying and selling converge into a seamless, community-driven experience.</p>
+       </div>
+       <div class="rounded-2xl p-8 mb-8" style="background:rgba(85, 110, 146, 0.63);">
+        <h3 class="text-2xl font-bold mb-4" style="color:#1a1a2e;">Our Vision</h3>
+        <p class="text-gray-600 leading-relaxed mb-4">ELS.OnlineStore was born from a simple belief: commerce should be human. In an era dominated by faceless mega-retailers, we envisioned a digital marketplace that puts people first — where independent sellers can build thriving businesses and buyers can discover truly unique products with stories behind them.</p>
+        <p class="text-gray-600 leading-relaxed">Our platform bridges the gap between creators and consumers, offering a frictionless experience where anyone can transition from buyer to seller with a single click. No warehouses, no middlemen — just real people sharing remarkable products with the world.</p>
+       </div>
+       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="rounded-2xl p-6" style="background:white;"><span><center>
+          <img src="trust.jpg" width="90" height="90"
+          style="border-radius: 10px;">
+          </center>
+         <center><h4 class="font-bold text-lg mb-3" style="color:#2a505f60; font-family: 18px;"> Trust &amp; Transparency</h4>
+        </center></span>
+         <p class="text-gray-600 text-sm leading-relaxed">Every transaction on ELS.OnlineStore is built on transparency. Sellers build reputation through authentic reviews, and our open pricing model means no hidden fees or surprise charges.</p>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;"><span>
+         <center> <img src="sustanbilty.jpg" width="90" height="90" style="border-radius:10px;">
+        </center></span><center>
+         <h4 class="font-bold text-lg mb-3" style="color:#e94560;
+         font-size: large;">Sustainable Commerce</h4></center>
+         <p class="text-gray-600 text-sm leading-relaxed">We champion small-batch production and local craftsmanship. By connecting buyers directly with makers, we reduce waste, shorten supply chains, and support sustainable business practices.</p>
+        </div>
+         <div class="rounded-2xl p-6" style="background:white;"><span><center>
+          <img src="dualimgtwo.jpg" width="90" height="90"
+          style="border-radius: 10px;">
+          </center>
+         <center><h4 class="font-bold text-lg mb-3" style="color:#2a505f60; font-family: 18px;">Dual-Mode Platform</h4>
+        </center></span>
+         <p class="text-gray-600 text-sm leading-relaxed">ELS.OnlineStore uniquely lets users switch between buying and selling modes. Browse the marketplace one moment, then open your own storefront the next — all from a single, unified account.</p>
+        </div>
+        <div class="rounded-2xl p-6" style="background:white;"><span>
+         <center> <img src="fashion.jpg" width="90" height="90" style="border-radius:10px;">
+        </center></span><center>
+         <h4 class="font-bold text-lg mb-3" style="color:#292952;
+         font-size: large;">🤝 Community First</h4></center>
+         <p class="text-gray-600 text-sm leading-relaxed">More than a marketplace, ELS.OnlineStore is a community.
+           We foster connections between sellers and buyers through direct messaging, reviews, and shared interests.</p>
+        </div>
+       </div>
+       <div class="rounded-2xl p-8 text-center"
+        style="background:linear-gradient(135deg, #1a1a2e, #0f3460);">
+        <h3 class="text-2xl font-bold text-white mb-3" style="font-family:'Playfair Display',serif;">Join the Movement</h3>
+        <p class="text-gray-300 mb-6">Whether you're here to discover or to create, ELS.OnlineStore is your launchpad.</p>
+        <div class="flex gap-3 justify-center flex-wrap">
+         <button onclick="goTo('shop')" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Start Shopping</button> <button onclick="goTo('open-store')" class="px-6 py-3 rounded-xl font-semibold text-white" style="border:1px solid rgba(255,255,255,0.3);">Open a Store</button>
+        </div>
+       </div>
+      </div>
+     </section>
+     <!-- CONTACT PAGE -->
+     <section id="page-contact" class="page">
+      <div class="max-w-2xl mx-auto px-4 py-12">
+       <div class="text-center mb-10">
+        <span class="text-5xl block mb-4">💬</span>
+        <h2 class="text-3xl font-bold mb-2" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Get in Touch</h2>
+        <p class="text-gray-500">Have questions? We'd love to hear from you.</p>
+       </div>
+       <form id="contact-form" onsubmit="handleContact(event)" 
+       class="rounded-2xl p-8" style="background:white;">
+        <div class="mb-4">
+         <label for="contact-name" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Name</label> <input id="contact-name" type="text" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+        </div>
+        <div class="mb-4">
+         <label for="contact-email" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Email</label> <input id="contact-email" type="email" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;">
+        </div>
+        <div class="mb-6">
+         <label
+          for="contact-msg" class="block text-sm font-medium mb-1" 
+          style="color:#1a1a2e;">Message</label> <textarea id="contact-msg" rows="5" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"></textarea>
+        </div>
+        <button id="contact-submit" type="submit" class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90 flex items-center justify-center" style="background:#204069ad;">
+          <span id="contact-submit-text">Send Message</span>
+          <span id="contact-submit-loading" class="hidden ml-3"><span class="spinner" aria-hidden="true"></span><span class="sr-only">Sending</span></span>
+        </button>
+        <p id="contact-success" class="hidden text-center text-green-600 font-medium mt-4">✓ Message sent! We'll get back to you soon.</p>
+       </form>
+       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+        <div class="rounded-2xl p-5 text-center" style="background:white;">
+         <i data-lucide="mail" class="w-5 h-5 mx-auto mb-2" style="color:#302464;"></i>
+         <p class="text-sm font-medium" style="color:#1a1a2e;">elsonlinestoreng@gmail.com</p>
+        </div>
+        <div class="rounded-2xl p-5 text-center" style="background:white;">
+         <i data-lucide="phone" class="w-5 h-5 mx-auto mb-2" style="color:#29285f91;"></i>
+         <p class="text-sm font-medium" style="color:#1a1a2e;">+234 (902) 505-8674 </p>
+        </div>
+        <div class="rounded-2xl p-5 text-center" style="background:white;">
+         <i data-lucide="clock" class="w-5 h-5 mx-auto mb-2" style="color:#335f5b;"></i>
+         <p class="text-sm font-large" style="color:#1a1a2e;">Mon–Fri 9am–6pm</p>
+        </div>
+       </div>
+      </div>
+     </section>
+    </main>
+   </div><!-- end main-app --> <!-- TOAST -->
+   <div id="toast" class="toast-msg hidden" style="background:#1a1a2e; color:white;"></div>
+  <!-- Upload progress modal -->
+  <div id="upload-modal" class="hidden fixed inset-0 z-60 flex items-center justify-center bg-black/40">
+    <div class="bg-white rounded-2xl p-6 w-full max-w-lg" role="dialog" aria-modal="true" aria-labelledby="upload-modal-title">
+      <h3 id="upload-modal-title" class="text-lg font-bold mb-4">Uploading images...</h3>
+      <div id="upload-list" class="space-y-3 max-h-64 overflow-auto">
+        <!-- per-image rows inserted here -->
+      </div>
+      <div class="mt-4 flex justify-end gap-2">
+        <button id="upload-cancel-btn" class="px-4 py-2 rounded-xl bg-gray-200">Cancel</button>
+        <button id="upload-close-btn" class="px-4 py-2 rounded-xl bg-e94560 text-white hidden">Close</button>
+      </div>
+    </div>
+  </div>
+  </div><!-- end app -->
+  <script>
+// ===== STATE =====
+let allProducts = [];
+let cart = [];
+let currentCategory = 'All';
+let currentUser = { name: 'User', email: '' };
+let selectedImages = []; // array of data URLs
+let primaryImageIndex = 0;
+let conversations = [];
+let currentConversation = null;
+let allOrders = [];
+let isLogisticsProvider = false;
+let logisticsFees = { 'Standard': 5, 'Express': 12, 'Overnight': 25, 'Pickup': 0 };
+
+const defaultConfig = {
+  site_name: 'ELS.OnlineStoress',
+  tagline: 'Shop. Sell. Thrive.',
+  hero_heading: 'Discover What You Love',
+  bg_color: '#f8f6f3',
+  surface_color: '#ffffff',
+  text_color: '#1a1a2e',
+  primary_color: '#e94560',
+  secondary_color: '#0f3460',
+  font_family: 'Outfit',
+  font_size: 16
+};
+
+// If running locally, default to the example upload server on port 8001
+try {
+  if (location && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    window.cloudImageUploadUrl = window.cloudImageUploadUrl || (location.protocol + '//' + location.hostname + ':8001/upload');
+    console.info('Defaulting cloudImageUploadUrl to', window.cloudImageUploadUrl);
+  }
+} catch (e) {}
+
+// ===== ELEMENT SDK =====
+window.elementSdk.init({
+  defaultConfig,
+  onConfigChange: async (config) => {
+    const bg = config.bg_color || defaultConfig.bg_color;
+    const surface = config.surface_color || defaultConfig.surface_color;
+    const txt = config.text_color || defaultConfig.text_color;
+    const primary = config.primary_color || defaultConfig.primary_color;
+    const secondary = config.secondary_color || defaultConfig.secondary_color;
+    const font = config.font_family || defaultConfig.font_family;
+    const fs = config.font_size || defaultConfig.font_size;
+    const siteName = config.site_name || defaultConfig.site_name;
+    const tagline = config.tagline || defaultConfig.tagline;
+    const heroH = config.hero_heading || defaultConfig.hero_heading;
+
+    document.getElementById('app').style.background = bg;
+    document.querySelectorAll('[style*="background:white"], [style*="background: white"]').forEach(el => el.style.background = surface);
+    document.querySelectorAll('h2, h3, h4, label, .font-bold').forEach(el => { if (!el.closest('#auth-screen') && !el.closest('#topnav') && !el.closest('#sidebar')) el.style.color = txt; });
+    document.querySelectorAll('[style*="background:#e94560"]').forEach(el => el.style.background = primary);
+    document.querySelectorAll('[style*="color:#e94560"]').forEach(el => el.style.color = primary);
+    document.getElementById('topnav').style.background = secondary;
+    document.getElementById('sidebar').style.background = secondary;
+
+    document.body.style.fontFamily = `${font}, Outfit, sans-serif`;
+    document.body.style.fontSize = `${fs}px`;
+
+    const authName = document.getElementById('auth-site-name');
+    const navName = document.getElementById('nav-site-name');
+    const authTag = document.getElementById('auth-tagline');
+    const heroEl = document.getElementById('hero-heading');
+    if (authName) authName.textContent = siteName;
+    if (navName) navName.textContent = siteName;
+    if (authTag) authTag.textContent = tagline;
+    if (heroEl) heroEl.textContent = heroH;
+  },
+  mapToCapabilities: (config) => ({
+    recolorables: [
+      { get: () => config.bg_color || defaultConfig.bg_color, set: (v) => { config.bg_color = v; window.elementSdk.setConfig({ bg_color: v }); } },
+      { get: () => config.surface_color || defaultConfig.surface_color, set: (v) => { config.surface_color = v; window.elementSdk.setConfig({ surface_color: v }); } },
+      { get: () => config.text_color || defaultConfig.text_color, set: (v) => { config.text_color = v; window.elementSdk.setConfig({ text_color: v }); } },
+      { get: () => config.primary_color || defaultConfig.primary_color, set: (v) => { config.primary_color = v; window.elementSdk.setConfig({ primary_color: v }); } },
+      { get: () => config.secondary_color || defaultConfig.secondary_color, set: (v) => { config.secondary_color = v; window.elementSdk.setConfig({ secondary_color: v }); } }
+    ],
+    borderables: [],
+    fontEditable: { get: () => config.font_family || defaultConfig.font_family, set: (v) => { config.font_family = v; window.elementSdk.setConfig({ font_family: v }); } },
+    fontSizeable: { get: () => config.font_size || defaultConfig.font_size, set: (v) => { config.font_size = v; window.elementSdk.setConfig({ font_size: v }); } }
+  }),
+  mapToEditPanelValues: (config) => new Map([
+    ['site_name', config.site_name || defaultConfig.site_name],
+    ['tagline', config.tagline || defaultConfig.tagline],
+    ['hero_heading', config.hero_heading || defaultConfig.hero_heading]
+  ])
+});
+
+// ===== DATA SDK =====
+const dataHandler = {
+  onDataChanged(data) {
+    allProducts = data.filter(d => d.name && d.price);
+    renderShop();
+    renderHomeProducts();
+    renderMyProducts();
+    // persist a local snapshot so user sees products if backend unavailable next load
+    try { saveProductsToLocal(); } catch (e) { /* ignore */ }
+  }
+};
+
+// ===== HOME BACKGROUND CAROUSEL SETUP =====
+function setupHomeCarousel(keywords) {
+  try {
+    const container = document.getElementById('home-bg-carousel');
+    if (!container) return;
+    container.innerHTML = '';
+    const track = document.createElement('div');
+    track.className = 'bg-track';
+
+    const kws = Array.isArray(keywords) && keywords.length ? keywords : ['ecommerce','shopping','storefront','marketplace','products','retail'];
+    // build image URLs (Unsplash source) - safe for demo and non-commercial testing
+    const images = kws.map(k => `https://source.unsplash.com/1600x900/?${encodeURIComponent(k)}`);
+    // duplicate images to enable a smooth loop
+    const items = images.concat(images);
+    items.forEach(url => {
+      const d = document.createElement('div');
+      d.className = 'bg-carousel-item';
+      d.style.backgroundImage = `url(${url})`;
+      track.appendChild(d);
+    });
+    container.appendChild(track);
+
+    // set animation duration proportional to number of unique images
+    const duration = Math.max(20, images.length * 6); // seconds
+    track.style.animationDuration = duration + 's';
+
+    // Ensure CSS keyframes use computed width: duplicate length handled by CSS translateX -50%
+    // No further runtime animation needed; images are fetched lazily by browser.
+  } catch (e) {
+    console.warn('Carousel init failed', e);
+  }
+}
+
+window.addEventListener('load', () => {
+  setupHomeCarousel();
+  // bind touch/hover micro-interactions for buttons
+  try { bindButtonTouchResponses(); } catch (e) { /* ignore */ }
+});
+
+// Upload modal helpers
+function showUploadModal(count) {
+  const modal = document.getElementById('upload-modal');
+  if (!modal) return;
+  document.getElementById('upload-list').innerHTML = '';
+  modal.classList.remove('hidden');
+  document.getElementById('upload-cancel-btn').classList.remove('hidden');
+  document.getElementById('upload-close-btn').classList.add('hidden');
+}
+function hideUploadModal() {
+  const modal = document.getElementById('upload-modal');
+  if (!modal) return;
+  document.getElementById('upload-cancel-btn').classList.add('hidden');
+  document.getElementById('upload-close-btn').classList.remove('hidden');
+  // leave modal visible so user can inspect results; close after a short delay
+  setTimeout(() => { modal.classList.add('hidden'); document.getElementById('upload-list').innerHTML = ''; }, 1400);
+}
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.id === 'upload-cancel-btn') {
+    // user cancels: clear handler and hide modal
+    window.__uploadProgressHandler = null;
+    hideUploadModal();
+    showToast('Upload cancelled');
+  }
+  if (e.target && e.target.id === 'upload-close-btn') {
+    document.getElementById('upload-modal').classList.add('hidden');
+  }
+});
+
+// Add interactive feedback when mouse/touch contacts buttons
+function bindButtonTouchResponses() {
+  const selector = '.auth-cta, .hero-cta, .cat-btn, .side-link, .nav-link, .image-upload-area button, .product-card button';
+  const nodes = Array.from(document.querySelectorAll(selector));
+  nodes.forEach(el => {
+    // don't bind repeatedly
+    if (el._touchBound) return; el._touchBound = true;
+    const trigger = (e) => {
+      el.classList.remove('button-touch-anim');
+      // force reflow to restart animation
+      void el.offsetWidth;
+      el.classList.add('button-touch-anim');
+      if (e.type === 'touchstart') el.focus();
+    };
+    el.addEventListener('mouseenter', trigger, { passive: true });
+    el.addEventListener('touchstart', trigger, { passive: true });
+  });
+}
+;
+(async () => {
+  const r = await window.dataSdk.init(dataHandler);
+  if (!r.isOk) console.error('Data SDK init failed');
+})();
+
+// ===== Local persistence helpers =====
+function saveProductsToLocal() {
+  try {
+    localStorage.setItem('els_products', JSON.stringify(allProducts));
+  } catch (e) { console.error('saveProductsToLocal failed', e); }
+}
+
+function loadProductsFromLocal() {
+  try {
+    const raw = localStorage.getItem('els_products');
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length) {
+      // only set if we don't already have server-provided products
+      if (!allProducts || !allProducts.length) allProducts = parsed;
+      renderShop(); renderHomeProducts(); renderMyProducts();
+    }
+  } catch (e) { console.error('loadProductsFromLocal failed', e); }
+}
+
+// load persisted products on startup (before dataSdk may populate)
+loadProductsFromLocal();
+
+// ===== Open Store form validation =====
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.remove('hidden');
+}
+function clearFieldError(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = '';
+  el.classList.add('hidden');
+}
+
+function validateOpenStoreForm() {
+  let ok = true;
+  const name = document.getElementById('prod-name').value.trim();
+  const price = document.getElementById('prod-price').value.trim();
+  const category = document.getElementById('prod-category').value.trim();
+  const desc = document.getElementById('prod-desc').value.trim();
+
+  if (!name) { showFieldError('err-prod-name', 'Please enter a product name'); ok = false; } else clearFieldError('err-prod-name');
+  if (!price || isNaN(Number(price)) || Number(price) <= 0) { showFieldError('err-prod-price', 'Enter a valid price'); ok = false; } else clearFieldError('err-prod-price');
+  if (!category) { showFieldError('err-prod-category', 'Select a category'); ok = false; } else clearFieldError('err-prod-category');
+  if (!desc || desc.length < 10) { showFieldError('err-prod-desc', 'Description must be at least 10 characters'); ok = false; } else clearFieldError('err-prod-desc');
+
+  return ok;
+}
+
+function updateAddProductButtonState() {
+  const btn = document.getElementById('add-product-btn');
+  if (!btn) return;
+  const valid = validateOpenStoreForm();
+  btn.disabled = !valid;
+  btn.style.opacity = valid ? '1' : '0.6';
+}
+
+// wire inputs
+(function wireOpenStoreValidation(){
+  const ids = ['prod-name','prod-price','prod-category','prod-desc'];
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('input', () => updateAddProductButtonState());
+    el.addEventListener('change', () => updateAddProductButtonState());
+  });
+  // initialize state
+  setTimeout(updateAddProductButtonState, 200);
+})();
+
+// ===== AUTH =====
+function switchAuthTab(tab) {
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const regLogo = document.getElementById('register-logo');
+  const loginTab = document.getElementById('login-tab');
+  const registerTab = document.getElementById('register-tab');
+
+  if (tab === 'login') {
+    loginForm.classList.remove('hidden'); loginForm.setAttribute('aria-hidden', 'false');
+    registerForm.classList.add('hidden'); registerForm.setAttribute('aria-hidden', 'true');
+    regLogo.classList.add('hidden');
+    loginTab.classList.add('text-white'); loginTab.classList.remove('text-gray-400'); loginTab.setAttribute('aria-pressed','true');
+    registerTab.classList.remove('text-white'); registerTab.classList.add('text-gray-400'); registerTab.setAttribute('aria-pressed','false');
+    // focus first input
+    setTimeout(()=>document.getElementById('login-email')?.focus(), 80);
+  } else {
+    loginForm.classList.add('hidden'); loginForm.setAttribute('aria-hidden', 'true');
+    registerForm.classList.remove('hidden'); registerForm.setAttribute('aria-hidden', 'false');
+    regLogo.classList.remove('hidden');
+    registerTab.classList.add('text-white'); registerTab.classList.remove('text-gray-400'); registerTab.setAttribute('aria-pressed','true');
+    loginTab.classList.remove('text-white'); loginTab.classList.add('text-gray-400'); loginTab.setAttribute('aria-pressed','false');
+    setTimeout(()=>document.getElementById('reg-name')?.focus(), 80);
+  }
+}
+function handleLogin(e) {
+  e.preventDefault();
+  currentUser.email = document.getElementById('login-email').value;
+  currentUser.name = currentUser.email.split('@')[0];
+  enterApp();
+}
+function handleRegister(e) {
+  e.preventDefault();
+  currentUser.name = document.getElementById('reg-name').value;
+  currentUser.email = document.getElementById('reg-email').value; 
+  enterApp();
+}
+function enterApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+  lucide.createIcons();
+  showToast('Welcome, ' + currentUser.name + '!');
+}
+function handleLogout() {
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  toggleSidebar();
+  cart = [];
+  conversations = [];
+  currentConversation = null;
+  goTo('home');
+}
+
+// ===== NAVIGATION =====
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const target = document.getElementById('page-' + page);
+  if (target) target.classList.add('active');
+
+  document.querySelectorAll('.nav-link').forEach(l => { l.style.background = l.dataset.nav === page ? 'rgba(255,255,255,0.1)' : ''; l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db'; });
+  document.querySelectorAll('.side-link').forEach(l => { l.style.background = l.dataset.nav === page ? 'rgba(255,255,255,0.1)' : ''; l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db'; });
+
+  if (page === 'cart') renderCart();
+  if (page === 'payment') renderPayment();
+  if (page === 'shop') renderShop();
+  if (page === 'messages') renderConversations();
+  window.scrollTo(0, 0);
+}
+
+// ===== SIDEBAR =====
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('open');
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2500);
+}
+
+// ===== IMAGE UPLOAD (Open Store) =====
+function handleImageUpload(event) {
+  const files = Array.from(event?.target?.files || []);
+  if (!files.length) return;
+  files.forEach(f => processProductImageFile(f));
+}
+
+function processProductImageFile(file) {
+  const maxFileSize = 8 * 1024 * 1024; // absolute max allowed: 8MB
+  if (!file.type.startsWith('image/')) {
+    showToast('Please upload an image file (JPG, PNG, WebP).');
+    return;
+  }
+  if (file.size > maxFileSize) {
+    showToast('Image too large. Max size is 8MB.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const dataUrl = e.target.result;
+      const optimize = document.getElementById('optimize-image')?.checked ?? true;
+      let finalDataUrl = dataUrl;
+      let compressedSize = null;
+      if (optimize) {
+        const compressed = await compressImageDataUrl(dataUrl, { maxDim: 1200, targetBytes: 700 * 1024 });
+        finalDataUrl = compressed;
+        compressedSize = dataURLtoBlob(compressed).size;
+      }
+
+      selectedImages.push(finalDataUrl);
+      // update gallery
+      renderImageGallery();
+      const infoEl = document.getElementById('image-info');
+      const originalBytes = dataURLtoBlob(dataUrl).size;
+      const dims = await getImageDimensions(dataUrl);
+      if (infoEl) infoEl.textContent = `${selectedImages.length} image(s) • ${dims.w}×${dims.h} • ${formatBytes(originalBytes)}${compressedSize ? ' → ' + formatBytes(compressedSize) : ''}`;
+      showToast('Image added');
+    } catch (err) {
+      console.error('Image processing failed', err);
+      showToast('Failed to process image');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderImageGallery() {
+  const gallery = document.getElementById('image-gallery');
+  const section = document.getElementById('image-preview-section');
+  if (!gallery || !section) return;
+  gallery.innerHTML = '';
+  if (!selectedImages.length) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  selectedImages.forEach((src, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'relative';
+    const img = document.createElement('img'); img.src = src; img.className = 'w-full h-28 object-cover rounded-lg';
+    wrap.appendChild(img);
+
+    const controls = document.createElement('div'); controls.className = 'absolute top-1 right-1 flex gap-1';
+    const btnPrimary = document.createElement('button'); btnPrimary.title = 'Set as primary'; btnPrimary.className = 'bg-white/70 p-1 rounded'; btnPrimary.innerHTML = i===primaryImageIndex ? '★' : '☆';
+    btnPrimary.onclick = () => { primaryImageIndex = i; renderImageGallery(); };
+    const btnLeft = document.createElement('button'); btnLeft.title = 'Move left'; btnLeft.className = 'bg-white/70 p-1 rounded'; btnLeft.innerHTML = '◀'; btnLeft.onclick = () => { moveImageLeft(i); };
+    const btnRight = document.createElement('button'); btnRight.title = 'Move right'; btnRight.className = 'bg-white/70 p-1 rounded'; btnRight.innerHTML = '▶'; btnRight.onclick = () => { moveImageRight(i); };
+    const btnRemove = document.createElement('button'); btnRemove.title = 'Remove'; btnRemove.className = 'bg-white/70 p-1 rounded text-red-500'; btnRemove.innerHTML = '✕'; btnRemove.onclick = () => { removeImageAt(i); };
+    controls.appendChild(btnPrimary); controls.appendChild(btnLeft); controls.appendChild(btnRight); controls.appendChild(btnRemove);
+    wrap.appendChild(controls);
+
+    gallery.appendChild(wrap);
+  });
+}
+
+function moveImageLeft(i) {
+  if (i<=0) return; [selectedImages[i-1], selectedImages[i]] = [selectedImages[i], selectedImages[i-1]];
+  if (primaryImageIndex===i) primaryImageIndex = i-1; else if (primaryImageIndex===i-1) primaryImageIndex = i;
+  renderImageGallery();
+}
+function moveImageRight(i) {
+  if (i>=selectedImages.length-1) return; [selectedImages[i+1], selectedImages[i]] = [selectedImages[i], selectedImages[i+1]];
+  if (primaryImageIndex===i) primaryImageIndex = i+1; else if (primaryImageIndex===i+1) primaryImageIndex = i;
+  renderImageGallery();
+}
+function removeImageAt(i) {
+  selectedImages.splice(i,1);
+  if (primaryImageIndex >= selectedImages.length) primaryImageIndex = Math.max(0, selectedImages.length-1);
+  renderImageGallery();
+}
+function clearAllImages() { selectedImages = []; primaryImageIndex = 0; renderImageGallery(); }
+
+function getImageDimensions(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.width, h: img.height });
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+
+function formatBytes(bytes) {
+  if (!bytes) return '0 B';
+  const units = ['B','KB','MB','GB'];
+  let i = 0; let v = bytes;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return v.toFixed(v < 10 && i > 0 ? 1 : 0) + ' ' + units[i];
+}
+
+function compressImageDataUrl(dataUrl, opts = {}) {
+  const maxDim = opts.maxDim || 1200;
+  const targetBytes = opts.targetBytes || 700 * 1024;
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        let w = img.width, h = img.height;
+        if (w > maxDim || h > maxDim) {
+          const ratio = Math.max(w / maxDim, h / maxDim);
+          w = Math.round(w / ratio);
+          h = Math.round(h / ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // try progressive quality reduction
+        let quality = 0.92;
+        function attempt() {
+          const out = canvas.toDataURL('image/jpeg', quality);
+          const bytes = dataURLtoBlob(out).size;
+          if (bytes <= targetBytes || quality <= 0.5) return resolve(out);
+          quality -= 0.08;
+          attempt();
+        }
+        attempt();
+      } catch (err) { reject(err); }
+    };
+    img.onerror = (err) => reject(err);
+    img.src = dataUrl;
+  });
+}
+
+function removeImage() { clearAllImages(); }
+
+// Setup drag & drop and click-to-upload handlers
+(function initProductImageArea(){
+  const area = document.getElementById('image-upload-area');
+  const input = document.getElementById('prod-image');
+  if (!area || !input) return;
+
+  area.addEventListener('click', () => input.click());
+
+  area.addEventListener('dragenter', (e) => { e.preventDefault(); area.classList.add('drag-over'); });
+  area.addEventListener('dragover', (e) => { e.preventDefault(); area.classList.add('drag-over'); });
+  area.addEventListener('dragleave', (e) => { e.preventDefault(); area.classList.remove('drag-over'); });
+  area.addEventListener('drop', (e) => {
+    e.preventDefault();
+    area.classList.remove('drag-over');
+    const files = Array.from(e.dataTransfer?.files || []);
+    files.forEach(f => processProductImageFile(f));
+  });
+
+  input.addEventListener('change', handleImageUpload);
+})();
+
+// ===== CLOUD UPLOAD HELPERS =====
+function dataURLtoBlob(dataURL) {
+  const parts = dataURL.split(',');
+  const meta = parts[0].match(/:(.*?);/);
+  const mime = meta ? meta[1] : 'image/png';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8arr = new Uint8Array(n);
+  while (n--) u8arr[n] = bstr.charCodeAt(n);
+  return new Blob([u8arr], { type: mime });
+}
+
+async function uploadImageToCloud(dataUrl, uid) {
+  // If user provided a custom handler function, use it
+  if (typeof window.cloudImageUploadHandler === 'function') {
+    return await window.cloudImageUploadHandler(dataUrl);
+  }
+  const uploadUrl = window.cloudImageUploadUrl || window.CLOUD_IMAGE_UPLOAD_URL;
+  if (uploadUrl) {
+    // Use XHR to allow upload progress events
+    return await new Promise((resolve, reject) => {
+      try {
+        const blob = dataURLtoBlob(dataUrl);
+        const form = new FormData();
+        form.append('file', blob, 'upload.png');
+
+        const uidLocal = uid || String(Math.random().toString(36).slice(2,9));
+        if (window.__uploadProgressHandler) window.__uploadProgressHandler(uidLocal, { status: 'started', loaded: 0, total: blob.size });
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl, true);
+        xhr.withCredentials = false;
+        xhr.upload.onprogress = function(evt) {
+          if (evt.lengthComputable && window.__uploadProgressHandler) {
+            window.__uploadProgressHandler(uidLocal, { status: 'progress', loaded: evt.loaded, total: evt.total });
+          }
+        };
+        xhr.onload = function() {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const json = JSON.parse(xhr.responseText || '{}');
+              const url = json.url || json.fileUrl || json.location || null;
+              if (window.__uploadProgressHandler) window.__uploadProgressHandler(uidLocal, { status: url ? 'done' : 'failed', url });
+              if (url) resolve(url); else reject(new Error('Unexpected upload response'));
+            } catch (err) {
+              if (window.__uploadProgressHandler) window.__uploadProgressHandler(uidLocal, { status: 'failed' });
+              reject(err);
+            }
+          } else {
+            if (window.__uploadProgressHandler) window.__uploadProgressHandler(uidLocal, { status: 'failed' });
+            reject(new Error('Upload failed: ' + xhr.status));
+          }
+        };
+        xhr.onerror = function() {
+          if (window.__uploadProgressHandler) window.__uploadProgressHandler(uidLocal, { status: 'failed' });
+          reject(new Error('Upload XHR error'));
+        };
+        xhr.send(form);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  }
+
+  // If Firebase config is provided, try uploading to Firebase Storage
+  if (window.FIREBASE_CONFIG) {
+    try {
+      const url = await uploadToFirebaseStorage(dataUrl);
+      return url;
+    } catch (err) {
+      console.error('Firebase upload failed', err);
+      throw err;
+    }
+  }
+
+  throw new Error('No cloud upload URL or handler configured');
+}
+
+// ========== Firebase Storage support (optional) ==========
+async function loadFirebaseSdkOnce() {
+  if (window.__firebaseSdkLoaded) return;
+  window.__firebaseSdkLoaded = true;
+  // load compat SDKs for Storage to simplify usage
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+    s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+  });
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js';
+    s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+  });
+}
+
+async function uploadToFirebaseStorage(dataUrl) {
+  if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG not set');
+  await loadFirebaseSdkOnce();
+  if (!window.firebase) throw new Error('Firebase SDK failed to load');
+  if (!window.__firebaseApp) {
+    window.__firebaseApp = window.firebase.initializeApp(window.FIREBASE_CONFIG);
+  }
+  const storage = window.firebase.storage();
+  const blob = dataURLtoBlob(dataUrl);
+  const filename = 'uploads/' + Date.now() + '-' + Math.random().toString(36).slice(2,8) + '.png';
+  const ref = storage.ref().child(filename);
+  const snap = await ref.put(blob);
+  const url = await snap.ref.getDownloadURL();
+  return url;
+}
+
+// ===== Firebase Firestore realtime chat support (optional) =====
+async function loadFirebaseFirestoreOnce() {
+  if (window.__firebaseFirestoreLoaded) return;
+  if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG not set');
+  window.__firebaseFirestoreLoaded = true;
+  // load compat SDK for firestore
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js';
+    s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+  });
+  if (!window.firebase) throw new Error('Firebase SDK failed to load');
+  if (!window.__firebaseApp) window.__firebaseApp = window.firebase.initializeApp(window.FIREBASE_CONFIG);
+  window.__firestore = window.firebase.firestore();
+}
+
+const __realtimeUnsub = {};
+async function startRealtimeConversationListener(convId) {
+  if (!window.FIREBASE_CONFIG) return;
+  try {
+    await loadFirebaseFirestoreOnce();
+    if (!window.__firestore) return;
+    // unsubscribe existing
+    if (__realtimeUnsub[convId]) __realtimeUnsub[convId]();
+    const col = window.__firestore.collection('conversations').doc(convId).collection('messages');
+    __realtimeUnsub[convId] = col.orderBy('time').onSnapshot(snap => {
+      const msgs = [];
+      snap.forEach(d => {
+        const data = d.data();
+        let time = data.time;
+        if (time && typeof time.toDate === 'function') time = time.toDate().toISOString();
+        else if (time && time.toDate === undefined) time = (new Date(time)).toISOString();
+        else time = new Date().toISOString();
+        msgs.push({ sender: data.sender || 'Unknown', text: data.text || '', time });
+      });
+      const conv = conversations.find(c => c.id === convId);
+      if (conv) { conv.messages = msgs; if (currentConversation && currentConversation.id === convId) renderMessages(); renderConversations(); }
+    }, err => console.warn('realtime listen failed', err));
+  } catch (err) { console.warn('startRealtimeConversationListener error', err); }
+}
+
+function stopRealtimeConversationListener(convId) {
+  if (__realtimeUnsub[convId]) { try { __realtimeUnsub[convId](); } catch(e){} delete __realtimeUnsub[convId]; }
+}
+
+async function writeMessageToFirestore(convId, msg) {
+  if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG not set');
+  await loadFirebaseFirestoreOnce();
+  const colRef = window.__firestore.collection('conversations').doc(convId).collection('messages');
+  const payload = { sender: msg.sender, text: msg.text, time: window.firebase.firestore.FieldValue.serverTimestamp() };
+  await colRef.add(payload);
+}
+
+// ===== Product image replace helpers =====
+let pendingReplaceProductId = null;
+function triggerReplaceImage(prodId) {
+  pendingReplaceProductId = prodId;
+  const input = document.getElementById('product-image-replace-input');
+  if (!input) return showToast('Replace input not found');
+  input.value = '';
+  input.click();
+}
+
+async function handleProductImageReplace(ev) {
+  const f = ev?.target?.files?.[0];
+  if (!f) return;
+  if (!pendingReplaceProductId) return showToast('No target product selected');
+  try {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      let dataUrl = e.target.result;
+      const optimize = document.getElementById('optimize-image')?.checked ?? true;
+      if (optimize) {
+        try { dataUrl = await compressImageDataUrl(dataUrl, { maxDim: 1200, targetBytes: 700 * 1024 }); } catch(e) { /* ignore */ }
+      }
+      let finalUrl = dataUrl;
+      if (window.cloudImageUploadUrl || window.CLOUD_IMAGE_UPLOAD_URL || typeof window.cloudImageUploadHandler === 'function' || window.FIREBASE_CONFIG) {
+        try {
+          const remote = await uploadImageToCloud(dataUrl);
+          if (remote) finalUrl = remote;
+        } catch (err) {
+          console.warn('Upload failed, using local data URL', err);
+        }
+      }
+
+      const prod = allProducts.find(p => p.__backendId === pendingReplaceProductId);
+      if (!prod) { showToast('Product not found'); pendingReplaceProductId = null; return; }
+
+      // Replace primary image (legacy) and first image in images array
+      prod.image_data = finalUrl;
+      prod.primary_image = finalUrl;
+      if (Array.isArray(prod.images) && prod.images.length) prod.images[0] = finalUrl; else prod.images = [finalUrl];
+
+      // try to update backend via dataSdk if available
+      try {
+        if (window.dataSdk && typeof window.dataSdk.update === 'function') {
+          await window.dataSdk.update(prod);
+        }
+      } catch (e) { console.warn('dataSdk.update failed', e); }
+
+      try { saveProductsToLocal(); } catch(e){}
+      renderShop(); renderHomeProducts(); renderMyProducts();
+      showToast('Product image updated');
+      pendingReplaceProductId = null;
+    };
+    reader.readAsDataURL(f);
+  } catch (err) {
+    console.error(err); showToast('Failed to replace image'); pendingReplaceProductId = null;
+  }
+}
+
+function replaceProductImageFromUrl(prodId) {
+  const url = prompt('Paste an image URL (http/https):');
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) return showToast('Invalid URL');
+  const prod = allProducts.find(p => p.__backendId === prodId);
+  if (!prod) return showToast('Product not found');
+  prod.image_data = url; prod.primary_image = url; prod.images = [url];
+  try { if (window.dataSdk && typeof window.dataSdk.update === 'function') window.dataSdk.update(prod); } catch(e){}
+  try { saveProductsToLocal(); } catch(e){}
+  renderShop(); renderHomeProducts(); renderMyProducts();
+  showToast('Product image updated from URL');
+}
+
+// ===== PRODUCTS =====
+function renderShop() {
+  const search = (document.getElementById('shop-search')?.value || '').toLowerCase();
+  let filtered = allProducts.filter(p => p.name && (p.public !== false || p.seller === currentUser.name));
+  if (currentCategory !== 'All') filtered = filtered.filter(p => p.category === currentCategory);
+  if (search) filtered = filtered.filter(p => (p.name || '').toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search));
+
+  const grid = document.getElementById('shop-grid');
+  if (!filtered.length) {
+    grid.innerHTML = '<p class="col-span-full text-center text-gray-400 py-16">No products found. <button onclick="goTo(\'open-store\')" class="underline font-semibold" style="color:#e94560;">List one!</button></p>';
+    return;
+  }
+  grid.innerHTML = filtered.map(p => `
+    <div class="product-card rounded-2xl overflow-hidden" style="background:white;" data-prod-id="${p.__backendId}">
+          <div class="h-48 bg-gray-200 overflow-hidden relative">${p.image_data ? `<img src="${p.image_data}" class="w-full h-full object-cover" alt="${escHtml(p.name)}" loading="lazy">` : '<div class="w-full h-full flex items-center justify-center text-6xl" style="background:linear-gradient(135deg, #f8f6f3, #eee);">📦</div>'}${p.seller === currentUser.name ? `<button onclick="triggerReplaceImage('${p.__backendId}')" class="absolute top-2 right-2 bg-white/80 text-sm px-2 py-1 rounded shadow">Upload</button>` : ''}</div>
+      <div class="p-5">
+        <span class="text-xs font-medium px-2 py-1 rounded-full" style="background:#f0f0f0; color:#666;">${p.category || 'Other'}</span>
+        ${p.public === false ? '<span class="text-xs ml-2 px-2 py-1 rounded-full" style="background:#fee2e2;color:#9b1c1c;font-weight:600">Private</span>' : ''}
+        <h4 class="font-bold mt-2 mb-1" style="color:#1a1a2e;">${escHtml(p.name)}</h4>
+        <p class="text-gray-500 text-sm mb-3 line-clamp-2">${escHtml(p.description)}</p>
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <span class="text-xl font-bold" style="color:#e94560;">$${Number(p.price).toFixed(2)}</span>
+          <button onclick="addToCart('${p.__backendId}')" class="px-3 py-2 rounded-xl text-sm font-semibold text-white transition hover:opacity-90" style="background:#e94560;">Add</button>
+          ${p.seller === currentUser.name ? `<div class="mt-2 flex gap-2">
+            <button onclick="triggerReplaceImage('${p.__backendId}')" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#0f3460;color:white;">Replace Image</button>
+            <button onclick="replaceProductImageFromUrl('${p.__backendId}')" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#f0f0f0;">Use Image URL</button>
+            ${p.public === false ? `<button onclick="setProductPublic('${p.__backendId}', true)" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#16a34a;color:white;">Publish</button>` : `<button onclick="setProductPublic('${p.__backendId}', false)" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#f97316;color:white;">Unpublish</button>`}
+          </div>` : ''}
+        </div>
+        <button onclick="openChat('${p.__backendId}')" class="w-full px-3 py-2 rounded-xl text-sm font-semibold text-white transition hover:opacity-90" style="background:#0f3460;"><i data-lucide="message-circle" class="w-3 h-3 inline mr-1"></i>Chat Seller</button>
+        <p class="text-xs text-gray-400 mt-2">by ${escHtml(p.seller || 'Unknown')}</p>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+  // If a product was just created, scroll it into view and highlight it briefly
+  if (window.lastCreatedProductId) {
+    setTimeout(() => { try { highlightAndScrollProduct(window.lastCreatedProductId); window.lastCreatedProductId = null; } catch(e){} }, 120);
+  }
+}
+
+function highlightAndScrollProduct(prodId) {
+  if (!prodId) return;
+  const el = document.querySelector(`[data-prod-id="${prodId}"]`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.classList.add('new-highlight');
+  setTimeout(() => el.classList.remove('new-highlight'), 4200);
+}
+
+function filterShopCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => {
+    const isActive = b.textContent.trim() === cat;
+    b.style.background = isActive ? '#e94560' : 'white';
+    b.style.color = isActive ? 'white' : '#1a1a2e';
+  });
+  // Render immediately for fast feedback, then ensure shop page is visible
+  renderShop();
+  goTo('shop');
+}s
+
+function renderHomeProducts() {
+  const container = document.getElementById('home-products');
+  const prods = allProducts.filter(p => p.name).slice(-4).reverse();
+  if (!prods.length) {
+    container.innerHTML = '<div class="col-span-full text-center py-12"><p class="text-gray-400 text-lg">📦 No products yet.</p><p class="text-gray-500 text-sm mt-2">Be the first to <button onclick="goTo(\'open-store\')" class="underline font-semibold" style="color:#e94560;">open a store</button> and list something!</p></div>';
+    return;
+  }
+  container.innerHTML = prods.map(p => `
+    <div class="product-card rounded-2xl overflow-hidden cursor-pointer" onclick="goTo('shop')" style="background:white;">
+      <div class="h-32 bg-gray-200 overflow-hidden flex items-center justify-center relative">${p.image_data ? `<img src="${p.image_data}" class="w-full h-full object-cover" alt="${escHtml(p.name)}" loading="lazy">` : '<span class="text-5xl">📦</span>'}${p.seller === currentUser.name ? `<button onclick="event.stopPropagation(); triggerReplaceImage('${p.__backendId}')" class="absolute top-2 right-2 bg-white/80 text-xs px-2 py-1 rounded">Upload</button>` : ''}</div>
+      <div class="p-4">
+        <h4 class="font-bold text-sm mb-1" style="color:#1a1a2e;">${escHtml(p.name)}</h4>
+        <span class="font-bold" style="color:#e94560;">$${Number(p.price).toFixed(2)}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderMyProducts() {
+  const container = document.getElementById('my-products');
+  const mine = allProducts.filter(p => p.seller === currentUser.name && p.name);
+  if (!mine.length) {
+    container.innerHTML = '<p class="text-gray-400 text-center py-8">You haven\'t listed any products yet.</p>';
+    return;
+  }
+  container.innerHTML = mine.map(p => `
+    <div class="flex items-center gap-4 rounded-xl p-4" style="background:#f8f6f3;">
+      <div class="w-16 h-16 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">${p.image_data ? `<img src="${p.image_data}" class="w-full h-full object-cover" alt="${escHtml(p.name)}" loading="lazy">` : '<span class="text-2xl">📦</span>'}</div>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-bold text-sm" style="color:#1a1a2e;">${escHtml(p.name)}</h4>
+        <p class="text-xs text-gray-500">${p.category} · $${Number(p.price).toFixed(2)}</p>
+      </div>
+      <div class="flex flex-col gap-2">
+        <button onclick="deleteProduct('${p.__backendId}', this)" class="text-red-400 hover:text-red-600 p-2 transition flex-shrink-0"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+        <button onclick="triggerReplaceImage('${p.__backendId}')" class="text-gray-600 hover:text-gray-800 p-2 transition flex-shrink-0" title="Replace image"><i data-lucide="image" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+  `).join('');
+  lucide.createIcons();
+}
+
+async function handleAddProduct(e) {
+  e.preventDefault();
+  if (allProducts.length >= 999) {
+    document.getElementById('store-limit-msg').classList.remove('hidden');
+    return;
+  }
+  const btn = document.getElementById('add-product-btn');
+  btn.disabled = true;
+  document.getElementById('add-prod-text').classList.add('hidden');
+  document.getElementById('add-prod-loading').classList.remove('hidden');
+  // ensure form is valid before proceeding
+  if (!validateOpenStoreForm()) {
+    showToast('Please complete all required fields');
+    btn.disabled = false;
+    document.getElementById('add-prod-text').classList.remove('hidden');
+    document.getElementById('add-prod-loading').classList.add('hidden');
+    return;
+  }
+  // require at least one image for a public listing
+  if (!selectedImages.length) {
+    showToast('Please add at least one product image');
+    btn.disabled = false;
+    document.getElementById('add-prod-text').classList.remove('hidden');
+    document.getElementById('add-prod-loading').classList.add('hidden');
+    return;
+  }
+  // determine if the submitter requested publish
+  const forcePublish = (e && e.submitter && e.submitter.dataset && e.submitter.dataset.publish === 'true');
+  // build base payload
+  const productPayload = {
+    name: document.getElementById('prod-name').value,
+    price: parseFloat(document.getElementById('prod-price').value) || 0,
+    category: document.getElementById('prod-category').value,
+    description: document.getElementById('prod-desc').value,
+    seller: currentUser.name,
+    images: Array.isArray(selectedImages) ? selectedImages.slice() : [],
+    primary_image: selectedImages[primaryImageIndex] || (selectedImages[0] || ''),
+    image_data: selectedImages[primaryImageIndex] || (selectedImages[0] || ''), // legacy single-image field
+    public: forcePublish ? true : (document.getElementById('prod-public') ? Boolean(document.getElementById('prod-public').checked) : true),
+    created_at: new Date().toISOString()
+  };
+
+  // If a cloud upload URL/handler is configured and we have a local image, upload it first
+  if (selectedImages.length && (window.cloudImageUploadUrl || window.CLOUD_IMAGE_UPLOAD_URL || typeof window.cloudImageUploadHandler === 'function' || window.FIREBASE_CONFIG)) {
+    try {
+      const uploaded = [];
+      // Show upload modal and bind progress handler
+      showUploadModal(selectedImages.length);
+      const progressMap = {};
+      window.__uploadProgressHandler = (uid, info) => {
+        // info: { status, loaded, total, url }
+        const row = document.getElementById('upload-row-' + uid);
+        if (!row && info.status === 'started') {
+          // create row
+          const r = document.createElement('div'); r.id = 'upload-row-' + uid; r.className = 'flex items-center gap-3';
+          r.innerHTML = `<div class="w-12 h-12 bg-gray-100 rounded overflow-hidden"><img src="" class="w-full h-full object-cover"/></div><div class="flex-1"><div class="text-sm upload-name">Uploading...</div><div class="w-full bg-gray-100 rounded h-2 mt-1"><div class="upload-bar bg-e94560 h-2 rounded" style="width:0%"></div></div></div><div class="upload-status text-xs text-gray-500">Starting</div>`;
+          document.getElementById('upload-list').appendChild(r);
+          progressMap[uid] = r;
+        }
+        const el = progressMap[uid] || document.getElementById('upload-row-' + uid);
+        if (!el) return;
+        if (info.status === 'started') {
+          el.querySelector('.upload-name').textContent = 'Uploading...';
+          el.querySelector('img').src = '';
+          el.querySelector('.upload-bar').style.width = '4%';
+          el.querySelector('.upload-status').textContent = 'Uploading';
+        } else if (info.status === 'progress') {
+          const pct = info.total ? Math.round((info.loaded / info.total) * 100) : 0;
+          el.querySelector('.upload-bar').style.width = pct + '%';
+          el.querySelector('.upload-status').textContent = pct + '%';
+        } else if (info.status === 'done') {
+          el.querySelector('.upload-bar').style.width = '100%';
+          el.querySelector('.upload-status').textContent = 'Done';
+          if (info.url) el.querySelector('img').src = info.url;
+        } else if (info.status === 'failed') {
+          el.querySelector('.upload-status').textContent = 'Failed';
+          el.querySelector('.upload-bar').style.background = '#ef4444';
+        }
+      };
+
+      for (let i = 0; i < selectedImages.length; i++) {
+        try {
+          // create a uid row before calling upload
+          const uid = String(Math.random().toString(36).slice(2,9));
+          // simulate starting row
+          window.__uploadProgressHandler(uid, {status:'started', loaded:0, total: dataURLtoBlob(selectedImages[i]).size});
+          const remoteUrl = await uploadImageToCloud(selectedImages[i], uid);
+          // mark done for the generated uid rows
+          // find the row with empty img and update
+          // we assume uploadImageToCloud calls handler with done event when using uploadUrl; otherwise mark here
+          if (!remoteUrl) {
+            // fallback to local data
+            window.__uploadProgressHandler(uid, {status:'failed'});
+            uploaded.push(selectedImages[i]);
+          } else {
+            window.__uploadProgressHandler(uid, {status:'done', url: remoteUrl});
+            uploaded.push(remoteUrl || selectedImages[i]);
+          }
+        } catch (err) {
+          console.warn('image upload failed for index', i, err);
+          window.__uploadProgressHandler && window.__uploadProgressHandler('', {status:'failed'});
+          uploaded.push(selectedImages[i]);
+        }
+      }
+      hideUploadModal();
+      if (uploaded.length) {
+        productPayload.images = uploaded;
+        productPayload.primary_image = uploaded[primaryImageIndex] || uploaded[0];
+        productPayload.image_data = productPayload.primary_image;
+      }
+    } catch (err) {
+      console.error('Cloud upload failed', err);
+      showToast('Image upload failed — listing will use local images.');
+      hideUploadModal();
+    }
+  }
+
+  let createdOk = false;
+  let sdkResult = null;
+  // Try to use dataSdk if available
+  try {
+    if (window.dataSdk && typeof window.dataSdk.create === 'function') {
+      const result = await window.dataSdk.create(productPayload);
+      sdkResult = result;
+      createdOk = !!(result && result.isOk);
+      // If backend returned the created item, add to local list for immediate UX
+      if (createdOk && result && result.item) {
+        const toPush = Object.assign({}, result.item);
+        if (!toPush.__backendId && result.id) toPush.__backendId = result.id;
+        allProducts.push(toPush);
+        // ensure UI reflects the new product immediately
+        renderShop(); renderHomeProducts(); renderMyProducts();
+        try { saveProductsToLocal(); } catch(e){}
+        window.lastCreatedProductId = toPush.__backendId || result.id || null;
+      } else if (createdOk && result && result.id) {
+        const toPush = Object.assign({}, productPayload, { __backendId: result.id });
+        allProducts.push(toPush);
+        renderShop(); renderHomeProducts(); renderMyProducts();
+        try { saveProductsToLocal(); } catch(e){}
+        window.lastCreatedProductId = toPush.__backendId || result.id || null;
+      }
+    }
+  } catch (err) {
+    console.error('dataSdk.create error', err);
+    createdOk = false;
+  }
+
+  // Fallback local-only storage
+  if (!createdOk) {
+    const localProd = Object.assign({}, productPayload, { __backendId: 'local-' + Date.now() + '-' + Math.random().toString(36).slice(2,8) });
+    allProducts.push(localProd);
+    window.lastCreatedProductId = localProd.__backendId;
+    renderShop();
+    renderHomeProducts();
+    renderMyProducts();
+    try { saveProductsToLocal(); } catch (e) {}
+    createdOk = true;
+  }
+
+  btn.disabled = false;
+  document.getElementById('add-prod-text').classList.remove('hidden');
+  document.getElementById('add-prod-loading').classList.add('hidden');
+
+  if (createdOk) {
+    document.getElementById('add-product-form').reset();
+    removeImage();
+    showToast('🎉 Product listed successfully!');
+    try { saveProductsToLocal(); } catch (e) {}
+  } else {
+    showToast('Failed to list product. Try again.');
+  }
+
+  // After successful creation, navigate to Shop and filter to this product's category
+  if (createdOk) {
+    try {
+      // prefer sdkResult.item.category if provided, otherwise the form category
+      const cat = (sdkResult && sdkResult.item && sdkResult.item.category) || productPayload.category;
+      if (cat) filterShopCategory(cat);
+      else goTo('shop');
+    } catch (e) { goTo('shop'); }
+  }
+}
+
+async function deleteProduct(id, btnEl) {
+  const prod = allProducts.find(p => p.__backendId === id);
+  if (!prod) return;
+  // if this is a locally-stored product, remove immediately
+  if (prod.__backendId && String(prod.__backendId).startsWith('local-')) {
+    allProducts = allProducts.filter(p => p.__backendId !== id);
+    renderShop(); renderHomeProducts(); renderMyProducts();
+    try { saveProductsToLocal(); } catch (e) {}
+    showToast('✓ Product removed');
+    return;
+  }
+  if (btnEl) btnEl.disabled = true;
+  try {
+    const result = await window.dataSdk.delete(prod);
+    if (result.isOk) {
+      showToast('✓ Product removed');
+      try { saveProductsToLocal(); } catch (e) {}
+    } else {
+      showToast('Failed to remove product');
+      if (btnEl) btnEl.disabled = false;
+    }
+  } catch (err) {
+    console.error('deleteProduct error', err);
+    showToast('Failed to remove product');
+    if (btnEl) btnEl.disabled = false;
+  }
+}
+
+// ===== MESSAGING =====
+function openChat(productId) {
+  const product = allProducts.find(p => p.__backendId === productId);
+  if (!product) return;
+  const convId = `product-${product.__backendId}`;
+  let conv = conversations.find(c => c.id === convId);
+
+  if (!conv) {
+    conv = {
+      id: convId,
+      title: `Chat about "${product.name}"`,
+      productId: product.__backendId,
+      participants: [product.seller, currentUser.name],
+      messages: []
+    };
+    conversations.push(conv);
+  }
+
+  currentConversation = conv;
+  // start realtime listener if configured
+  if (window.FIREBASE_CONFIG) startRealtimeConversationListener(conv.id).catch(()=>{});
+  goTo('messages');
+  renderConversations();
+}
+
+// Open or create a conversation tied to an order (logistics <> buyer)
+function openOrderChat(orderId) {
+  const order = allOrders.find(o => o.order_id === orderId);
+  if (!order) return showToast('Order not found');
+  const convId = `order-${orderId}`;
+  let conv = conversations.find(c => c.id === convId);
+  if (!conv) {
+    conv = {
+      id: convId,
+      title: `Order ${orderId} - ${order.tracking_number || ''}`,
+      orderId: orderId,
+      participants: [order.buyer_name, order.logistics_provider || 'Logistics'],
+      messages: []
+    };
+    conversations.push(conv);
+  }
+  currentConversation = conv;
+  if (window.FIREBASE_CONFIG) startRealtimeConversationListener(conv.id).catch(()=>{});
+  goTo('messages');
+  renderConversations();
+}
+
+function renderConversations() {
+  const list = document.getElementById('conversations-list');
+  const header = document.getElementById('chat-header');
+  const inputArea = document.getElementById('chat-input-area');
+  const container = document.getElementById('messages-container');
+  
+  if (!conversations.length) {
+    list.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">No conversations yet. Click a product to message the seller!</p>';
+    header.innerHTML = '<p class="text-gray-400 text-center">Select a conversation to start chatting</p>';
+    inputArea.classList.add('hidden');
+    container.innerHTML = '';
+    return;
+  }
+  
+  list.innerHTML = conversations.map(c => `
+    <button onclick="selectConversation('${c.id}')" class="w-full text-left px-3 py-2 rounded-lg transition ${currentConversation?.id === c.id ? 'text-white' : 'text-gray-600 hover:bg-gray-100'}" style="${currentConversation?.id === c.id ? 'background:#e94560;' : ''}">
+      <p class="font-semibold text-sm">${escHtml(c.title || (c.product || c.seller || 'Conversation'))}</p>
+      <p class="text-xs text-gray-500">Participants: ${escHtml((c.participants||[]).join(', '))}</p>
+    </button>
+  `).join('');
+  
+  if (currentConversation) {
+    header.innerHTML = `<p class="font-bold" style="color:#1a1a2e;">💬 ${escHtml(currentConversation.title || 'Conversation')}</p>`;
+    inputArea.classList.remove('hidden');
+    renderMessages();
+  }
+  // ensure message input placeholder reflects participants
+  const msgInput = document.getElementById('message-input');
+  if (msgInput && currentConversation) {
+    msgInput.placeholder = `Message ${currentConversation.participants && currentConversation.participants.filter(p=>p!==currentUser.name).join(', ') || 'participant'}`;
+  }
+  // ensure send button reflects current state
+  try { updateSendButtonState(); } catch (e) {}
+}
+
+function renderMessages() {
+  const container = document.getElementById('messages-container');
+  if (!currentConversation) return;
+  container.innerHTML = currentConversation.messages.map(msg => `
+    <div class="message-bubble ${msg.sender === currentUser.name ? 'sent' : 'received'}">
+      <div class="px-4 py-2 rounded-xl inline-block max-w-xs break-words">
+        ${msg.sender !== currentUser.name ? `<div class="text-xs text-gray-500 mb-1">${escHtml(msg.sender)}</div>` : ''}
+        <p class="text-sm">${escHtml(msg.text)}</p>
+        <p class="text-xs mt-1 opacity-70">${new Date(msg.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+      </div>
+    </div>
+  `).join('');
+  
+  container.scrollTop = container.scrollHeight;
+}
+
+function selectConversation(id) {
+  currentConversation = conversations.find(c => c.id === id);
+  renderConversations();
+}
+
+async function sendMessage() {
+  const input = document.getElementById('message-input');
+  const btn = document.getElementById('send-btn');
+  if (!input || !btn) return;
+  const text = input.value.trim();
+  if (!text || !currentConversation) return;
+
+  const msg = { sender: currentUser.name, text: text, time: new Date().toISOString() };
+
+  // If realtime (Firestore) is configured, write to Firestore and let onSnapshot update local state
+  if (window.FIREBASE_CONFIG) {
+    try {
+      await writeMessageToFirestore(currentConversation.id, msg);
+    } catch (err) {
+      console.warn('firestore write failed, falling back to local', err);
+      currentConversation.messages.push(msg);
+    }
+  } else {
+    currentConversation.messages.push(msg);
+  }
+
+  // If this is an order conversation and the sender is logistics, optionally add a system update
+  if (currentConversation.orderId && isLogisticsProvider) {
+    const ord = allOrders.find(o => o.order_id === currentConversation.orderId);
+    if (ord) {
+      ord._timeline = ord._timeline || [];
+      ord._timeline.push({ actor: currentUser.name, text: msg.text, time: msg.time });
+    }
+  }
+
+  input.value = '';
+  updateSendButtonState();
+  renderMessages();
+  renderConversations();
+  showToast('✓ Message sent!');
+  input.focus();
+}
+
+function updateSendButtonState() {
+  const input = document.getElementById('message-input');
+  const btn = document.getElementById('send-btn');
+  if (!btn || !input) return;
+  const disabled = !input.value.trim() || !currentConversation;
+  btn.disabled = disabled;
+  btn.style.opacity = disabled ? '0.6' : '1';
+  btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+}
+
+// Wire up Enter-to-send and input state handling
+(function() {
+  const input = document.getElementById('message-input');
+  if (!input) return;
+  input.addEventListener('input', () => updateSendButtonState());
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const btn = document.getElementById('send-btn');
+      if (btn && !btn.disabled) sendMessage();
+    }
+  });
+})();
+
+// ===== CART =====
+function addToCart(backendId) {
+  const prod = allProducts.find(p => p.__backendId === backendId);
+  if (!prod) return;
+  const existing = cart.find(c => c.__backendId === backendId);
+  if (existing) existing.qty++;
+  else cart.push({ ...prod, qty: 1 });
+  updateCartBadge();
+  showToast(`✓ ${prod.name} added to cart!`);
+}
+
+function removeFromCart(backendId) {
+  cart = cart.filter(c => c.__backendId !== backendId);
+  updateCartBadge();
+  renderCart();
+}
+
+function updateCartBadge() {
+  const badge = document.getElementById('cart-badge');
+  const total = cart.reduce((s, c) => s + c.qty, 0);
+  badge.textContent = total;
+  badge.classList.toggle('hidden', total === 0);
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items');
+  const summary = document.getElementById('cart-summary');
+  if (!cart.length) {
+    container.innerHTML = '<p class="text-gray-400 text-center py-16">Your cart is empty. <button onclick="goTo(\'shop\')" class="underline font-semibold" style="color:#e94560;">Start shopping!</button></p>';
+    summary.classList.add('hidden');
+    return;
+  }
+  summary.classList.remove('hidden');
+  let total = 0;
+  container.innerHTML = cart.map(c => {
+    const sub = c.qty * c.price;
+    total += sub;
+    return `
+    <div class="flex items-center gap-4 rounded-xl p-4" style="background:white;">
+      <div class="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">${c.image_data ? `<img src="${c.image_data}" class="w-full h-full object-cover" alt="${escHtml(c.name)}" loading="lazy">` : '<span class="text-3xl">📦</span>'}</div>
+      <div class="flex-1 min-w-0">
+        <h4 class="font-bold text-sm" style="color:#1a1a2e;">${escHtml(c.name)}</h4>
+        <p class="text-sm text-gray-500">$${Number(c.price).toFixed(2)} × ${c.qty}</p>
+      </div>
+      <span class="font-bold flex-shrink-0" style="color:#e94560;">$${sub.toFixed(2)}</span>
+      <button onclick="removeFromCart('${c.__backendId}')" class="text-gray-400 hover:text-red-500 p-1 flex-shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>`;
+  }).join('');
+  document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
+  lucide.createIcons();
+}
+
+// ===== PAYMENT =====
+function renderPayment() {
+  const itemsEl = document.getElementById('payment-items');
+  let total = 0;
+  itemsEl.innerHTML = cart.map(c => { const sub = c.qty * c.price; total += sub; return `<div class="flex justify-between"><span>${escHtml(c.name)} ×${c.qty}</span><span>$${sub.toFixed(2)}</span></div>`; }).join('');
+  document.getElementById('payment-total').textContent = '$' + total.toFixed(2);
+}
+
+function handlePayment(e) {
+  e.preventDefault();
+  const method = document.getElementById('delivery-method').value;
+  cart = [];
+  updateCartBadge();
+  showToast(`🎉 Order placed! Delivery: ${method}`);
+  goTo('home');
+}
+
+// ===== CONTACT =====
+function handleContact(e) {
+  e.preventDefault();
+  const form = document.getElementById('contact-form');
+  const submit = document.getElementById('contact-submit');
+  const loading = document.getElementById('contact-submit-loading');
+  const success = document.getElementById('contact-success');
+  if (!form || !submit) return;
+
+  // Simple validation
+  const name = document.getElementById('contact-name').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  const msg = document.getElementById('contact-msg').value.trim();
+  if (!name || !email || !msg) {
+    showToast('Please complete all fields.');
+    return;
+  }
+
+  submit.disabled = true;
+  loading.classList.remove('hidden');
+  submit.style.opacity = '0.8';
+
+  // simulate async submit
+  setTimeout(() => {
+    loading.classList.add('hidden');
+    submit.disabled = false;
+    submit.style.opacity = '';
+    form.reset();
+    updateContactButtonState();
+    showToast('✓ Message sent!');
+    goTo('contact-thanks');
+  }, 800);
+}
+
+function updateContactButtonState() {
+  const form = document.getElementById('contact-form');
+  const submit = document.getElementById('contact-submit');
+  if (!form || !submit) return;
+  const name = document.getElementById('contact-name').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  const msg = document.getElementById('contact-msg').value.trim();
+  const enabled = name && email && msg;
+  submit.disabled = !enabled;
+  submit.style.opacity = enabled ? '1' : '0.6';
+}
+
+// enable/disable submit as user types
+(function() {
+  const inputs = ['contact-name','contact-email','contact-msg'].map(id => document.getElementById(id)).filter(Boolean);
+  if (!inputs.length) return;
+  inputs.forEach(i => i.addEventListener('input', updateContactButtonState));
+  // initialize
+  updateContactButtonState();
+})();
+
+// ===== ORDERS & LOGISTICS =====
+function renderOrders() {
+  const userOrders = allOrders.filter(o => o.buyer === currentUser.name);
+  const container = document.getElementById('orders-list');
+  
+  if (!userOrders.length) {
+    container.innerHTML = '<p class="text-gray-400 text-center py-8">No orders yet. <button onclick="goTo(\'shop\')" class="underline font-semibold" style="color:#e94560;">Start shopping!</button></p>';
+    document.getElementById('total-orders').textContent = '0';
+    document.getElementById('in-transit-count').textContent = '0';
+    document.getElementById('delivered-count').textContent = '0';
+    return;
+  }
+  
+  document.getElementById('total-orders').textContent = userOrders.length;
+  const inTransit = userOrders.filter(o => o.order_status === 'In Transit').length;
+  const delivered = userOrders.filter(o => o.order_status === 'Delivered').length;
+  document.getElementById('in-transit-count').textContent = inTransit;
+  document.getElementById('delivered-count').textContent = delivered;
+  
+  container.innerHTML = userOrders.map(o => `
+    <div class="rounded-xl p-4 border-l-4 transition" style="background:white; border-color: ${o.order_status === 'Delivered' ? '#27ae60' : o.order_status === 'In Transit' ? '#0f3460' : '#e94560'};">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+        <div>
+          <p class="font-bold" style="color:#1a1a2e;">${o.order_id}</p>
+          <p class="text-xs text-gray-500">${new Date(o.created_at).toLocaleDateString()}</p>
+        </div>
+        <span class="px-3 py-1 rounded-full text-xs font-semibold text-white w-fit" style="background: ${o.order_status === 'Delivered' ? '#27ae60' : o.order_status === 'In Transit' ? '#0f3460' : '#e94560'};">${o.order_status}</span>
+      </div>
+      <div class="mb-2 text-sm text-gray-600">
+        <p>${o.items.map(i => i.name).join(', ')}</p>
+        <p class="text-xs text-gray-500 mt-1">Delivery: ${o.delivery_method} | Total: <strong style="color:#e94560;">$${o.total_amount.toFixed(2)}</strong></p>
+      </div>
+      ${o.tracking_number ? `<p class="text-xs font-mono text-gray-500">Track: ${o.tracking_number}</p>` : '<p class="text-xs text-gray-400">Waiting for logistics assignment...</p>'}
+    </div>
+  `).join('');
+}
+
+function renderLogisticsView() {
+  // Seller view
+  const sellerOrders = allOrders.filter(o => o.items.some(i => i.seller === currentUser.name));
+  const pendingOrders = sellerOrders.filter(o => o.order_status === 'Pending Logistics');
+  
+  document.getElementById('seller-balance').textContent = '$' + ((Math.random() * 5000).toFixed(2));
+  document.getElementById('pending-shipments').textContent = pendingOrders.length;
+  document.getElementById('completed-seller-orders').textContent = sellerOrders.filter(o => o.order_status === 'Delivered').length;
+  
+  const sellerContainer = document.getElementById('seller-pending-orders');
+  if (!pendingOrders.length) {
+    sellerContainer.innerHTML = '<p class="text-gray-400 text-center py-8">No pending orders to ship.</p>';
+  } else {
+    sellerContainer.innerHTML = pendingOrders.map(o => `
+      <div class="rounded-lg p-3 border border-gray-200">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <p class="font-bold text-sm" style="color:#1a1a2e;">${o.order_id}</p>
+            <p class="text-xs text-gray-500">To: ${o.buyer_name}</p>
+          </div>
+          <button onclick="requestLogisticsPickup('${o.order_id}')" class="px-3 py-1 rounded text-xs font-semibold text-white bg-blue-500 hover:bg-blue-600">Book Logistics</button>
+        </div>
+        <p class="text-xs text-gray-600">${o.delivery_method} • $${o.total_amount.toFixed(2)}</p>
+      </div>
+    `).join('');
+  }
+  
+  // Logistics provider view
+  const availableOrders = allOrders.filter(o => o.order_status === 'Pending Logistics');
+  const activeDeliveries = allOrders.filter(o => o.order_status === 'In Transit' && o.logistics_provider === currentUser.name);
+  
+  document.getElementById('logistics-balance').textContent = '$' + ((Math.random() * 8000).toFixed(2));
+  document.getElementById('active-shipments').textContent = activeDeliveries.length;
+  document.getElementById('completed-deliveries').textContent = allOrders.filter(o => o.order_status === 'Delivered' && o.logistics_provider === currentUser.name).length;
+  
+  const availableContainer = document.getElementById('available-shipments');
+  if (!availableOrders.length) {
+    availableContainer.innerHTML = '<p class="text-gray-400 text-center py-8">No pending shipments available.</p>';
+  } else {
+    availableContainer.innerHTML = availableOrders.map(o => `
+      <div class="rounded-lg p-3 border border-green-200" style="background:#f0fdf4;">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <p class="font-bold text-sm" style="color:#1a1a2e;">${o.order_id}</p>
+            <p class="text-xs text-gray-600">${o.buyer_name} → ${o.delivery_method}</p>
+          </div>
+          <button onclick="acceptShipment('${o.order_id}')" class="px-3 py-1 rounded text-xs font-semibold text-white bg-green-500 hover:bg-green-600">Accept</button>
+        </div>
+        <p class="text-xs font-semibold" style="color:#27ae60;">Earnings: $${o.logistics_fee.toFixed(2)}</p>
+      </div>
+    `).join('');
+  }
+  
+  const deliveriesContainer = document.getElementById('active-deliveries');
+  if (!activeDeliveries.length) {
+    deliveriesContainer.innerHTML = '<p class="text-gray-400 text-center py-8">No active deliveries.</p>';
+  } else {
+    deliveriesContainer.innerHTML = activeDeliveries.map(o => `
+      <div class="rounded-lg p-3 border border-blue-200" style="background:#eff6ff;">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <p class="font-bold text-sm" style="color:#1a1a2e;">${o.order_id} - ${o.tracking_number}</p>
+            <p class="text-xs text-gray-600">To: ${o.buyer_name}</p>
+          </div>
+          <button onclick="completeDelivery('${o.order_id}')" class="px-3 py-1 rounded text-xs font-semibold text-white bg-green-600 hover:bg-green-700">Mark Delivered</button>
+        </div>
+        <p class="text-xs text-gray-600">${o.delivery_method}</p>
+      </div>
+    `).join('');
+  }
+}
+
+function toggleLogisticsRole() {
+  isLogisticsProvider = !isLogisticsProvider;
+  document.getElementById('seller-logistics-view').classList.toggle('hidden');
+  document.getElementById('logistics-provider-view').classList.toggle('hidden');
+  document.getElementById('logistics-role-btn').textContent = isLogisticsProvider ? 'Switch to Seller View' : 'Switch to Logistics View';
+  renderLogisticsView();
+}
+
+function requestLogisticsPickup(orderId) {
+  const order = allOrders.find(o => o.order_id === orderId);
+  if (order) {
+    order.order_status = 'Awaiting Pickup';
+    showToast('✓ Logistics pickup requested');
+    renderLogisticsView();
+  }
+}
+
+function acceptShipment(orderId) {
+  const order = allOrders.find(o => o.order_id === orderId);
+  if (order) {
+    order.order_status = 'In Transit';
+    order.logistics_provider = currentUser.name;
+    order.tracking_number = 'TRK-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    order.estimated_delivery = new Date(Date.now() + 3*24*60*60*1000).toLocaleDateString();
+    showToast(`✓ Shipment accepted! Earned $${order.logistics_fee.toFixed(2)}`);
+    renderLogisticsView();
+    renderOrders();
+    // create or open an order chat and post a system message
+    try {
+      const convId = `order-${orderId}`;
+      let conv = conversations.find(c => c.id === convId);
+      if (!conv) {
+        conv = { id: convId, title: `Order ${orderId}`, orderId: orderId, participants: [order.buyer_name, currentUser.name], messages: [] };
+        conversations.push(conv);
+      }
+      conv.messages.push({ sender: currentUser.name, text: `I've accepted this shipment and will deliver it. Tracking: ${order.tracking_number}`, time: new Date().toISOString() });
+    } catch (e) { console.warn('order chat create failed', e); }
+  }
+}
+
+function completeDelivery(orderId) {
+  const order = allOrders.find(o => o.order_id === orderId);
+  if (order) {
+    order.order_status = 'Delivered';
+    showToast(`✓ Delivery completed! Payment $${order.logistics_fee.toFixed(2)} + Product sales released to seller`);
+    renderLogisticsView();
+    renderOrders();
+  }
+}
+
+// ===== UTILS =====
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+// Init icons
+lucide.createIcons();
+
+// ===== Home background carousel initialization =====
+function initHomeCarousel(images = [], speedPerImage = 6) {
+  const container = document.getElementById('home-bg-carousel');
+  if (!container) return;
+  // prefer provided window array
+  const imgs = (window.HOME_CAROUSEL_IMAGES && window.HOME_CAROUSEL_IMAGES.length) ? window.HOME_CAROUSEL_IMAGES : (images.length ? images : [
+    'https://source.unsplash.com/1600x900/?ecommerce,shopping',
+    'https://source.unsplash.com/1600x900/?store,products',
+    'https://source.unsplash.com/1600x900/?marketplace,shop',
+    'https://source.unsplash.com/1600x900/?retail,storefront',
+    'https://source.unsplash.com/1600x900/?shopping,online',
+    'https://source.unsplash.com/1600x900/?product,display'
+  ]);
+
+  // build track
+  container.innerHTML = '';
+  const track = document.createElement('div'); track.className = 'bg-track';
+  // create items and append twice for seamless scroll
+  const all = imgs.concat(imgs);
+  all.forEach(src => {
+    const it = document.createElement('div'); it.className = 'bg-carousel-item';
+    it.style.backgroundImage = `url('${src}')`;
+    track.appendChild(it);
+  });
+  container.appendChild(track);
+
+  // compute duration: speedPerImage seconds per unique image
+  const duration = Math.max(8, imgs.length * speedPerImage);
+  track.style.animationDuration = duration + 's';
+}
+
+// auto init on load
+document.addEventListener('DOMContentLoaded', () => {
+  initHomeCarousel();
+});
+</script>
+</body>
+  </html>

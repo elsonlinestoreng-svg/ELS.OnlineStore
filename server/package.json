@@ -1,0 +1,14 @@
+{
+  "name": "els-upload-server",
+  "version": "1.0.0",
+  "description": "Simple Node/Express upload endpoint for ELS.online store demos",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}
