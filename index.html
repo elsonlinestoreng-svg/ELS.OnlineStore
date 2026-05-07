@@ -261,7 +261,7 @@ input:focus, textarea:focus, select:focus { outline: none; }
        <div class="relative overflow-hidden py-20 px-6 text-center" style="background: linear-gradient(135deg, rgba(10,10,20,0.6), rgba(8,12,30,0.4));">
          <div id="home-bg-carousel"></div>
          <div class="max-w-3xl mx-auto relative z-10">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold text-white mb-4 slide-up" style="background:rgba(233,69,96,0.3); border:1px solid rgba(233,69,96,0.5);">  Welcome to ELS.OnlineStore</span>
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold text-white mb-4 slide-up" style="background:rgba(233,69,96,0.3); border:1px solid rgba(122, 109, 158, 0.596);">  Welcome to ELS.OnlineStore</span>
         <h2 id="hero-heading" class="text-4xl md:text-6xl font-extrabold text-white mb-6 slide-up-d1" style="font-family:'Playfair Display',serif; line-height:1.1;">Discover What You Love</h2>
         <p class="text-gray-300 text-lg mb-8 max-w-xl mx-auto slide-up-d2">Buy unique products from independent sellers or open your own store and start selling today.</p>
         <div class="flex flex-wrap gap-3 justify-center slide-up-d3">
@@ -318,7 +318,20 @@ input:focus, textarea:focus, select:focus { outline: none; }
        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <h2 class="text-3xl font-bold" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Shop</h2>
         <div class="flex gap-2 flex-wrap">
-         <button onclick="filterShopCategory('All')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:#e94560; color:white;">All</button> <button onclick="filterShopCategory('Electronics')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Electronics</button> <button onclick="filterShopCategory('Fashion')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Fashion</button> <button onclick="filterShopCategory('Home')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Home</button> <button onclick="filterShopCategory('Sports')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Sports</button> <button onclick="filterShopCategory('Other')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Other</button>
+         <button onclick="filterShopCategory('All')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+          style="background:#e94560; color:white;">All</button> 
+          <button onclick="filterShopCategory('Electronics')"
+           class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Electronics</button> 
+           <button onclick="filterShopCategory('Fashion')"
+            class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" 
+            style="background:white; color:#1a1a2e;">Fashion</button>
+             <button onclick="filterShopCategory('Home')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+              style="background:white; color:#1a1a2e;">Home</button> 
+              <button onclick="filterShopCategory('Sports')"
+               class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+                style="background:white; color:#1a1a2e;">Sports</button>
+                 <button onclick="filterShopCategory('Other')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+                  style="background:white; color:#1a1a2e;">Other</button>
         </div>
        </div>
        <div class="mb-6">
@@ -410,7 +423,9 @@ input:focus, textarea:focus, select:focus { outline: none; }
             <input id="product-image-replace-input" type="file" accept="image/*" class="hidden" onchange="handleProductImageReplace(event)">
             <div class="flex flex-col items-center gap-2">
             <i data-lucide="upload-cloud" class="w-6 h-6" style="color:#999;"></i>
-            <button type="button" onclick="document.getElementById('prod-image').click()" class="text-sm font-medium" style="color:#1a1a2e; background:transparent; border:none; cursor:pointer;">
+            <button type="button" onclick="document.getElementById('prod-image').click()" 
+            class="text-sm font-medium" 
+            style="color:#1a1a2e; background:transparent; border:none; cursor:pointer;">
               Click or drag image here
             </button>
             <p class="text-xs text-gray-500">JPG, PNG, WebP • Max 5MB • Recommended: 500×500px</p>
@@ -441,14 +456,16 @@ input:focus, textarea:focus, select:focus { outline: none; }
              <p id="err-prod-desc" class="hidden text-sm text-red-500 mt-1"></p>
          </div>
          <div class="flex gap-3 w-full mt-3">
-           <button id="save-draft-btn" type="submit" data-publish="false" disabled class="flex-1 py-3 rounded-xl font-semibold text-gray-700" style="background:#f3f4f6;">Save Draft</button>
-           <button id="add-product-btn" type="submit" data-publish="true" disabled class="flex-1 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">
-             <span id="add-prod-text">List & Publish</span>
+           <button id="save-draft-btn" type="submit" data-publish="false" disabled class="flex-1 py-3 rounded-xl font-semibold text-gray-700" 
+           style="background:#f3f4f6;">Save Draft</button>
+           <button id="add-product-btn" type="submit" data-publish="true" disabled class="flex-1 py-3 rounded-xl font-semibold text-white" 
+           style="background:#e94560;">
+             <span id="add-prod-text">Publish</span>
              <span id="add-prod-loading" class="hidden">Listing...</span>
            </button>
          </div>
          <p id="store-limit-msg" 
-         class="hidden text-center text-red-500 text-sm mt-3 font-medium">Maximum product limit reached (999). Please remove some products first.</p>
+         class="hidden text-center text-red-500 text-sm mt-3 font-medium">Minimum product list (7). Please remove some products first.</p>
         </form>
 
         <!-- My Products -->
@@ -620,10 +637,10 @@ input:focus, textarea:focus, select:focus { outline: none; }
         style="color:#41416e; font-family:'Playfair Display',serif;">Payment</h2>
        <p class="text-gray-500 mb-8">Complete your order securely.</p>
        <div class="rounded-2xl p-1 mb-6" 
-       style="background:linear-gradient(135deg, #e94560, #0f3460); 
+       style="background:linear-gradient(135deg, #0e69b44f, #0f3460); 
        border-radius:16px;">
         <div class="rounded-2xl p-4 text-center"
-         style="background:#1a1a2e;">
+         style="background:#4f4f7238;">
          <p class="text-xs text-gray-400 mb-1">SAMPLE PAYMENT</p>
          <p class="text-white font-bold text-sm">
           This is a demo checkout — no real payment is processed</p>
