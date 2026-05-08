@@ -169,6 +169,7 @@ input:focus, textarea:focus, select:focus { outline: none; }
         class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
          style="background:#170a5f8f; box-shadow: #4571e9;">Sign In</button>
        <p class="text-center text-gray-500 text-xs mt-4"> Login with email / password works</p>
+      <p class="text-center text-xs mt-2"><a href="#" onclick="openResetRequestModal();return false;" class="text-sm text-indigo-200 underline">Forgot password?</a></p>
       </form>
       <!-- Register Form -->
       <div id="register-logo" class="hidden text-center mb-4">
@@ -208,6 +209,42 @@ input:focus, textarea:focus, select:focus { outline: none; }
        <p class="text-center text-gray-500 text-xs mt-4">Demo: registration is simulated</p>
 
       </form>
+
+        <!-- Password Reset Request Modal -->
+        <div id="reset-password-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+          <div class="absolute inset-0 bg-black/50"></div>
+          <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-3">Reset Password</h3>
+            <form id="reset-request-form" onsubmit="sendPasswordResetRequest(event)">
+              <label class="block text-sm text-gray-700 mb-1">Enter your registered email</label>
+              <input id="reset-email" type="email" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="you@email.com" />
+              <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeResetRequestModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+                <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Send Reset</button>
+              </div>
+            </form>
+            <div id="reset-request-result" class="mt-3 text-sm text-gray-700"></div>
+          </div>
+        </div>
+
+        <!-- Password Reset Set Modal -->
+        <div id="reset-set-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+          <div class="absolute inset-0 bg-black/50"></div>
+          <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-3">Choose a new password</h3>
+            <form id="reset-set-form" onsubmit="completePasswordReset(event)">
+              <label class="block text-sm text-gray-700 mb-1">New password</label>
+              <input id="reset-new-pass" type="password" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="New password" />
+              <label class="block text-sm text-gray-700 mb-1">Confirm password</label>
+              <input id="reset-new-pass-confirm" type="password" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="Confirm password" />
+              <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeResetSetModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+                <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Set Password</button>
+              </div>
+            </form>
+            <div id="reset-set-result" class="mt-3 text-sm text-gray-700"></div>
+          </div>
+        </div>
      </div>
     </div>
    </div><!-- MAIN APP (hidden until login) -->
@@ -267,7 +304,7 @@ input:focus, textarea:focus, select:focus { outline: none; }
         <div class="flex flex-wrap gap-3 justify-center slide-up-d3">
          <button onclick="goTo('shop')" class="px-8 py-3 rounded-xl font-semibold text-white hero-cta" style="background:#2c4872a4;">Browse Shop</button>
          <button onclick="goTo('open-store')" class="px-8 py-3 rounded-xl font-semibold text-white hero-cta" 
-         style="background:rgba(118, 126, 172, 0.445); border:1px solid rgba(110, 91, 196, 0.596);">Open a Store</button>
+         style="background:rgba(118, 126, 172, 0.445); border:1px solid rgba(110, 91, 196, 0.596);">Open a Store</button>  
         </div>
        </div>
        <div class="absolute inset-0 opacity-10"
@@ -1198,12 +1235,27 @@ function switchAuthTab(tab) {
 function handleLogin(e) {
   e.preventDefault();
   const email = (document.getElementById('login-email')?.value || '').trim();
+  const pass = (document.getElementById('login-pass')?.value || '');
   if (!email) return showToast('Please enter your email');
-  // If a persisted profile for this email exists, load it and do not overwrite
+  if (!pass) return showToast('Please enter your password');
+  // Try to load persisted profile for this email
   const loaded = loadUserIfExists(email);
   if (!loaded) {
+    // No persisted user — fallback to previous behaviour: allow non-registered quick login
     currentUser.email = email;
     currentUser.name = email.split('@')[0];
+    enterApp();
+    return;
+  }
+  // if loaded user has a password stored, verify
+  if (currentUser.password) {
+    try {
+      const stored = currentUser.password || '';
+      const encoded = btoa(pass);
+      if (stored !== encoded) {
+        return showToast('Incorrect password. Click "Forgot password?" to reset.');
+      }
+    } catch (e) { /* ignore encoding errors */ }
   }
   enterApp();
 }
@@ -1211,14 +1263,143 @@ function handleRegister(e) {
   e.preventDefault();
   const name = (document.getElementById('reg-name')?.value || '').trim();
   const email = (document.getElementById('reg-email')?.value || '').trim();
-  if (!email || !name) return showToast('Please enter name and email to register');
+  const pass = (document.getElementById('reg-pass')?.value || '');
+  if (!email || !name || !pass) return showToast('Please enter name, email and password to register');
   const loaded = loadUserIfExists(email);
   if (!loaded) {
     currentUser.name = name;
     currentUser.email = email;
+    try { currentUser.password = btoa(pass); } catch(e) { currentUser.password = pass; }
+    try { localStorage.setItem('els_user', JSON.stringify(currentUser)); } catch(e){}
+  } else {
+    // if user exists, do not overwrite; but if password missing, set it
+    if (!currentUser.password) {
+      try { currentUser.password = btoa(pass); } catch(e){ currentUser.password = pass; }
+      try { localStorage.setItem('els_user', JSON.stringify(currentUser)); } catch(e){}
+    }
   }
   enterApp();
 }
+
+// Password reset helpers
+function openResetRequestModal() {
+  document.getElementById('reset-password-modal').classList.remove('hidden');
+}
+function closeResetRequestModal() {
+  document.getElementById('reset-password-modal').classList.add('hidden');
+  document.getElementById('reset-request-result').innerHTML = '';
+}
+function openResetSetModal() {
+  document.getElementById('reset-set-modal').classList.remove('hidden');
+}
+function closeResetSetModal() {
+  document.getElementById('reset-set-modal').classList.add('hidden');
+  document.getElementById('reset-set-result').innerHTML = '';
+}
+
+function generateResetToken() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function sendPasswordResetRequest(e) {
+  e.preventDefault();
+  const email = (document.getElementById('reset-email')?.value || '').trim();
+  if (!email) return showToast('Please enter your registered email');
+  // check stored user
+  let user = null;
+  try {
+    const raw = localStorage.getItem('els_user');
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u && u.email && String(u.email).toLowerCase() === String(email).toLowerCase()) user = u;
+    }
+  } catch (e) { /* ignore */ }
+
+  const token = generateResetToken();
+  const expires = Date.now() + (60 * 60 * 1000); // 1 hour
+  let resets = {};
+  try { resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}'); } catch(e) { resets = {}; }
+  resets[token] = { email: email, expires };
+  try { localStorage.setItem('els_password_resets', JSON.stringify(resets)); } catch(e){}
+
+  const resetUrl = (location.href.split('#')[0].split('?')[0]) + '#reset=' + token;
+
+  // Prefer server-side email sending if configured
+  const serverUrl = window.RESET_API_URL || 'http://localhost:8001/send-reset';
+  fetch(serverUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, resetUrl, siteName: document.title })
+  }).then(res => res.json()).then(json => {
+    if (json && json.ok) {
+      document.getElementById('reset-request-result').textContent = 'Reset email sent — check your inbox.';
+    } else {
+      // fallback to Gmail/mailto links
+      const mailto = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent('Password reset') + '&body=' + encodeURIComponent('Reset link: ' + resetUrl);
+      const gmail = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent('Password reset') + '&body=' + encodeURIComponent('Reset link: ' + resetUrl);
+      document.getElementById('reset-request-result').innerHTML = '<div>Reset link created. Use your email to send it, or open Gmail compose:</div><div class="mt-2"><a target="_blank" href="' + gmail + '" class="underline text-indigo-600 mr-2">Open Gmail</a><a href="' + mailto + '" class="underline mr-2">Open mail client</a><button onclick="navigator.clipboard && navigator.clipboard.writeText(\'' + resetUrl + '\')?showToast(\'Link copied\'):null" class="ml-2 px-2 py-1 bg-gray-100 rounded">Copy link</button></div>';
+    }
+  }).catch(err => {
+    // server not reachable — fallback to Gmail/mailto links
+    const mailto = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent('Password reset') + '&body=' + encodeURIComponent('Reset link: ' + resetUrl);
+    const gmail = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent('Password reset') + '&body=' + encodeURIComponent('Reset link: ' + resetUrl);
+    document.getElementById('reset-request-result').innerHTML = '<div>Reset link created. Use your email to send it, or open Gmail compose:</div><div class="mt-2"><a target="_blank" href="' + gmail + '" class="underline text-indigo-600 mr-2">Open Gmail</a><a href="' + mailto + '" class="underline mr-2">Open mail client</a><button onclick="navigator.clipboard && navigator.clipboard.writeText(\'' + resetUrl + '\')?showToast(\'Link copied\'):null" class="ml-2 px-2 py-1 bg-gray-100 rounded">Copy link</button></div>';
+  });
+}
+
+function completePasswordReset(e) {
+  e.preventDefault();
+  // token should be in location.hash
+  const hash = location.hash || '';
+  const m = hash.match(/#reset=([A-Za-z0-9_-]+)/);
+  if (!m) return showToast('Reset token not found');
+  const token = m[1];
+  let resets = {};
+  try { resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}'); } catch(e){ resets = {}; }
+  const info = resets[token];
+  if (!info) return showToast('Invalid or expired reset token');
+  if (Date.now() > info.expires) return showToast('Reset token expired');
+  const pass = (document.getElementById('reset-new-pass')?.value || '');
+  const pass2 = (document.getElementById('reset-new-pass-confirm')?.value || '');
+  if (!pass || pass.length < 6) return showToast('Password must be at least 6 characters');
+  if (pass !== pass2) return showToast('Passwords do not match');
+  // update stored user if matches
+  try {
+    const raw = localStorage.getItem('els_user');
+    if (raw) {
+      const u = JSON.parse(raw);
+      if (u && u.email && String(u.email).toLowerCase() === String(info.email).toLowerCase()) {
+        try { u.password = btoa(pass); } catch(e){ u.password = pass; }
+        localStorage.setItem('els_user', JSON.stringify(u));
+        document.getElementById('reset-set-result').textContent = 'Password reset — you can now sign in.';
+        // remove token
+        delete resets[token];
+        try { localStorage.setItem('els_password_resets', JSON.stringify(resets)); } catch(e){}
+        setTimeout(() => { closeResetSetModal(); location.hash = ''; }, 1200);
+        return;
+      }
+    }
+  } catch(e){ }
+  showToast('Account not found for that email');
+}
+
+// On load, detect reset token and show set-password modal
+function checkForResetTokenOnLoad() {
+  const hash = location.hash || '';
+  const m = hash.match(/#reset=([A-Za-z0-9_-]+)/);
+  if (!m) return;
+  const token = m[1];
+  let resets = {};
+  try { resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}'); } catch(e){ resets = {}; }
+  const info = resets[token];
+  if (!info) return;
+  if (Date.now() > info.expires) return;
+  // show set modal
+  openResetSetModal();
+}
+
+// run check on startup
+try { window.addEventListener('load', checkForResetTokenOnLoad); } catch(e){}
 function enterApp() {
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
