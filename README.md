@@ -38,6 +38,16 @@ powershell -ExecutionPolicy Bypass -File .\serve.ps1
 
 ## Troubleshooting
 - If the server fails to start, run PowerShell as Administrator or change the port in `serve.ps1`.
+  
+Remote access / URL ACL
+- If you want the `serve.ps1` listener to accept connections from other machines on your LAN, Windows may block non-admin bindings by default.
+- A helper script `register-urlacl.ps1` is included to register a URL ACL and open the firewall for the chosen port. Run it as Administrator:
+
+```powershell
+.\register-urlacl.ps1 -Port 8000
+```
+
+After running the helper, re-run `serve.ps1` (you may need to restart it). Alternatively, run `serve.ps1` itself as Administrator.
 - If images don't upload to cloud, check the browser console for errors and ensure the upload endpoint accepts multipart form `file` uploads.
 
 ## Notes
