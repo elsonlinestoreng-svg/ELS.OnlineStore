@@ -12,27 +12,7 @@ $listener.Prefixes.Add($prefix)
 try {
     $listener.Start()
 } catch {
-    Write-Error "Failed to start listener. This is often caused by missing URL ACL permissions or firewall blocking the port."
-    $errMsg = $_.Exception.Message
-    Write-Host "Error details: $errMsg"
-    Write-Host "You can try one of the following options:"
-    Write-Host "  1) Run this script as Administrator"
-    Write-Host "  2) Run the helper to register a URL ACL and open the firewall: .\register-urlacl.ps1 -Port $port (requires elevation)"
-    Write-Host "  3) Choose a different port that you have permissions for"
-    # Offer to run the helper elevated if available
-    $helper = Join-Path $PSScriptRoot 'register-urlacl.ps1'
-    if (Test-Path $helper) {
-        Write-Host "Helper script found: $helper"
-        $run = Read-Host "Attempt to run helper now with elevation? (Y/N)"
-        if ($run -match '^[Yy]') {
-            try {
-                Start-Process -FilePath pwsh -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',"`"$helper`"","-Port","$port"" -Verb RunAs -WindowStyle Normal
-                Write-Host 'Launched helper to register URL ACL and firewall rule. After it finishes, re-run this script.'
-            } catch {
-                Write-Error 'Failed to launch helper with elevation. Please run it manually as Administrator.'
-            }
-        }
-    }
+    Write-Error "Failed to start listener. Try running PowerShell as Administrator or choose another port."
     exit 1
 }
 Write-Host "Serving $root on http://localhost:$port/"
