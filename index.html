@@ -28,69 +28,314 @@
   -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
   <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: 'Outfit', sans-serif; }
-.page { display: none; transition: opacity 0.4s ease, transform 0.3s ease; }
-.page.active { display: block; animation: pageIn 0.4s ease; }
-@keyframes pageIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 40; }
-.sidebar-overlay.open { display: block; }
-.sidebar { position: fixed; left: -300px; top: 0; bottom: 0; width: 280px; z-index: 50; transition: left 0.3s ease; }
-.sidebar.open { left: 0; }
-.fade-in { animation: fadeIn 0.4s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-.pulse { animation: pulse 2s ease-in-out infinite; }
-.slide-up { animation: slideUp 0.6s ease forwards; }
-.slide-up-d1 { animation: slideUp 0.6s 0.1s ease forwards; opacity: 0; }
-.slide-up-d2 { animation: slideUp 0.6s 0.2s ease forwards; opacity: 0; }
-.slide-up-d3 { animation: slideUp 0.6s 0.3s ease forwards; opacity: 0; }
-.product-card { transition: transform 0.2s, box-shadow 0.2s; }
-.product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.12); }
-.toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; z-index: 200; font-weight: 500; animation: fadeIn 0.3s ease; }
-input:focus, textarea:focus, select:focus { outline: none; }
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
-  .image-upload-area { border: 2px dashed #e5e5e5; border-radius: 12px; transition: all 0.2s; position: relative; }
-  .image-upload-area #image-preview-section { max-height: 220px; overflow:auto; padding-top:12px; }
-  .image-upload-area #image-gallery img { height: 72px; }
+* { 
+  box-sizing: border-box; 
+  margin: 0; padding: 0; 
+}
+html, body {
+   height: 100%; 
+   font-family: 'Outfit', s
+   ans-serif; 
+  }
+.page { 
+  display: none; 
+  transition: opacity 0.4s ease, transform 0.3s ease;
+ }
+.page.active {
+   display: block;
+    animation: pageIn 0.4s ease;
+   }
+@keyframes pageIn {
+   from { opacity: 0;
+     transform: translateY(10px); 
+    } to { opacity: 1;
+       transform: translateY(0);
+       } }
+.sidebar-overlay {
+   display: none;
+    position: fixed;
+     inset: 0;
+      background: rgba(0,0,0,0.5); 
+      z-index: 40;
+     }
+.sidebar-overlay.open {
+   display: block; 
+  }
+.sidebar { 
+  position: fixed; 
+  left: -300px; 
+  top: 0; 
+  bottom: 0;
+   width: 280px;
+    z-index: 50; 
+    transition: left 0.3s ease;
+   }
+.sidebar.open {
+   left: 0;
+   }
+.fade-in {
+   animation: fadeIn 0.4s ease; 
+  }
+@keyframes fadeIn { 
+  from { opacity: 0;
+     transform: translateY(12px);
+     }
+      to { 
+        opacity: 1; 
+        transform: translateY(0);
+       } }
+@keyframes slideUp { 
+  from { opacity: 0;
+     transform: translateY(30px);
+     }
+      to { 
+        opacity: 1; 
+        transform: translateY(0);
+       } }
+@keyframes pulse {
+   0%, 100%
+    { opacity: 1;
+     } 50% { opacity: 0.6; 
+    } }
+.pulse { 
+  animation: pulse 2s ease-in-out infinite;
+ }
+.slide-up {
+   animation: slideUp 0.6s ease forwards;
+   }
+.slide-up-d1 { 
+  animation: slideUp 0.6s 0.1s ease forwards;
+   opacity: 0;
+ }
+.slide-up-d2 {
+   animation: slideUp 0.6s 0.2s ease forwards;
+    opacity: 0;
+   }
+.slide-up-d3 {
+   animation: slideUp 0.6s 0.3s ease forwards;
+    opacity: 0;
+   }
+.product-card {
+   transition: transform 0.2s, box-shadow 0.2s;
+   }
+/* Animated button hover/touch styles used by small control buttons */
+.btn-anim {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 160ms cubic-bezier(.2,.9,.2,1), box-shadow 160ms cubic-bezier(.2,.9,.2,1), background-color 120ms;
+  will-change: transform;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.btn-anim:hover {
+  transform: translateY(-3px) scale(1.06);
+  box-shadow: 0 6px 18px rgba(15,52,96,0.12), 0 2px 6px rgba(0,0,0,0.06);
+}
+.btn-anim:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 3px 8px rgba(15,52,96,0.10);
+}
+@media (hover: none) {
+  .btn-anim:hover { transform: none; box-shadow: none; }
+}
+.product-card:hover {
+   transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+   }
+.toast-msg {
+   position: fixed;
+    bottom: 24px;
+     left: 50%;
+      transform: translateX(-50%);
+       padding: 12px 24px;
+        border-radius: 12px;
+         z-index: 200;
+          font-weight: 500;
+           animation: fadeIn 0.3s ease;
+           }
+input:focus, textarea:focus, select:focus {
+   outline: none; 
+  }
+::-webkit-scrollbar {
+   width: 6px;
+   }
+::-webkit-scrollbar-thumb {
+   background: #ccc; 
+   border-radius: 3px; 
+  }
+  .image-upload-area {
+     border: 2px dashed #e5e5e5; 
+     border-radius: 12px;
+      transition: all 0.2s;
+       position: relative;
+       } 
+  .image-upload-area #image-preview-section { 
+    max-height: 220px; 
+    overflow:auto;
+     padding-top:12px;
+     }
+  .image-upload-area #image-gallery img {
+     height: 72px; 
+    }
   /* Improved upload visuals */
-  .image-upload-area { padding: 18px; background: linear-gradient(180deg, #fff 0%, #fbfbfb 100%); }
-  .image-upload-area .upload-instructions { font-size: 14px; color: #6b7280; }
-  .image-upload-area.drag-over { border-color: #e94560; background: rgba(233,69,96,0.03); box-shadow: 0 6px 20px rgba(233,69,96,0.06); }
-  #image-preview-section { margin-top: 12px; }
-  #image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
-  #image-gallery img { width: 100%; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid #eee; }
-  .upload-row { display:flex; gap:10px; align-items:center; margin-bottom:8px; }
-  .upload-row img { width:48px; height:48px; object-fit:cover; border-radius:6px; border:1px solid #eee }
-  .upload-bar { height:8px; background:#f3f4f6; border-radius:6px; overflow:hidden; }
-  .upload-bar > .upload-progress { height:100%; width:0%; background:linear-gradient(90deg,#e94560,#f97316); border-radius:6px; transition:width 200ms ease; }
-  .upload-status { font-size:12px; color:#6b7280; min-width:72px; text-align:right }
-  .new-highlight { box-shadow: 0 10px 30px rgba(233,69,96,0.25); border-radius: 14px; outline: 3px solid rgba(233,69,96,0.12); transition: box-shadow 360ms ease; }
-.image-upload-area.drag-over { border-color: #e94560; background: rgba(233,69,96,0.05); }
-.message-bubble { animation: fadeIn 0.3s ease; }
-.message-bubble.sent { text-align: right; }
-.message-bubble.sent > div { background: #e94560; color: white; margin-left: auto; }
-.message-bubble.received > div { background: #f0f0f0; color: #1a1a2e; margin-right: auto; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner { border: 2px solid rgba(255,255,255,0.25); border-top-color: white; border-radius: 50%; width: 14px; height: 14px; display: inline-block; vertical-align: middle; animation: spin 1s linear infinite; }
+  .image-upload-area {
+     padding: 18px; 
+     background: linear-gradient(180deg, #fff 0%, #fbfbfb 100%);
+     }
+  .image-upload-area .upload-instructions {
+     font-size: 15px;
+      color: #6b7280;
+     }
+  .image-upload-area.drag-over {
+     border-color: #e94560; 
+     background: rgba(233,69,96,0.03);
+      box-shadow: 0 6px 20px rgba(233,69,96,0.06);
+     }
+  #image-preview-section {
+     margin-top: 12px;
+     }
+
+  #image-gallery {
+     display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+       gap: 10px; 
+      }
+  #image-gallery img {
+     width: 100%; height: 100px;
+      object-fit: cover; 
+      border-radius: 8px; 
+      border: 1px solid #eee;
+     }
+  .upload-row {
+     display:flex;
+      gap:10px;
+       align-items:center; 
+       margin-bottom:8px;
+       }
+  .upload-row img {
+     width: 50px;
+      height: 50px;;
+       object-fit:cover;
+        border-radius:6px;
+         border:1px solid #eee
+         }
+  .upload-bar {
+     height:8px;
+      background:#f3f4f6;
+       border-radius:6px;
+        overflow:hidden;
+       }
+  .upload-bar > .upload-progress {
+     height:100%; 
+     width:0%; 
+     background:linear-gradient(90deg,#e94560,#f97316);
+      border-radius:6px;
+       transition:width 200ms ease;
+       }
+  .upload-status {
+     font-size:12px;
+      color:#6b7280; 
+      min-width:72px;
+       text-align:right
+       }
+  .new-highlight {
+     box-shadow: 0 10px 30px rgba(233,69,96,0.25);
+      border-radius: 14px; 
+      outline: 3px solid rgba(233,69,96,0.12);
+       transition: box-shadow 360ms ease; 
+      }
+.image-upload-area.drag-over { 
+  border-color: #e94560; 
+  background: rgba(233,69,96,0.05);
+ }
+.message-bubble {
+   animation: fadeIn 0.3s ease;
+   }
+.message-bubble.sent {
+   text-align: right;
+   }
+.message-bubble.sent > div {
+   background: #e94560;
+    color: white;
+     margin-left: auto;
+     }
+.message-bubble.received > div {
+   background: #f0f0f0;
+    color: #1a1a2e;
+     margin-right: auto;
+     }
+@keyframes spin {
+   to { transform: rotate(360deg);
+   } }
+.spinner {
+   border: 2px solid rgba(255,255,255,0.25);
+    border-top-color: white;
+     border-radius: 50%;
+      width: 14px;
+       height: 14px;
+        display: inline-block;
+         vertical-align: middle; 
+         animation: spin 1s linear infinite;
+         }
 /* Home background carousel */
-#home-bg-carousel { position: absolute; inset: 0; z-index: -20; overflow: hidden; pointer-events: none; }
-#home-bg-carousel .bg-track { display: flex; height: 100%; align-items: center; }
-.bg-carousel-item { flex: 0 0 auto; width: 33.3333%; height: 100%; background-size: cover; background-position: center; }
-@keyframes carousel-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-#home-bg-carousel .bg-track { animation-name: carousel-scroll; animation-timing-function: linear; animation-iteration-count: infinite; }
+#home-bg-carousel {
+   position: absolute;
+    inset: 0;
+     z-index: -20;
+      overflow: hidden;
+       pointer-events: none;
+       }
+#home-bg-carousel .bg-track {
+   display: flex; 
+   height: 100%;
+    align-items: center;
+   }
+.bg-carousel-item {
+   flex: 0 0 auto;
+    width: 33.3333%;
+     height: 100%;
+      background-size: cover; 
+      background-position: center;
+     }
+@keyframes carousel-scroll {
+   from { transform: translateX(0);
+   } to {
+     transform: translateX(-50%);
+     } }
+#home-bg-carousel .bg-track {
+   animation-name: carousel-scroll;
+    animation-timing-function: linear;
+     animation-iteration-count: infinite;
+     }
   </style>
   <style>
   /* Hero carousel visuals and CTA */
-  #home-bg-carousel { opacity: 0.95; }
-  #home-bg-carousel .bg-track { will-change: transform; }
-  .bg-carousel-item { min-width: 33.3333%; height: 100vh; background-size: cover; background-position: center; }
+
+  #home-bg-carousel {
+     opacity: 0.95;
+     }
+  #home-bg-carousel .bg-track {
+     will-change: transform; 
+    }
+  .bg-carousel-item {
+     min-width: 33.3333%;
+      height: 100vh;
+       background-size: cover; 
+       background-position: center;
+       }
   /* Hero CTA style */
-  .hero-cta { transition: transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 240ms ease, background-color 180ms ease; }
-  .hero-cta:hover { transform: translateY(-6px); box-shadow: 0 20px 50px rgba(0,0,0,0.28); }
-  .hero-cta:active { transform: translateY(-2px) scale(0.995); }
+  .hero-cta {
+     transition: transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 240ms ease, background-color 180ms ease; 
+    }
+  .hero-cta:hover {
+     transform: translateY(-6px); 
+     box-shadow: 0 20px 50px rgba(0,0,0,0.28);
+     }
+
+  .hero-cta:active {
+     transform: translateY(-2px) scale(0.995);
+     }
   @media (max-width: 640px) {
     .bg-carousel-item { min-width: 80%; }
     #home-bg-carousel .bg-track { animation-duration: 36s !important; }
@@ -120,24 +365,50 @@ input:focus, textarea:focus, select:focus { outline: none; }
     outline-offset: 3px;
   }
   /* Slightly different accent for login vs register if needed */
-  #login-form .auth-cta { background-image: linear-gradient(180deg,#2b2578 0%, #170a5f 100%); }
-  #register-form .auth-cta { background-image: linear-gradient(180deg,#5b85ff 0%, #4571e9 100%); }
+
+  #login-form .auth-cta {
+     background-image: linear-gradient(180deg,#2b2578 0%, #170a5f 100%);
+     }
+  #register-form .auth-cta { 
+    background-image: linear-gradient(180deg,#5b85ff 0%, #4571e9 100%);
+   }
   /* brief touch/mouse contact animation for better feedback */
-  .button-touch-anim { animation: touchPop 360ms cubic-bezier(.2,.9,.3,1); }
+
+  .button-touch-anim {
+     animation: touchPop 360ms cubic-bezier(.2,.9,.3,1);
+     }
   @keyframes touchPop {
     0% { transform: translateY(0) scale(1); }
     30% { transform: translateY(-8px) scale(1.06); }
     100% { transform: translateY(0) scale(1); }
   }
   </style>
-  <style>body { box-sizing: border-box; }</style>
+  <style>body {
+     box-sizing: border-box;
+      }
+      </style>
   <style>
   /* Joint movement button visuals: consistent radius and hover shadow */
-  .cat-btn, .product-card button, .nav-link, .side-link, .hero-cta, .auth-cta, .product-action, .joint-btn {
-    border-radius: 8px; /* uniform 8px radius */
+  .cat-btn,
+   .product-card button,
+    .nav-link, 
+    .side-link,
+     .hero-cta,
+      .auth-cta, 
+      .product-action,
+       .joint-btn {
+    border-radius: 8px;
+     /* uniform 8px radius */
     transition: transform 200ms cubic-bezier(.2,.9,.3,1), box-shadow 180ms ease, background-color 140ms ease;
   }
-  .cat-btn:hover, .product-card button:hover, .nav-link:hover, .side-link:hover, .hero-cta:hover, .auth-cta:hover, .product-action:hover, .joint-btn:hover {
+  .cat-btn:hover,
+   .product-card button:hover,
+    .nav-link:hover,
+     .side-link:hover, 
+     .hero-cta:hover, 
+     .auth-cta:hover,
+      .product-action:hover,
+       .joint-btn:hover {
     transform: translateY(-6px);
     box-shadow: 0 12px 30px rgba(0,0,0,0.14);
   }
@@ -292,7 +563,8 @@ input:focus, textarea:focus, select:focus { outline: none; }
           </div>
      </div>
     </div>
-   </div><!-- MAIN APP (hidden until login) -->
+   </div>
+   <!-- MAIN APP (hidden until login) -->
    <div id="main-app" class="hidden h-full w-full">
     <!-- TOP NAV -->
     <header id="topnav" class="sticky top-0 z-30 w-full" style="background:#547f97; border-bottom:1px solid rgba(255,255,255,0.08);">
@@ -341,7 +613,9 @@ input:focus, textarea:focus, select:focus { outline: none; }
      <!-- HOME PAGE -->
      <section id="page-home" class="page active">
        <div class="relative overflow-hidden py-20 px-6 text-center" style="background: linear-gradient(135deg, rgba(10,10,20,0.6), rgba(8,12,30,0.4));">
-         <div id="home-bg-carousel"></div>
+         <div id="home-bg-carousel">
+          
+         </div>
          <div class="max-w-3xl mx-auto relative z-10">
         <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold text-white mb-4 slide-up" style="background:rgba(233,69,96,0.3); border:1px solid rgba(122, 109, 158, 0.596);">  Welcome to ELS.OnlineStore</span>
         <h2 id="hero-heading" class="text-4xl md:text-6xl font-extrabold text-white mb-6 slide-up-d1" style="font-family:'Playfair Display',serif; line-height:1.1;">Discover What You Love</h2>
@@ -429,8 +703,7 @@ input:focus, textarea:focus, select:focus { outline: none; }
       <div class="max-w-2xl mx-auto px-4 py-20 text-center">
         <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
           <h2 class="text-3xl font-bold mb-4" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Thank you!</h2>
-          <p class="text-gray-600 mb-6">We've received your message and will get back to you shortly.</p>
-          <div class="flex gap-3 justify-center">
+           <div class="flex gap-3 justify-center">
             <button onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Return Home</button>
             <button onclick="goTo('contact')" class="px-6 py-3 rounded-xl font-semibold text-gray-700" style="background:#f3f4f6;">Send Another</button>
           </div>
@@ -956,7 +1229,7 @@ let isLogisticsProvider = false;
 let logisticsFees = { 'Standard': 5, 'Express': 12, 'Overnight': 25, 'Pickup': 0 };
 
 const defaultConfig = {
-  site_name: 'ELS.OnlineStoress',
+  site_name: 'ELS.OnlineStores',
   tagline: 'Shop. Sell. Thrive.',
   hero_heading: 'Discover What You Love',
   bg_color: '#f8f6f3',
@@ -1744,18 +2017,24 @@ function handleImageUpload(event) {
 }
 
 function processProductImageFile(file) {
-  const maxFileSize = 8 * 1024 * 1024; // absolute max allowed: 8MB
+  const maxFileSize = 5 * 1024 * 1024; // absolute max allowed: 5MB
   if (!file.type.startsWith('image/')) {
     showToast('Please upload an image file (JPG, PNG, WebP).');
     return;
   }
   if (file.size > maxFileSize) {
-    showToast('Image too large. Max size is 8MB.');
+    showToast('Image too large. Max size is 5MB. Try compressing or resize your photo.');
     return;
   }
-
+  // limit number of selected images to keep UI manageable
+  const maxImages = 8;
+  if (selectedImages.length >= maxImages) {
+    showToast('You can upload up to ' + maxImages + ' images per product.');
+    return;
+  }
+sss
   const reader = new FileReader();
-  reader.onload = async (e) => {
+  reader.onload = async (e) => {ss
     try {
       const dataUrl = e.target.result;
       const optimize = document.getElementById('optimize-image')?.checked ?? true;
@@ -1796,11 +2075,11 @@ function renderImageGallery() {
     wrap.appendChild(img);
 
     const controls = document.createElement('div'); controls.className = 'absolute top-1 right-1 flex gap-1';
-    const btnPrimary = document.createElement('button'); btnPrimary.title = 'Set as primary'; btnPrimary.className = 'bg-white/70 p-1 rounded'; btnPrimary.innerHTML = i===primaryImageIndex ? '★' : '☆';
+    const btnPrimary = document.createElement('button'); btnPrimary.title = 'Set as primary'; btnPrimary.className = 'bg-white/70 p-1 rounded btn-anim'; btnPrimary.innerHTML = i===primaryImageIndex ? '★' : '☆';
     btnPrimary.onclick = () => { primaryImageIndex = i; renderImageGallery(); };
-    const btnLeft = document.createElement('button'); btnLeft.title = 'Move left'; btnLeft.className = 'bg-white/70 p-1 rounded'; btnLeft.innerHTML = '◀'; btnLeft.onclick = () => { moveImageLeft(i); };
-    const btnRight = document.createElement('button'); btnRight.title = 'Move right'; btnRight.className = 'bg-white/70 p-1 rounded'; btnRight.innerHTML = '▶'; btnRight.onclick = () => { moveImageRight(i); };
-    const btnRemove = document.createElement('button'); btnRemove.title = 'Remove'; btnRemove.className = 'bg-white/70 p-1 rounded text-red-500'; btnRemove.innerHTML = '✕'; btnRemove.onclick = () => { removeImageAt(i); };
+    const btnLeft = document.createElement('button'); btnLeft.title = 'Move left'; btnLeft.className = 'bg-white/70 p-1 rounded btn-anim'; btnLeft.innerHTML = '◀'; btnLeft.onclick = () => { moveImageLeft(i); };
+    const btnRight = document.createElement('button'); btnRight.title = 'Move right'; btnRight.className = 'bg-white/70 p-1 rounded btn-anim'; btnRight.innerHTML = '▶'; btnRight.onclick = () => { moveImageRight(i); };
+    const btnRemove = document.createElement('button'); btnRemove.title = 'Remove'; btnRemove.className = 'bg-white/70 p-1 rounded text-red-500 btn-anim'; btnRemove.innerHTML = '✕'; btnRemove.onclick = () => { removeImageAt(i); };
     controls.appendChild(btnPrimary); controls.appendChild(btnLeft); controls.appendChild(btnRight); controls.appendChild(btnRemove);
     wrap.appendChild(controls);
 
@@ -2009,6 +2288,28 @@ async function uploadToFirebaseStorage(dataUrl) {
   const snap = await ref.put(blob);
   const url = await snap.ref.getDownloadURL();
   return url;
+}
+
+// Create a product document in Firestore (used when publishing)
+async function createProductInFirebase(product) {
+  if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG not set');
+  await loadFirebaseFirestoreOnce();
+  if (!window.__firestore) throw new Error('Firestore failed to initialize');
+  // clone and normalize payload to avoid Firestore errors
+  const doc = Object.assign({}, product);
+  // remove any non-serializable helper flags
+  delete doc.__optimistic;
+  // ensure timestamps are strings
+  if (doc.created_at && doc.created_at.toDate) doc.created_at = doc.created_at.toISOString();
+  try {
+    const ref = await window.__firestore.collection('products').add(doc);
+    const snapshot = await ref.get();
+    const item = Object.assign({}, snapshot.data(), { __backendId: ref.id });
+    return { id: ref.id, item };
+  } catch (err) {
+    console.error('createProductInFirebase error', err);
+    throw err;
+  }
 }
 
 // ===== Firebase Firestore realtime chat support (optional) =====
@@ -2387,7 +2688,19 @@ async function handleAddProduct(e) {
   let sdkResult = null;
   // Try to use dataSdk if available
   try {
-    if (window.dataSdk && typeof window.dataSdk.create === 'function') {
+    // If Firebase is configured and this is a publish action, prefer writing to Firestore
+    if (forcePublish && window.FIREBASE_CONFIG) {
+      try {
+        const fbRes = await createProductInFirebase(productPayload);
+        // fbRes: { id, item }
+        sdkResult = { isOk: true, id: fbRes.id, item: fbRes.item };
+        createdOk = true;
+      } catch (fbErr) {
+        console.warn('Firebase publish failed, falling back to dataSdk/local', fbErr);
+        createdOk = false;
+      }
+    }
+    if (!createdOk && window.dataSdk && typeof window.dataSdk.create === 'function') {
       const result = await window.dataSdk.create(productPayload);
       sdkResult = result;
       createdOk = !!(result && result.isOk);
