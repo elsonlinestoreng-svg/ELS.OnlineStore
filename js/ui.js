@@ -10,9 +10,10 @@ let currentConversation = null;
 let allOrders = [];
 let isLogisticsProvider = false;
 let logisticsFees = { 'Standard': 5, 'Express': 12, 'Overnight': 25, 'Pickup': 0 };
+window.activeUploads = [];
 
 const defaultConfig = {
-  site_name: 'ELS.OnlineStoress',
+  site_name: 'ELS.OnlineStores',
   tagline: 'Shop. Sell. Thrive.',
   hero_heading: 'Discover What You Love',
   bg_color: '#f8f6f3',
@@ -31,6 +32,7 @@ try {
   }
 } catch (e) {}
 
+if (window.elementSdk) {
 window.elementSdk.init({
   defaultConfig,
   onConfigChange: async (config) => {
@@ -83,13 +85,13 @@ window.elementSdk.init({
     ['hero_heading', config.hero_heading || defaultConfig.hero_heading]
   ])
 });
-
+}
 const dataHandler = {
   onDataChanged(data) {
     allProducts = data.filter(d => d.name && d.price);
-    renderShop();
-    renderHomeProducts();
-    renderMyProducts();
+    if (typeof renderShop === 'function') renderShop();
+    if (typeof renderHomeProducts === 'function') renderHomeProducts();
+    if (typeof renderMyProducts === 'function') renderMyProducts();
     try { saveProductsToLocal(); } catch (e) { }
   }
 };
@@ -145,6 +147,11 @@ function hideUploadModal() {
 document.addEventListener('click', (e) => {
   if (e.target && e.target.id === 'upload-cancel-btn') {
     window.__uploadProgressHandler = null;
+    window.activeUploads.forEach(x => {
+      try { x.abort(); } catch(e){}
+    });
+
+    window.activeUploads = [];
     hideUploadModal();
     showToast('Upload cancelled');
   }
@@ -182,10 +189,10 @@ function loadProductsFromLocal() {
     if (!raw) return;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length) {
-      if (!allProducts || !allProducts.length) allProducts = parsed;
+      allProducts = parsed;
       renderShop(); renderHomeProducts(); renderMyProducts();
     }
-  } catch (e) { console.error('loadProductsToLocal failed', e); }
+  } catch (e) { console.error('loadProductsFromLocal failed', e); }
 }
 
 function showFieldError(id, msg) {
@@ -260,36 +267,137 @@ function switchAuthTab(tab) {
   }
 }
 
-function handleLogin(e) {
+async function handleLogin(e) {
   e.preventDefault();
-  currentUser.email = document.getElementById('login-email').value;
-  currentUser.name = currentUser.email.split('@')[0];
-  enterApp();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+
+  if (!email || !password) {
+    showToast('Please enter email and password');
+    return;
+  }
+
+  try {
+    showToast('Logging in...', 'loading');
+    const response = await fetch('http://localhost:8001/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      showToast(`Login failed: ${response.status} ${text}`);
+      return;
+    }
+
+    if (!data.success) {
+      showToast(data.message || 'Login failed');
+      return;
+    }
+
+    // Store token and user data
+    localStorage.setItem('els_token', data.token);
+    localStorage.setItem('els_user', JSON.stringify(data.user));
+    
+    currentUser = data.user;
+    enterApp();
+  } catch (err) {
+    console.error('Login error:', err);
+    showToast('Connection error. Make sure server is running on port 8001');
+  }
 }
 
-function handleRegister(e) {
+async function handleRegister(e) {
   e.preventDefault();
-  currentUser.name = document.getElementById('reg-name').value;
-  currentUser.email = document.getElementById('reg-email').value;
-  enterApp();
+  const name = document.getElementById('reg-name').value;
+  const email = document.getElementById('reg-email').value;
+  const password = document.getElementById('reg-password').value;
+  const confirmPassword = document.getElementById('reg-confirm-password').value;
+
+  if (!name || !email || !password || !confirmPassword) {
+    showToast('Please fill all fields');
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    showToast('Passwords do not match');
+    return;
+  }
+
+  if (password.length < 6) {
+    showToast('Password must be at least 6 characters');
+    return;
+  }
+
+  try {
+    showToast('Creating account...', 'loading');
+    const response = await fetch('http://localhost:8001/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, confirmPassword })
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      showToast(`Registration failed: ${response.status} ${text}`);
+      return;
+    }
+
+    if (!data.success) {
+      showToast(data.message || 'Registration failed');
+      return;
+    }
+
+    // Store token and user data
+    localStorage.setItem('els_token', data.token);
+    localStorage.setItem('els_user', JSON.stringify(data.user));
+    
+    currentUser = data.user;
+    showToast('Account created successfully!');
+    enterApp();
+  } catch (err) {
+    console.error('Register error:', err);
+    showToast('Connection error. Make sure server is running on port 8001');
+  }
 }
 
 function enterApp() {
   document.getElementById('auth-screen').classList.add('hidden');
   document.getElementById('main-app').classList.remove('hidden');
-  document.getElementById('user-avatar').textContent = currentUser.name.charAt(0).toUpperCase();
+  document.getElementById('user-avatar').textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
   lucide.createIcons();
-  showToast('Welcome, ' + currentUser.name + '!');
+  loadProductsFromLocal();
+  showToast('Welcome, ' + (currentUser.name || currentUser.email) + '!');
 }
 
 function handleLogout() {
+  // Clear auth data
+  localStorage.removeItem('els_token');
+  localStorage.removeItem('els_user');
+  currentUser = {};
+  
+  // Clear UI
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
   toggleSidebar();
   cart = [];
   conversations = [];
   currentConversation = null;
+  try { saveProductsToLocal(); } catch (e) {}
+  
+  // Reset forms
+  document.getElementById('login-form').reset();
+  document.getElementById('register-form').reset();
+  switchAuthTab('login');
   goTo('home');
+  showToast('Logged out successfully');
 }
 
 function goTo(page) {
@@ -347,13 +455,132 @@ function initHomeCarousel(images = [], speedPerImage = 6) {
   track.style.animationDuration = duration + 's';
 }
 
+// Restore session from localStorage on page load
+function restoreSession() {
+  const token = localStorage.getItem('els_token');
+  const userData = localStorage.getItem('els_user');
+  
+  if (token && userData) {
+    try {
+      currentUser = JSON.parse(userData);
+      // Auto-login if token exists
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('register-form').style.display = 'none';
+      enterApp();
+      return true;
+    } catch (err) {
+      console.error('Session restore failed:', err);
+      localStorage.removeItem('els_token');
+      localStorage.removeItem('els_user');
+    }
+  }
+  return false;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initHomeCarousel();
+  
+  // Try to restore session
+  const sessionRestored = restoreSession();
+
+  // Wait for all functions/files to load first
+  setTimeout(() => {
+    try {
+      if (sessionRestored) {
+        loadProductsFromLocal();
+      }
+    } catch (e) {
+      console.error('Failed loading products:', e);
+    }
+  }, 300);
 });
 
 (async () => {
+  if (!window.dataSdk) {
+    console.warn('dataSdk not found');
+    return;
+  }
+
   const r = await window.dataSdk.init(dataHandler);
-  if (!r.isOk) console.error('Data SDK init failed');
+
+  if (!r.isOk) {
+    console.error('Data SDK init failed');
+  }
 })();
 
-loadProductsFromLocal();
+// Contact Form Handler
+function handleContact(e) {
+  e.preventDefault();
+  const form = document.getElementById('contact-form');
+  const nameInput = form.querySelector('input[name="name"]');
+  const emailInput = form.querySelector('input[name="email"]');
+  const subjectInput = form.querySelector('input[name="subject"]');
+  const messageInput = form.querySelector('textarea[name="message"]');
+
+  if (!nameInput.value || !emailInput.value || !subjectInput.value || !messageInput.value) {
+    showToast('Please fill all fields');
+    return;
+  }
+
+  // Show success page
+  document.getElementById('contact-form').style.display = 'none';
+  document.getElementById('contact-success').classList.remove('hidden');
+  
+  // Log contact attempt (no backend yet)
+  console.log('Contact submitted:', {
+    name: nameInput.value,
+    email: emailInput.value,
+    subject: subjectInput.value,
+    message: messageInput.value
+  });
+}
+
+// Logistics Role Toggle
+function toggleLogisticsRole() {
+  const btn = document.querySelector('[onclick="toggleLogisticsRole()"]');
+  if (!btn) return;
+  
+  const currentRole = btn.textContent.includes('Buyer') ? 'buyer' : 'seller';
+  const newRole = currentRole === 'buyer' ? 'seller' : 'buyer';
+  
+  btn.textContent = newRole === 'buyer' ? 'Switch to Seller' : 'Switch to Buyer';
+  showToast(`Switched to ${newRole} mode`);
+  console.log(`Current logistics role: ${newRole}`);
+}
+
+// Send Message Handler
+function sendMessage() {
+  const input = document.getElementById('msg-input');
+  if (!input || !input.value.trim()) {
+    showToast('Message cannot be empty');
+    return;
+  }
+
+  const msg = input.value.trim();
+  
+  if (!currentConversation) {
+    showToast('Select a conversation first');
+    return;
+  }
+
+  // Add message to current conversation
+  if (!currentConversation.messages) {
+    currentConversation.messages = [];
+  }
+
+  currentConversation.messages.push({
+    sender: currentUser.name,
+    text: msg,
+    timestamp: new Date().toLocaleTimeString()
+  });
+
+  input.value = '';
+  
+  // Re-render messages
+  if (typeof renderMessageContent === 'function') {
+    renderMessageContent();
+  }
+  
+  showToast('Message sent');
+}
+

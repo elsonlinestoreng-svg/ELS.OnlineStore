@@ -6,8 +6,6 @@
   <title>ELS.OnlineStore</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script src="/_sdk/element_sdk.js"></script>
-  <script src="/_sdk/data_sdk.js"></script>
   <!--
     Optional: For Firebase Storage uploads, set `window.FIREBASE_CONFIG` before the app script runs.
     Example (development only - keep secrets out of public repos):
@@ -30,14 +28,14 @@
   <link rel="stylesheet" href="style.css">
  </head>
  <body class="h-full">
-  <div id="app" class="h-full w-full overflow-auto" style="background:s#6497aca1;">
+  <div id="app" class="h-full w-full overflow-auto" style="background:#6497aca1;">
    <!-- AUTH SCREEN -->
    <div id="auth-screen" class="h-full w-full flex items-center justify-center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-   background-image: url('Ecommerceimg.jpg');">
+   background-image: url('images/Ecommerceimg.jpg');">
     <div class="w-full max-w-md mx-4 fade-in">
      <div class="text-center mb-6" id="auth-branding">
       <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3" >
-        <img src="els.logo2.png" alt="ELS Logo" class="w-12 h-12 rounded" style="filter: drop-shadow(0 0 5px rgba(233,69,96,0.7));">
+        <img src="images/els.logo2.png" alt="ELS Logo" class="w-12 h-12 rounded" style="filter: drop-shadow(0 0 5px rgba(233,69,96,0.7));">
       </div>
       <h1 id="auth-site-name" class="text-2xl md:text-3xl font-bold text-white" style="font-family:'Playfair Display',serif;">Welcome to ELS</h1>
       <p id="auth-tagline" class="text-gray-300 mt-1 text-sm">Shop with confidence, sell with ease.</p>
@@ -57,20 +55,20 @@
           style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
        </div>
        <div class="mb-6">
-        <label for="login-pass"
+        <label for="login-password"
          class="block text-gray-300 text-sm mb-1">Password</label> 
-          <input id="login-pass" type="password" required placeholder="password" 
+          <input id="login-password" type="password" required placeholder="password" 
           class="w-full px-4 py-3 rounded-xl text-white"
            style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
        </div>
        <button type="submit"
         class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
          style="background:#170a5f8f; box-shadow: #4571e9;">Sign In</button>
-       <p class="text-center text-gray-500 text-xs mt-4"> Login with email / password works</p>
+       <p class="text-center text-gray-500 text-xs mt-4">Login with secure password authentication</p>
       </form>
       <!-- Register Form -->
       <div id="register-logo" class="hidden text-center mb-4">
-        <img src="els.logo2.png" alt="ELS logo" class="w-24 h-24 mx-auto rounded-lg shadow-md">
+        <img src="images/els.logo2.png" alt="ELS logo" class="w-24 h-24 mx-auto rounded-lg shadow-md">
       </div>
       <form id="register-form" class="hidden" onsubmit="handleRegister(event)" aria-hidden="true">
        <div class="mb-4">
@@ -87,23 +85,21 @@
         style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
        </div>
        <div class="mb-6">
-        <label for="reg-pass" class="block text-gray-300 text-sm mb-1">Password</label>
-         <input id="reg-pass" type="password" required placeholder="password"
+        <label for="reg-password" class="block text-gray-300 text-sm mb-1">Password</label>
+         <input id="reg-password" type="password" required placeholder="password (min 6 chars)"
           class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
            border:1px solid rgba(255,255,255,0.15);">
-      
        </div>
        <div class="mb-6">
-        <label for="reg-dob" class="block text-gray-300 text-sm mb-1">Date Of Birth </label>
-        <input id="reg-dob" type="date" required placeholder="Date of Birth"
+        <label for="reg-confirm-password" class="block text-gray-300 text-sm mb-1">Confirm Password</label>
+         <input id="reg-confirm-password" type="password" required placeholder="confirm password"
           class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
            border:1px solid rgba(255,255,255,0.15);">
-        </button> 
        </div>
        <button type="submit"
         class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
          style="background:#4571e9;">Create Account</button>
-       <p class="text-center text-gray-500 text-xs mt-4">Demo: registration is simulated</p>
+       <p class="text-center text-gray-500 text-xs mt-4">Passwords are securely hashed and stored in MongoDB</p>
 
       </form>
      </div>
@@ -169,25 +165,25 @@
        <h3 class="text-2xl font-bold mb-8 text-center" style="color:#1a1a2e;">Shop by Category</h3>
        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div onclick="filterShopCategory('Electronics')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
-         <span class="text-4xl block mb-3"><img src="gadgets.jpg" alt="Electronics">
+         <span class="text-4xl block mb-3"><img src="images/gadgets.jpg" alt="Electronics" loading="lazy">
 
          </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Electronics</span>
         </div>
         <div onclick="filterShopCategory('Fashion')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
          <span class="text-4xl block mb-3">
-            <img src="fashion.jpg" alt="Fashion" style="border-radius:8px; width:250px; height:250px;">
+            <img src="images/fashion.jpg" alt="Fashion" style="border-radius:8px; width:250px; height:250px;" loading="lazy">
          </span>
           <span class="font-semibold text-sm" style="color:#1a1a2e;">Fashion</span>
         </div>
         <div onclick="filterShopCategory('Home')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
          <span class="text-4xl block mb-3"> 
-          <img src="home.jpg" alt="Home" style="border-radius:8px; width:250px; height:250px;">
-</span>
-         </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Home</span>
+          <img src="images/home.jpg" alt="Home" style="border-radius:8px; width:250px; height:250px;" loading="lazy">
+         </span>
+          <span class="font-semibold text-sm" style="color:#1a1a2e;">Home</span>
         </div>
         <div onclick="filterShopCategory('Sports')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
          <span class="text-4xl block mb-3">
-            <img src="sport.jpg" alt="Sports" style="border-radius:8px; width:250px; height:250px;">
+            <img src="images/sport.jpg" alt="Sports" style="border-radius:8px; width:250px; height:250px;" loading="lazy">
          </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Sports</span>
         </div>
        </div>
@@ -196,9 +192,7 @@
        <h3 class="text-2xl font-bold mb-8 text-center" style="color:#38384b6c;">Dashboard - Recently Listed</h3>
        <div id="home-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="col-span-full text-center py-12">
-         <p class="text-gray-400 text-lg"
-         imag src="produc.jpg">
-          No products yet.</p>
+         <p class="text-gray-400 text-lg">No products yet.</p>
          <p class="text-gray-500 text-sm mt-2">Be the first to <button onclick="goTo('open-store')" class="underline font-semibold" style="color:#e94560;">open a store</button> and list something!</p>
         </div>
        </div>
@@ -237,8 +231,8 @@
      <section id="page-open-store" class="page">
       <div class="max-w-4xl mx-auto px-4 py-8">
        <div class="text-center mb-10">
-        <span class="text-5xl block mb-4"> <center><img src="timesetup.png" width="100" height="100"
-          > </center></span>
+        <span class="text-5xl block mb-4"> <center><img src="images/timesetup.png" width="100" height="100"
+          loading="lazy"> </center></span>
         <h2 class="text-3xl font-bold mb-2" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Open Your Store</h2>
         <p class="text-gray-500">Start selling in minutes. List your products and reach customers worldwide.</p>
        </div>
@@ -246,7 +240,7 @@
        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <div class="rounded-2xl p-6 text-center" style="background:white;">
          <span class="text-3xl block mb-2"><center>
-          <img src="setupimg.png" width="100" height="100"></center>
+          <img src="images/setupimg.png" width="100" height="100" loading="lazy"></center>
          </span>
          <h4 class="font-bold mb-1" style="color:#1a1a2e;">Quick Setup</h4>
          <p class="text-gray-500 text-sm">List a product in under a minute</p>
@@ -254,14 +248,14 @@
         <div class="rounded-2xl p-6 text-center" style="background:white;">
          <span class="text-3xl block mb-2"
          style="image-orientation: 0deg;"><center>
-          <img src="globe.png" width="100"height="100" ></center>
+          <img src="images/globe.png" width="100" height="100" loading="lazy"></center>
          </span>
          <h4 class="font-bold mb-1" style="color:#1a1a2e;">Global Reach</h4>
          <p class="text-gray-500 text-sm">Your products visible to everyone</p>
         </div>
         <div class="rounded-2xl p-6 text-center" style="background:white;">
          <span class="text-3xl block mb-2"> <center>
-          <img src="feeimg.png" width="100" height="100"></center>
+          <img src="images/feeimg.png" width="100" height="100" loading="lazy"></center>
          </span>
          <h4 class="font-bold mb-1" style="color:#1a1a2e;">Zero Fees</h4>
          <p class="text-gray-500 text-sm">No listing or commission fees</p>
@@ -329,10 +323,11 @@
            <textarea id="prod-desc" rows="3" required placeholder="Describe your product..."
             class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"></textarea>
              <p id="err-prod-desc" class="hidden text-sm text-red-500 mt-1"></p>
-         </div><button id="add-product-btn" type="submit" data-publish="true"
+         </div><button id="add-product-btn" type="submit"
+         data-publish="true"
          disabled
          class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90"
-          style="background:#e94560;"> <span id="add-prod-text">List & Publish</span>
+         style="background:#e94560;"> <span id="add-prod-text">List & Publish</span>
            <span id="add-prod-loading" class="hidden">Listing...</span> 
           </button>
          <p id="store-limit-msg" 
@@ -456,14 +451,20 @@
        style="color:#1a1a2e; font-family:'Playfair Display',serif;">Direct Messaging</h2>
        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
         <!-- Conversations List -->
-        <div class="rounded-2xl p-4" 
+        <div class="rounded-2xl p-4"
         style="background:white; border:1px solid #e5e5e5; overflow-y:auto;">
 
-        </div>
-         <h3 class="font-bold mb-4" style="color:#1a1a2e;">Conversations</h3>
-         <div id="conversations-list" class="space-y-2">
-          <p class="text-gray-400 text-sm text-center py-8">No conversations yet. Click a product to message the seller!</p>
-        </div>
+        <h3 class="font-bold mb-4" style="color:#1a1a2e;">
+            Conversations
+        </h3>
+
+        <div id="conversations-list" class="space-y-2">
+        <p class="text-gray-400 text-sm text-center py-8">
+          No conversations yet. Click a product to message the seller!
+        </p>
+      </div>
+
+      </div>
         <!-- Chat Area -->
         <div class="md:col-span-2 rounded-2xl p-6 flex flex-col"
          style="background:white; border:1px solid #e5e5e5;">
@@ -562,10 +563,10 @@
      </section>
      <!-- ABOUT PAGE -->
      <section id="page-about" class="page">
-      <div class="max-w-4xl mx-auto px-4 py-12"ss>
+      <div class="max-w-4xl mx-auto px-4 py-12">
        <div class="text-center mb-12">
         <span class="text-5xl block mb-4">
-           <center><img src="els.logo2.png"width="105" height="105"
+           <center><img src="images/els.logo2.png" width="105" height="105"
             style="border-radius: 10px;"> </center>
         </span>
         <h2 class="text-4xl font-bold mb-4"
@@ -579,7 +580,7 @@
        </div>
        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="rounded-2xl p-6" style="background:white;"><span><center>
-          <img src="trust.jpg" width="90" height="90"
+          <img src="images/trust.jpg" width="90" height="90"
           style="border-radius: 10px;">
           </center>
          <center><h4 class="font-bold text-lg mb-3" style="color:#2a505f60; font-family: 18px;"> Trust &amp; Transparency</h4>
@@ -587,14 +588,14 @@
          <p class="text-gray-600 text-sm leading-relaxed">Every transaction on ELS.OnlineStore is built on transparency. Sellers build reputation through authentic reviews, and our open pricing model means no hidden fees or surprise charges.</p>
         </div>
         <div class="rounded-2xl p-6" style="background:white;"><span>
-         <center> <img src="sustanbilty.jpg" width="90" height="90" style="border-radius:10px;">
+         <center> <img src="images/sustanbilty.jpg" width="90" height="90" style="border-radius:10px;" loading="lazy">
         </center></span><center>
          <h4 class="font-bold text-lg mb-3" style="color:#e94560;
          font-size: large;">Sustainable Commerce</h4></center>
          <p class="text-gray-600 text-sm leading-relaxed">We champion small-batch production and local craftsmanship. By connecting buyers directly with makers, we reduce waste, shorten supply chains, and support sustainable business practices.</p>
         </div>
          <div class="rounded-2xl p-6" style="background:white;"><span><center>
-          <img src="dualimgtwo.jpg" width="90" height="90"
+          <img src="images/dualimgtwo.jpg" width="90" height="90"
           style="border-radius: 10px;">
           </center>
          <center><h4 class="font-bold text-lg mb-3" style="color:#2a505f60; font-family: 18px;">Dual-Mode Platform</h4>
@@ -602,7 +603,7 @@
          <p class="text-gray-600 text-sm leading-relaxed">ELS.OnlineStore uniquely lets users switch between buying and selling modes. Browse the marketplace one moment, then open your own storefront the next all from a single, unified account.</p>
         </div>
         <div class="rounded-2xl p-6" style="background:white;"><span>
-         <center> <img src="fashion.jpg" width="90" height="90" style="border-radius:10px;">
+         <center> <img src="images/fashion.jpg" width="90" height="90" style="border-radius:10px;" loading="lazy">
         </center></span><center>
          <h4 class="font-bold text-lg mb-3" style="color:#292952;
          font-size: large;">Community First</h4></center>
@@ -658,7 +659,7 @@
         </div>
         <div class="rounded-2xl p-5 text-center" style="background:white;">
          <i data-lucide="clock" class="w-5 h-5 mx-auto mb-2" style="color:#335f5b;"></i>
-         <p class="text-sm font-large" style="color:#1a1a2e;">Mon Fri 9am 6pm</p>
+         <p class="text-sm font-large" style="color:#1a1a2e;">Mon - Fri • 9am - 6pm</p>
         </div>
        </div>
       </div>
@@ -675,12 +676,13 @@
       </div>
       <div class="mt-4 flex justify-end gap-2">
         <button id="upload-cancel-btn" class="px-4 py-2 rounded-xl bg-gray-200">Cancel</button>
-        <button id="upload-close-btn" class="px-4 py-2 rounded-xl bg-e94560 text-white hidden">Close</button>
+        <button id="upload-close-btn" class="px-4 py-2 rounded-xl class="bg-red-500" text-white hidden">Close</button>
       </div>
     </div>
   </div>
   </div><!-- end app -->
     <script src="js/ui.js"></script>
+  <script src="js/dataSdk.js"></script>
   <script src="js/products.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/chat.js"></script>

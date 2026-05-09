@@ -1,5 +1,9 @@
 function handleImageUpload(event) {
   const files = Array.from(event?.target?.files || []);
+  if (selectedImages.length + files.length > 6) {
+  showToast('Maximum 6 images allowed');
+  return;
+}
   if (!files.length) return;
   files.forEach(f => processProductImageFile(f));
 }
@@ -183,6 +187,7 @@ async function uploadImageToCloud(dataUrl, uid) {
         const uidLocal = uid || String(Math.random().toString(36).slice(2,9));
         if (window.__uploadProgressHandler) window.__uploadProgressHandler(uidLocal, { status: 'started', loaded: 0, total: blob.size });
         const xhr = new XMLHttpRequest();
+        window.activeUploads.push(xhr);
         xhr.open('POST', uploadUrl, true);
         xhr.withCredentials = false;
         xhr.upload.onprogress = function(evt) {
@@ -320,6 +325,9 @@ function replaceProductImageFromUrl(prodId) {
   const url = prompt('Paste an image URL (http/https):');
   if (!url) return;
   if (!/^https?:\/\//i.test(url)) return showToast('Invalid URL');
+  if (!url.match(/\.(jpg|jpeg|png|webp)$/i)) {
+    return showToast('Only JPG, PNG, WEBP images allowed');
+  }
   const prod = allProducts.find(p => p.__backendId === prodId);
   if (!prod) return showToast('Product not found');
   prod.image_data = url; prod.primary_image = url; prod.images = [url];
@@ -351,12 +359,13 @@ function renderShop() {
         <div class="flex items-center justify-between gap-2 mb-3">
           <span class="text-xl font-bold" style="color:#e94560;">$${Number(p.price).toFixed(2)}</span>
           <button onclick="addToCart('${p.__backendId}')" class="px-3 py-2 rounded-xl text-sm font-semibold text-white transition hover:opacity-90" style="background:#e94560;">Add</button>
+          </div>
+
           ${p.seller === currentUser.name ? `<div class="mt-2 flex gap-2">
             <button onclick="triggerReplaceImage('${p.__backendId}')" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#0f3460;color:white;">Replace Image</button>
             <button onclick="replaceProductImageFromUrl('${p.__backendId}')" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#f0f0f0;">Use Image URL</button>
             ${p.public === false ? `<button onclick="setProductPublic('${p.__backendId}', true)" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#16a34a;color:white;">Publish</button>` : `<button onclick="setProductPublic('${p.__backendId}', false)" class="px-3 py-2 rounded-xl text-sm font-semibold" style="background:#f97316;color:white;">Unpublish</button>`}
           </div>` : ''}
-        </div>
         <button onclick="openChat('${p.__backendId}')" class="w-full px-3 py-2 rounded-xl text-sm font-semibold text-white transition hover:opacity-90" style="background:#0f3460;"><i data-lucide="message-circle" class="w-3 h-3 inline mr-1"></i>Chat Seller</button>
         <p class="text-xs text-gray-400 mt-2">by ${escHtml(p.seller || 'Unknown')}</p>
       </div>
@@ -516,7 +525,14 @@ async function handleAddProduct(e) {
         } catch (err) {
           console.warn('image upload failed for index', i, err);
           window.__uploadProgressHandler && window.__uploadProgressHandler('', {status:'failed'});
-          uploaded.push(selectedImages[i]);
+          showToast('Image upload failed');
+          hideUploadModal();
+          btn.disabled = false;
+
+          document.getElementById('add-prod-text').classList.remove('hidden');
+          document.getElementById('add-prod-loading').classList.add('hidden');
+
+          return;
         }
       }
       hideUploadModal();
@@ -575,6 +591,7 @@ async function handleAddProduct(e) {
   if (createdOk) {
     document.getElementById('add-product-form').reset();
     removeImage();
+    document.getElementById('prod-image').value = '';
     showToast('🎉 Product listed successfully!');
     try { saveProductsToLocal(); } catch (e) {}
   } else {
@@ -614,5 +631,43 @@ async function deleteProduct(id, btnEl) {
     console.error('deleteProduct error', err);
     showToast('Failed to remove product');
     if (btnEl) btnEl.disabled = false;
+  }
+}
+
+async function loadProductsFromBackend() {
+  try {
+    if (!window.dataSdk || typeof window.dataSdk.getAll !== 'function') {
+  console.warn('dataSdk.getAll unavailable');
+  return;
+}
+
+const products = await window.dataSdk.getAll();
+
+    allProducts = products.map(p => ({
+      ...p,
+      __backendId: p._id
+    }));
+
+    renderShop();
+    renderHomeProducts();
+    renderMyProducts();
+
+    console.log('Products loaded:', allProducts.length);
+
+  } catch (err) {
+    console.error('Failed to load products', err);
+  }
+}
+
+if (window.dataSdk && typeof window.dataSdk.getAll === 'function') {
+  loadProductsFromBackend();
+} else {
+  console.warn('dataSdk not available, using local products only');
+
+  // Load from localStorage instead
+  try {
+    loadProductsFromLocal();
+  } catch (e) {
+    console.error('Local product loading failed', e);
   }
 }

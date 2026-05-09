@@ -1,15 +1,24 @@
+require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const productRoutes = require('./routes/products');
+const authRoutes = require('./routes/auth');
+
+const connectDB = require('./config/db');
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const app = express();
 app.use(cors());
+app.use(express.json({ limit: '20mb' }));
 app.use('/uploads', express.static(UPLOAD_DIR));
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -30,4 +39,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
 app.get('/', (req, res) => res.send('ELS upload server is running'));
 
 const port = process.env.PORT || 8001;
-app.listen(port, () => console.log(`Upload server listening on http://localhost:${port}`));
+
+connectDB().then(() => {
+  app.listen(port, () => console.log(`Upload server listening on http://localhost:${port}`));
+});

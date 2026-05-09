@@ -1,5 +1,19 @@
 {
+  "name": "els-upload-server",
+  "version": "1.0.0",
+  "description": "Simple Node/Express upload endpoint for ELS.online store demos",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.3"
+    "@supabase/supabase-js": "^2.105.3",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.6.2",
+    "multer": "^2.1.1"
   }
 }
