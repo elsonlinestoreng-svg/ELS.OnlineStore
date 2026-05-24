@@ -26,16 +26,17 @@
   -->
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+ 
  </head>
  <body class="h-full">
-  <div id="app" class="h-full w-full overflow-auto" style="background:#6497aca1;">
+  <div id="app" class="h-full w-full overflow-auto" style="background:s#6497aca1;">
    <!-- AUTH SCREEN -->
    <div id="auth-screen" class="h-full w-full flex items-center justify-center" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
    background-image: url('images/Ecommerceimg.jpg');">
     <div class="w-full max-w-md mx-4 fade-in">
      <div class="text-center mb-6" id="auth-branding">
       <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3" >
-        <img src="images/els.logo2.png" alt="ELS Logo" class="w-12 h-12 rounded" style="filter: drop-shadow(0 0 5px rgba(233,69,96,0.7));">
+        <img src="images/els.logo2 copy.png" alt="ELS Logo" class="w-12 h-12 rounded" style="filter: drop-shadow(0 0 5px rgba(233, 69, 96, 0.274));">
       </div>
       <h1 id="auth-site-name" class="text-2xl md:text-3xl font-bold text-white" style="font-family:'Playfair Display',serif;">Welcome to ELS</h1>
       <p id="auth-tagline" class="text-gray-300 mt-1 text-sm">Shop with confidence, sell with ease.</p>
@@ -55,20 +56,26 @@
           style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
        </div>
        <div class="mb-6">
-        <label for="login-password"
+        <label for="login-pass"
          class="block text-gray-300 text-sm mb-1">Password</label> 
-          <input id="login-password" type="password" required placeholder="password" 
-          class="w-full px-4 py-3 rounded-xl text-white"
-           style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
+         <div class="relative">
+          <input id="login-pass" type="password" required placeholder="••••••••" 
+           class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding-right:68px;">
+          <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-white/10 text-white" aria-pressed="false" onclick="togglePasswordVisibility('login-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+         </div>
        </div>
        <button type="submit"
         class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
          style="background:#170a5f8f; box-shadow: #4571e9;">Sign In</button>
-       <p class="text-center text-gray-500 text-xs mt-4">Login with secure password authentication</p>
+       <p class="text-center text-gray-500 text-xs mt-4"> Login with email / password works</p>
+      <div class="flex items-center justify-between mt-2">
+        <label class="text-xs text-gray-300"><input id="remember-login" type="checkbox" style="margin-right:6px;" /> Remember me</label>
+        <a href="#" onclick="openResetRequestModal();return false;" class="text-sm text-indigo-200 underline">Forgot password?</a>
+      </div>
       </form>
       <!-- Register Form -->
       <div id="register-logo" class="hidden text-center mb-4">
-        <img src="images/els.logo2.png" alt="ELS logo" class="w-24 h-24 mx-auto rounded-lg shadow-md">
+        <img src="images/els.logo2 copy.png" alt="ELS logo" class="w-24 h-24 mx-auto rounded-lg shadow-md">
       </div>
       <form id="register-form" class="hidden" onsubmit="handleRegister(event)" aria-hidden="true">
        <div class="mb-4">
@@ -85,26 +92,93 @@
         style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
        </div>
        <div class="mb-6">
-        <label for="reg-password" class="block text-gray-300 text-sm mb-1">Password</label>
-         <input id="reg-password" type="password" required placeholder="password (min 6 chars)"
-          class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
-           border:1px solid rgba(255,255,255,0.15);">
+        <label for="reg-pass" class="block text-gray-300 text-sm mb-1">Password</label>
+         <div class="relative">
+          <input id="reg-pass" type="password" required placeholder="••••••••"
+           class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding-right:68px;">
+          <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-white/10 text-white" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+         </div>
+      
        </div>
        <div class="mb-6">
-        <label for="reg-confirm-password" class="block text-gray-300 text-sm mb-1">Confirm Password</label>
-         <input id="reg-confirm-password" type="password" required placeholder="confirm password"
+        <label for="reg-dob" class="block text-gray-300 text-sm mb-1">Date Of Birth </label>
+        <input id="reg-dob" type="date" required placeholder="Date of Birth"
           class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
            border:1px solid rgba(255,255,255,0.15);">
+        </button> 
        </div>
        <button type="submit"
         class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
          style="background:#4571e9;">Create Account</button>
-       <p class="text-center text-gray-500 text-xs mt-4">Passwords are securely hashed and stored in MongoDB</p>
+       <div class="mt-3 text-sm">
+         <label class="text-gray-300"><input id="remember-register" type="checkbox" style="margin-right:6px;" checked /> Remember me</label>
+       </div>
+       <p class="text-center text-gray-500 text-xs mt-4">Demo: registration is simulated</p>
 
       </form>
+
+        <!-- Password Reset Request Modal -->
+        <div id="reset-password-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+          <div class="absolute inset-0 bg-black/50"></div>
+          <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-3">Reset Password</h3>
+            <form id="reset-request-form" onsubmit="sendPasswordResetRequest(event)">
+              <label class="block text-sm text-gray-700 mb-1">Enter your registered email</label>
+              <input id="reset-email" type="email" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="you@email.com" />
+              <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeResetRequestModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+                <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Send Reset</button>
+              </div>
+            </form>
+            <div id="reset-request-result" class="mt-3 text-sm text-gray-700"></div>
+          </div>
+        </div>
+
+        <!-- Password Reset Set Modal -->
+        <div id="reset-set-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+          <div class="absolute inset-0 bg-black/50"></div>
+          <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-3">Choose a new password</h3>
+            <form id="reset-set-form" onsubmit="completePasswordReset(event)">
+              <label class="block text-sm text-gray-700 mb-1">New password</label>
+              <div class="relative">
+                <input id="reset-new-pass" type="password" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="New password" style="padding-right:90px;" />
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-gray-100" aria-pressed="false" onclick="togglePasswordVisibility('reset-new-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
+              <label class="block text-sm text-gray-700 mb-1">Confirm password</label>
+              <div class="relative">
+                <input id="reset-new-pass-confirm" type="password" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="Confirm password" style="padding-right:90px;" />
+                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-gray-100" aria-pressed="false" onclick="togglePasswordVisibility('reset-new-pass-confirm', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              </div>
+              <div class="flex gap-2 justify-end">
+                <button type="button" onclick="closeResetSetModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+                <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Set Password</button>
+              </div>
+            </form>
+            <div id="reset-set-result" class="mt-3 text-sm text-gray-700"></div>
+          </div>
+        </div>
+          <!-- OTP Verify Modal -->
+          <div id="reset-otp-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
+            <div class="absolute inset-0 bg-black/50"></div>
+            <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
+              <h3 class="text-lg font-semibold mb-3">Enter verification code</h3>
+              <form id="reset-otp-form" onsubmit="verifyOtp(event)">
+                <label class="block text-sm text-gray-700 mb-1">One-time code (sent to your email)</label>
+                <input id="reset-otp-code" type="text" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="123456" pattern="[0-9]{6}" />
+                <div class="flex gap-2 justify-end">
+                    <button type="button" onclick="closeResetOtpModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
+                    <button type="button" id="resend-reset-code-btn" onclick="resendResetCode()" class="px-3 py-2 rounded bg-yellow-400 text-black">Resend code</button>
+                    <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Verify</button>
+                </div>
+              </form>
+              <div id="reset-otp-result" class="mt-3 text-sm text-gray-700"></div>
+            </div>
+          </div>
      </div>
     </div>
-   </div><!-- MAIN APP (hidden until login) -->
+   </div>
+   <!-- MAIN APP (hidden until login) -->
    <div id="main-app" class="hidden h-full w-full">
     <!-- TOP NAV -->
     <header id="topnav" class="sticky top-0 z-30 w-full" style="background:#547f97; border-bottom:1px solid rgba(255,255,255,0.08);">
@@ -116,12 +190,19 @@
       <nav class="hidden md:flex items-center gap-1">
        <button onclick="goTo('home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="home">Home</button> <button onclick="goTo('shop')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="shop">Shop</button> <button onclick="goTo('open-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="open-store">Open Store</button> <button onclick="goTo('messages')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="messages">Messages</button> <button onclick="goTo('about')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="about">About</button> <button onclick="goTo('contact')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="contact">Contact</button>
       </nav>
-      <div class="flex items-center gap-2">
-       <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders"> <i data-lucide="package" class="w-5 h-5"></i> </button><button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition"> <i data-lucide="shopping-cart" class="w-5 h-5"></i> 
-        <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" 
-        style="background:#e94560;">0</span> </button> <button onclick="goTo('home')" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm" 
-        style="background:#e94560;" id="user-avatar">J</button>
-      </div>
+       <div class="flex items-center gap-2">
+         <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders">
+           <i data-lucide="package" class="w-5 h-5"></i>
+         </button>
+         <button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition">
+           <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+           <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" style="background:#e94560;">0</span>
+         </button>
+         <button id="user-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden" title="Edit profile" onclick="goTo('profile')" style="background:#e94560;">
+           <img id="user-avatar-img" src="" alt="avatar" class="hidden w-full h-full object-cover" />
+           <span id="user-avatar-initial">J</span>
+         </button>
+       </div>
      </div>
     </header>
     <!-- SIDEBAR OVERLAY -->
@@ -146,15 +227,17 @@
      <!-- HOME PAGE -->
      <section id="page-home" class="page active">
        <div class="relative overflow-hidden py-20 px-6 text-center" style="background: linear-gradient(135deg, rgba(10,10,20,0.6), rgba(8,12,30,0.4));">
-         <div id="home-bg-carousel"></div>
+         <div id="home-bg-carousel">
+          
+         </div>
          <div class="max-w-3xl mx-auto relative z-10">
-        <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold text-white mb-4 slide-up" style="background:rgba(233,69,96,0.3); border:1px solid rgba(233,69,96,0.5);">  Welcome to ELS.OnlineStore</span>
+        <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold text-white mb-4 slide-up" style="background:rgba(233,69,96,0.3); border:1px solid rgba(122, 109, 158, 0.596);">  Welcome to ELS.OnlineStore</span>
         <h2 id="hero-heading" class="text-4xl md:text-6xl font-extrabold text-white mb-6 slide-up-d1" style="font-family:'Playfair Display',serif; line-height:1.1;">Discover What You Love</h2>
         <p class="text-gray-300 text-lg mb-8 max-w-xl mx-auto slide-up-d2">Buy unique products from independent sellers or open your own store and start selling today.</p>
         <div class="flex flex-wrap gap-3 justify-center slide-up-d3">
          <button onclick="goTo('shop')" class="px-8 py-3 rounded-xl font-semibold text-white hero-cta" style="background:#2c4872a4;">Browse Shop</button>
          <button onclick="goTo('open-store')" class="px-8 py-3 rounded-xl font-semibold text-white hero-cta" 
-         style="background:rgba(118, 126, 172, 0.445); border:1px solid rgba(110, 91, 196, 0.596);">Open a Store</button>
+         style="background:rgba(118, 126, 172, 0.445); border:1px solid rgba(110, 91, 196, 0.596);">Open a Store</button>  
         </div>
        </div>
        <div class="absolute inset-0 opacity-10"
@@ -165,34 +248,36 @@
        <h3 class="text-2xl font-bold mb-8 text-center" style="color:#1a1a2e;">Shop by Category</h3>
        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div onclick="filterShopCategory('Electronics')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
-         <span class="text-4xl block mb-3"><img src="images/gadgets.jpg" alt="Electronics" loading="lazy">
+         <span class="text-4xl block mb-3"><img src="images/gadgets.jpg" alt="Electronics">
 
          </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Electronics</span>
         </div>
         <div onclick="filterShopCategory('Fashion')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
          <span class="text-4xl block mb-3">
-            <img src="images/fashion.jpg" alt="Fashion" style="border-radius:8px; width:250px; height:250px;" loading="lazy">
+            <img src="images/fashionimg.jpg" alt="Fashion" style="border-radius:8px; width:250px; height:250px;">
          </span>
           <span class="font-semibold text-sm" style="color:#1a1a2e;">Fashion</span>
         </div>
         <div onclick="filterShopCategory('Home')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
          <span class="text-4xl block mb-3"> 
-          <img src="images/home.jpg" alt="Home" style="border-radius:8px; width:250px; height:250px;" loading="lazy">
-         </span>
-          <span class="font-semibold text-sm" style="color:#1a1a2e;">Home</span>
+          <img src="images/home.jpg" salt="Home" style="border-radius:8px; width:250px; height:250px;">
+</span>
+         </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Home</span>
         </div>
         <div onclick="filterShopCategory('Sports')" class="cursor-pointer rounded-2xl p-6 text-center transition hover:shadow-lg" style="background:white;">
          <span class="text-4xl block mb-3">
-            <img src="images/sport.jpg" alt="Sports" style="border-radius:8px; width:250px; height:250px;" loading="lazy">
+            <img src="images/sport.jpg" alt="Sports" style="border-radius:8px; width:250px; height:250px;">
          </span> <span class="font-semibold text-sm" style="color:#1a1a2e;">Sports</span>
         </div>
        </div>
       </div><!-- Dashboard - Recently Added Products -->
       <div class="max-w-6xl mx-auto px-4 pb-16">
-       <h3 class="text-2xl font-bold mb-8 text-center" style="color:#38384b6c;">Dashboard - Recently Listed</h3>
+       <h3 class="text-2xl font-bold mb-8 text-center" 
+       style="color:#80c4c48e;"> Dashboard - Recently Listed</h3>
        <div id="home-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div class="col-span-full text-center py-12">
-         <p class="text-gray-400 text-lg">No products yet.</p>
+         <p class="text-gray-400 text-lg"
+          No products yet.</p>
          <p class="text-gray-500 text-sm mt-2">Be the first to <button onclick="goTo('open-store')" class="underline font-semibold" style="color:#e94560;">open a store</button> and list something!</p>
         </div>
        </div>
@@ -203,7 +288,20 @@
        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <h2 class="text-3xl font-bold" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Shop</h2>
         <div class="flex gap-2 flex-wrap">
-         <button onclick="filterShopCategory('All')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:#e94560; color:white;">All</button> <button onclick="filterShopCategory('Electronics')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Electronics</button> <button onclick="filterShopCategory('Fashion')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Fashion</button> <button onclick="filterShopCategory('Home')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Home</button> <button onclick="filterShopCategory('Sports')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Sports</button> <button onclick="filterShopCategory('Other')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Other</button>
+         <button onclick="filterShopCategory('All')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+          style="background:#e94560; color:white;">All</button> 
+          <button onclick="filterShopCategory('Electronics')"
+           class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" style="background:white; color:#1a1a2e;">Electronics</button> 
+           <button onclick="filterShopCategory('Fashion')"
+            class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition" 
+            style="background:white; color:#1a1a2e;">Fashion</button>
+             <button onclick="filterShopCategory('Home')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+              style="background:white; color:#1a1a2e;">Home</button> 
+              <button onclick="filterShopCategory('Sports')"
+               class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+                style="background:white; color:#1a1a2e;">Sports</button>
+                 <button onclick="filterShopCategory('Other')" class="cat-btn px-4 py-2 rounded-xl text-sm font-medium transition"
+                  style="background:white; color:#1a1a2e;">Other</button>
         </div>
        </div>
        <div class="mb-6">
@@ -219,8 +317,7 @@
       <div class="max-w-2xl mx-auto px-4 py-20 text-center">
         <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
           <h2 class="text-3xl font-bold mb-4" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Thank you!</h2>
-          <p class="text-gray-600 mb-6">We've received your message and will get back to you shortly.</p>
-          <div class="flex gap-3 justify-center">
+           <div class="flex gap-3 justify-center">
             <button onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Return Home</button>
             <button onclick="goTo('contact')" class="px-6 py-3 rounded-xl font-semibold text-gray-700" style="background:#f3f4f6;">Send Another</button>
           </div>
@@ -232,7 +329,7 @@
       <div class="max-w-4xl mx-auto px-4 py-8">
        <div class="text-center mb-10">
         <span class="text-5xl block mb-4"> <center><img src="images/timesetup.png" width="100" height="100"
-          loading="lazy"> </center></span>
+          > </center></span>
         <h2 class="text-3xl font-bold mb-2" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Open Your Store</h2>
         <p class="text-gray-500">Start selling in minutes. List your products and reach customers worldwide.</p>
        </div>
@@ -240,7 +337,7 @@
        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
         <div class="rounded-2xl p-6 text-center" style="background:white;">
          <span class="text-3xl block mb-2"><center>
-          <img src="images/setupimg.png" width="100" height="100" loading="lazy"></center>
+          <img src="images/setupimg.png" width="100" height="100"></center>
          </span>
          <h4 class="font-bold mb-1" style="color:#1a1a2e;">Quick Setup</h4>
          <p class="text-gray-500 text-sm">List a product in under a minute</p>
@@ -248,14 +345,14 @@
         <div class="rounded-2xl p-6 text-center" style="background:white;">
          <span class="text-3xl block mb-2"
          style="image-orientation: 0deg;"><center>
-          <img src="images/globe.png" width="100" height="100" loading="lazy"></center>
+          <img src="images/globe.png" width="100"height="100" ></center>
          </span>
          <h4 class="font-bold mb-1" style="color:#1a1a2e;">Global Reach</h4>
          <p class="text-gray-500 text-sm">Your products visible to everyone</p>
         </div>
         <div class="rounded-2xl p-6 text-center" style="background:white;">
          <span class="text-3xl block mb-2"> <center>
-          <img src="images/feeimg.png" width="100" height="100" loading="lazy"></center>
+          <img src="images/feeimg.png" width="100" height="100"></center>
          </span>
          <h4 class="font-bold mb-1" style="color:#1a1a2e;">Zero Fees</h4>
          <p class="text-gray-500 text-sm">No listing or commission fees</p>
@@ -280,40 +377,48 @@
          </div>
          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
-           <label for="prod-category" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Category</label> <select id="prod-category" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"> <option value="">Select category</option> <option value="Electronics">Electronics</option> <option value="Fashion">Fashion</option> <option value="Home">Home</option> <option value="Sports">Sports</option> <option value="Other">Other</option> </select>
+           <label for="prod-category" class="block text-sm font-medium mb-1" style="color:#1a1a2e;">Category</label> <select id="prod-category" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"> <option value="">Select category</option>
+             <option value="Electronics">Electronics</option> <option value="Fashion">Fashion</option> <option value="Home">Home</option> <option value="Sports">Sports</option> <option value="Other">Other</option> </select>
            <p id="err-prod-category" class="hidden text-sm text-red-500 mt-1"></p>
           </div>
          </div>
          <div class="mb-4">
           <label for="prod-image" class="block text-sm font-medium mb-2" 
           style="color:#1a1a2e;">Product Image</label>
-          <div id="image-upload-area" class="image-upload-area p-6 text-center cursor-pointer"
-           style="border:2px dashed #e5e5e5;">
+          <div id="image-upload-area" class="image-upload-area text-center cursor-pointer"
+           aria-label="Product image upload area">
              <input id="prod-image" type="file" accept="image/*" class="hidden" multiple onchange="handleImageUpload(event)">
-            <p class="text-sm text-gray-500">Click or drop images here.</p>
+            <div class="upload-instructions">
+              <div style="font-weight:600;color:#111827;margin-bottom:6px">Add product images</div>
+              <div class="text-xs text-gray-500">Click or drag & drop images here • JPG / PNG / WebP • Max 5MB</div>
+            </div>
             <input id="product-image-replace-input" type="file" accept="image/*" class="hidden" onchange="handleProductImageReplace(event)">
             <div class="flex flex-col items-center gap-2">
-            <i data-lucide="upload-cloud" class="w-6 h-6" style="color:#999;"></i>
-            <button type="button" onclick="document.getElementById('prod-image').click()" class="text-sm font-medium" style="color:#1a1a2e; background:transparent; border:none; cursor:pointer;">
-              Click or drag image here
+            <i data-lucide="upload-cloud" class="w-8 h-8" style="color:#9ca3af;"></i>
+            <button type="button" onclick="document.getElementById('prod-image').click()" 
+            class="text-sm font-medium" 
+            style="color:#0f3460; background:transparent; border:none; cursor:pointer;">
+              Select images
             </button>
-            <p class="text-xs text-gray-500">JPG, PNG, WebP Max 5MB Recommended: 500—500px</p>
+            <p class="text-xs text-gray-500">Recommended: 500×500px • Keep important content centered</p>
            </div>
            <!-- image previews appear inside the upload box -->
            <div id="image-preview-section" class="hidden mt-4 w-full">
-             <div id="image-gallery" class="grid grid-cols-3 gap-3"></div>
-             <div class="flex items-center justify-between mt-2">
-               <div id="image-info" class="text-xs text-gray-500"></div>
-               <div class="flex items-center gap-2">
-                  <label class="text-xs text-gray-600">Optimize</label>
+             <div id="image-gallery"></div>
+             <div class="flex items-center justify-between mt-3">
+               <div id="image-info" class="text-sm text-gray-600"></div>
+               <div class="flex items-center gap-3">
+                  <label class="text-sm text-gray-600">Optimize</label>
                   <input id="optimize-image" type="checkbox" checked />
-                  <label class="text-xs text-gray-600 ml-4">Public</label>
+                  <label class="text-sm text-gray-600 ml-3">Public</label>
                   <input id="prod-public" type="checkbox" checked />
                </div>
              </div>
-             <button type="button" onclick="clearAllImages()"
-              class="mt-2 text-sm text-red-500 hover:text-red-700 font-medium">Clear Images</button>
-          </div>
+             <div id="upload-list" class="mt-3"></div>
+             <div class="flex justify-end mt-2">
+               <button type="button" onclick="clearAllImages()" class="text-sm text-red-500 hover:text-red-700 font-medium">Clear Images</button>
+             </div>
+         </div>
           </div>
          </div>
          <div class="mb-6">
@@ -323,15 +428,18 @@
            <textarea id="prod-desc" rows="3" required placeholder="Describe your product..."
             class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"></textarea>
              <p id="err-prod-desc" class="hidden text-sm text-red-500 mt-1"></p>
-         </div><button id="add-product-btn" type="submit"
-         data-publish="true"
-         disabled
-         class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90"
-         style="background:#e94560;"> <span id="add-prod-text">List & Publish</span>
-           <span id="add-prod-loading" class="hidden">Listing...</span> 
-          </button>
+         </div>
+         <div class="flex gap-3 w-full mt-3">
+           <button id="save-draft-btn" type="submit" data-publish="false" disabled class="flex-1 py-3 rounded-xl font-semibold text-gray-700" 
+           style="background:#f3f4f6;">Save Draft</button>
+           <button id="add-product-btn" type="submit" data-publish="true" disabled class="flex-1 py-3 rounded-xl font-semibold text-white" 
+           style="background:#e94560;">
+             <span id="add-prod-text">Publish</span>
+             <span id="add-prod-loading" class="hidden">Listing...</span>
+           </button>
+         </div>
          <p id="store-limit-msg" 
-         class="hidden text-center text-red-500 text-sm mt-3 font-medium">Maximum product limit reached (999). Please remove some products first.</p>
+         class="hidden text-center text-red-500 text-sm mt-3 font-medium">Minimum product list (7). Please remove some products first.</p>
         </form>
 
         <!-- My Products -->
@@ -385,7 +493,7 @@
       <div class="max-w-6xl mx-auto px-4 py-8">
        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
         <h2 class="text-3xl font-bold" 
-        style="color:#1a1a2e; font-family:'Playfair Display',serif;">Logistics Dashboard</h2>
+        style="color:#1a1a2e; font-family:'Playfair Display',serif;">🚚 Logistics Dashboard</h2>
         <button onclick="toggleLogisticsRole()" 
         class="px-6 py-3 rounded-xl font-semibold text-white transition hover:opacity-90"
          style="background:#0f3460;" id="logistics-role-btn">Switch to Seller View</button>
@@ -408,7 +516,7 @@
          </div>
         </div>
         <div class="rounded-2xl p-6" style="background:white;">
-         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">Orders Awaiting Logistics Booking</h3>
+         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">📤 Orders Awaiting Logistics Booking</h3>
          <div id="seller-pending-orders" class="space-y-3">
           <p class="text-gray-400 text-center py-8">No pending orders to ship.</p>
          </div>
@@ -431,13 +539,13 @@
          </div>
         </div>
         <div class="rounded-2xl p-6" style="background:white;">
-         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">Shipping Available Shipments to Accept</h3>
+         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">shpping Available Shipments to Accept</h3>
          <div id="available-shipments" class="space-y-3">
           <p class="text-gray-400 text-center py-8">No pending shipments available.</p>
          </div>
         </div>
         <div class="rounded-2xl p-6" style="background:white;">
-         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;">Your Active Deliveries</h3>
+         <h3 class="text-xl font-bold mb-4" style="color:#1a1a2e;"> Your Active Deliveries</h3>
          <div id="active-deliveries" class="space-y-3">
           <p class="text-gray-400 text-center py-8">No active deliveries.</p>
          </div>
@@ -448,23 +556,17 @@
      <section id="page-messages" class="page">
       <div class="max-w-4xl mx-auto px-4 py-8 h-full flex flex-col">
        <h2 class="text-3xl font-bold mb-6" 
-       style="color:#1a1a2e; font-family:'Playfair Display',serif;">Direct Messaging</h2>
+       style="color:#1a1a2e; font-family:'Playfair Display',serif;">💬 Direct Messaging</h2>
        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 min-h-0">
         <!-- Conversations List -->
-        <div class="rounded-2xl p-4"
+        <div class="rounded-2xl p-4" 
         style="background:white; border:1px solid #e5e5e5; overflow-y:auto;">
 
-        <h3 class="font-bold mb-4" style="color:#1a1a2e;">
-            Conversations
-        </h3>
-
-        <div id="conversations-list" class="space-y-2">
-        <p class="text-gray-400 text-sm text-center py-8">
-          No conversations yet. Click a product to message the seller!
-        </p>
-      </div>
-
-      </div>
+        </div>
+         <h3 class="font-bold mb-4" style="color:#1a1a2e;">Conversations</h3>
+         <div id="conversations-list" class="space-y-2">
+          <p class="text-gray-400 text-sm text-center py-8">No conversations yet. Click a product to message the seller!</p>
+        </div>
         <!-- Chat Area -->
         <div class="md:col-span-2 rounded-2xl p-6 flex flex-col"
          style="background:white; border:1px solid #e5e5e5;">
@@ -509,13 +611,13 @@
         style="color:#41416e; font-family:'Playfair Display',serif;">Payment</h2>
        <p class="text-gray-500 mb-8">Complete your order securely.</p>
        <div class="rounded-2xl p-1 mb-6" 
-       style="background:linear-gradient(135deg, #e94560, #0f3460); 
+       style="background:linear-gradient(135deg, #0e69b44f, #0f3460); 
        border-radius:16px;">
         <div class="rounded-2xl p-4 text-center"
-         style="background:#1a1a2e;">
+         style="background:#4f4f7238;">
          <p class="text-xs text-gray-400 mb-1">SAMPLE PAYMENT</p>
          <p class="text-white font-bold text-sm">
-          This is a demo checkout no real payment is processed</p>
+          This is a demo checkout — no real payment is processed</p>
         </div>
        </div>
        <div class="rounded-2xl p-6 mb-4" style="background:white;">
@@ -563,10 +665,10 @@
      </section>
      <!-- ABOUT PAGE -->
      <section id="page-about" class="page">
-      <div class="max-w-4xl mx-auto px-4 py-12">
+      <div class="max-w-4xl mx-auto px-4 py-12"ss>
        <div class="text-center mb-12">
         <span class="text-5xl block mb-4">
-           <center><img src="images/els.logo2.png" width="105" height="105"
+           <center><img src="images/els.logo2.png"width="105" height="105"
             style="border-radius: 10px;"> </center>
         </span>
         <h2 class="text-4xl font-bold mb-4"
@@ -575,8 +677,8 @@
        </div>
        <div class="rounded-2xl p-8 mb-8" style="background:rgba(85, 110, 146, 0.63);">
         <h3 class="text-2xl font-bold mb-4" style="color:#1a1a2e;">Our Vision</h3>
-        <p class="text-gray-600 leading-relaxed mb-4">ELS.OnlineStore was born from a simple belief: commerce should be human. In an era dominated by faceless mega-retailers, we envisioned a digital marketplace that puts people first where independent sellers can build thriving businesses and buyers can discover truly unique products with stories behind them.</p>
-        <p class="text-gray-600 leading-relaxed">Our platform bridges the gap between creators and consumers, offering a frictionless experience where anyone can transition from buyer to seller with a single click. No warehouses, no middlemen just real people sharing remarkable products with the world.</p>
+        <p class="text-gray-600 leading-relaxed mb-4">ELS.OnlineStore was born from a simple belief: commerce should be human. In an era dominated by faceless mega-retailers, we envisioned a digital marketplace that puts people first — where independent sellers can build thriving businesses and buyers can discover truly unique products with stories behind them.</p>
+        <p class="text-gray-600 leading-relaxed">Our platform bridges the gap between creators and consumers, offering a frictionless experience where anyone can transition from buyer to seller with a single click. No warehouses, no middlemen — just real people sharing remarkable products with the world.</p>
        </div>
        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="rounded-2xl p-6" style="background:white;"><span><center>
@@ -588,7 +690,7 @@
          <p class="text-gray-600 text-sm leading-relaxed">Every transaction on ELS.OnlineStore is built on transparency. Sellers build reputation through authentic reviews, and our open pricing model means no hidden fees or surprise charges.</p>
         </div>
         <div class="rounded-2xl p-6" style="background:white;"><span>
-         <center> <img src="images/sustanbilty.jpg" width="90" height="90" style="border-radius:10px;" loading="lazy">
+         <center> <img src="images/sustanbilty.jpg" width="90" height="90" style="border-radius:10px;">
         </center></span><center>
          <h4 class="font-bold text-lg mb-3" style="color:#e94560;
          font-size: large;">Sustainable Commerce</h4></center>
@@ -600,32 +702,73 @@
           </center>
          <center><h4 class="font-bold text-lg mb-3" style="color:#2a505f60; font-family: 18px;">Dual-Mode Platform</h4>
         </center></span>
-         <p class="text-gray-600 text-sm leading-relaxed">ELS.OnlineStore uniquely lets users switch between buying and selling modes. Browse the marketplace one moment, then open your own storefront the next all from a single, unified account.</p>
+         <p class="text-gray-600 text-sm leading-relaxed">ELS.OnlineStore uniquely lets users switch between buying and selling modes. Browse the marketplace one moment, then open your own storefront the next — all from a single, unified account.</p>
         </div>
         <div class="rounded-2xl p-6" style="background:white;"><span>
-         <center> <img src="images/fashion.jpg" width="90" height="90" style="border-radius:10px;" loading="lazy">
+         <center> <img src="images/fashion.jpg" width="90" height="90" style="border-radius:10px;">
         </center></span><center>
          <h4 class="font-bold text-lg mb-3" style="color:#292952;
-         font-size: large;">Community First</h4></center>
+         font-size: large;">🤝 Community First</h4></center>
          <p class="text-gray-600 text-sm leading-relaxed">More than a marketplace, ELS.OnlineStore is a community.
            We foster connections between sellers and buyers through direct messaging, reviews, and shared interests.</p>
         </div>
        </div>
        <div class="rounded-2xl p-8 text-center"
         style="background:linear-gradient(135deg, #1a1a2e, #0f3460);">
+        
         <h3 class="text-2xl font-bold text-white mb-3" style="font-family:'Playfair Display',serif;">Join the Movement</h3>
         <p class="text-gray-300 mb-6">Whether you're here to discover or to create, ELS.OnlineStore is your launchpad.</p>
         <div class="flex gap-3 justify-center flex-wrap">
-         <button onclick="goTo('shop')" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Start Shopping</button> <button onclick="goTo('open-store')" class="px-6 py-3 rounded-xl font-semibold text-white" style="border:1px solid rgba(255,255,255,0.3);">Open a Store</button>
+         <button onclick="goTo('shop')" 
+         class="joint-btn px-6 py-3 rounded-xl font-semibold text-white" 
+         style="background:#24558d;">Start Shopping</button> 
+         <button onclick="goTo('open-store')"
+          class="joint-btn px-6 py-3 rounded-xl font-semibold text-white"
+          style="border:1px solid rgba(255,255,255,0.3);">Open a Store</button>
         </div>
        </div>
       </div>
      </section>
      <!-- CONTACT PAGE -->
+    <!-- PROFILE PAGE -->
+    <section id="page-profile" class="page">
+      <div class="max-w-2xl mx-auto px-4 py-12">
+        <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
+          <h2 class="text-2xl font-bold mb-4" style="color:#1a1a2e;">Edit Profile</h2>
+          <form id="profile-form" onsubmit="saveProfile(event)">
+            <div class="text-center mb-4">
+              <img id="profile-avatar-preview-page" src="" alt="avatar preview" class="mx-auto rounded-full w-24 h-24 object-cover hidden" />
+              <div id="profile-avatar-placeholder-page" class="mx-auto w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-600"></div>
+              <input id="profile-avatar-input-page" type="file" accept="image/*" class="hidden" onchange="handleProfileAvatarInput(event)" />
+              <div class="flex gap-2 justify-center mt-3">
+                <button type="button" onclick="document.getElementById('profile-avatar-input-page').click()" class="px-4 py-2 rounded-xl bg-gray-100">Choose Avatar</button>
+                <button type="button" onclick="clearProfileAvatarPreviewPage()" class="px-4 py-2 rounded-xl bg-gray-100">Clear</button>
+              </div>
+            </div>
+            <div class="mb-4">
+              <label for="profile-name" class="block text-sm font-medium mb-1">Display Name</label>
+              <input id="profile-name" type="text" class="w-full px-4 py-3 rounded-xl" />
+            </div>
+            <div class="mb-4">
+              <label for="profile-email" class="block text-sm font-medium mb-1">Email</label>
+              <input id="profile-email" type="email" class="w-full px-4 py-3 rounded-xl" />
+            </div>
+            <div class="mb-4">
+              <label for="profile-bio" class="block text-sm font-medium mb-1">Bio</label>
+              <textarea id="profile-bio" rows="3" class="w-full px-4 py-3 rounded-xl"></textarea>
+            </div>
+            <div class="flex gap-3">
+              <button type="submit" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Save Profile</button>
+              <button type="button" onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold" style="background:#f3f4f6;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
      <section id="page-contact" class="page">
       <div class="max-w-2xl mx-auto px-4 py-12">
        <div class="text-center mb-10">
-        <span class="text-5xl block mb-4"></span>
+        <span class="text-5xl block mb-4">💬</span>
         <h2 class="text-3xl font-bold mb-2" style="color:#1a1a2e; font-family:'Playfair Display',serif;">Get in Touch</h2>
         <p class="text-gray-500">Have questions? We'd love to hear from you.</p>
        </div>
@@ -640,13 +783,15 @@
         <div class="mb-6">
          <label
           for="contact-msg" class="block text-sm font-medium mb-1" 
-          style="color:#1a1a2e;">Message</label> <textarea id="contact-msg" rows="5" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"></textarea>
+          style="color:#1a1a2e;">Message</label> 
+          <textarea id="contact-msg" rows="5" required class="w-full px-4 py-3 rounded-xl" style="border:1px solid #e5e5e5;"></textarea>
         </div>
         <button id="contact-submit" type="submit" class="w-full py-3 rounded-xl font-semibold text-white transition hover:opacity-90 flex items-center justify-center" style="background:#204069ad;">
           <span id="contact-submit-text">Send Message</span>
-          <span id="contact-submit-loading" class="hidden ml-3"><span class="spinner" aria-hidden="true"></span><span class="sr-only">Sending</span></span>
+          <span id="contact-submit-loading" class="hidden ml-3"><span class="spinner" aria-hidden="true">   
+          </span><span class="sr-only">Sending</span></span>
         </button>
-        <p id="contact-success" class="hidden text-center text-green-600 font-medium mt-4">Message sent! We'll get back to you soon.</p>
+        <p id="contact-success" class="hidden text-center text-green-600 font-medium mt-4">✓ Message sent! We'll get back to you soon.</p>
        </form>
        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
         <div class="rounded-2xl p-5 text-center" style="background:white;">
@@ -659,7 +804,7 @@
         </div>
         <div class="rounded-2xl p-5 text-center" style="background:white;">
          <i data-lucide="clock" class="w-5 h-5 mx-auto mb-2" style="color:#335f5b;"></i>
-         <p class="text-sm font-large" style="color:#1a1a2e;">Mon - Fri • 9am - 6pm</p>
+         <p class="text-sm font-large" style="color:#1a1a2e;">Mon–Fri 9am–6pm</p>
         </div>
        </div>
       </div>
@@ -676,16 +821,21 @@
       </div>
       <div class="mt-4 flex justify-end gap-2">
         <button id="upload-cancel-btn" class="px-4 py-2 rounded-xl bg-gray-200">Cancel</button>
-        <button id="upload-close-btn" class="px-4 py-2 rounded-xl class="bg-red-500" text-white hidden">Close</button>
+        <button id="upload-close-btn" class="px-4 py-2 rounded-xl bg-e94560 text-white hidden">Close</button>
       </div>
     </div>
   </div>
+ 
   </div><!-- end app -->
-    <script src="js/ui.js"></script>
-  <script src="js/dataSdk.js"></script>
-  <script src="js/products.js"></script>
-  <script src="js/cart.js"></script>
-  <script src="js/chat.js"></script>
-  <script src="js/logistics.js"></script>
+  <script src="./js/cloudupload.js"></script>
+ <script src="./js/ui.js"></script>
+ <script src="./js/products.js"></script>
+ <script src="./js/logistics.js"></script>
+ <script src="./js/message.js"></script>
+ <script src="./js/cart.js"></script> 
+ <script src="./js/chat.js"></script>
+ <script src="./js/profile.js"></script>
+ <script src="./js/dataSdk.js"></script>
+<script src="./js/register.js"></script>
 </body>
-  </html>
+</html>

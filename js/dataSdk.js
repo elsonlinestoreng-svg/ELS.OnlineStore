@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8001/api';
+window.API_BASE = 'http://localhost:8001/api';
 
 function getToken() {
   return localStorage.getItem('els_token') || '';
@@ -9,7 +9,7 @@ window.dataSdk = {
   async create(product) {
     try {
       const token = getToken();
-      const res = await fetch(`${API_BASE}/products`, {
+      const res = await fetch(`${window.API_BASE}/products`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -30,7 +30,6 @@ window.dataSdk = {
         item: data,
         id: data._id
       };
-
     } catch (err) {
       console.error('create failed', err);
       return { isOk: false };
@@ -39,7 +38,7 @@ window.dataSdk = {
 
   async getAll() {
     try {
-      const res = await fetch(`${API_BASE}/products`);
+      const res = await fetch(`${window.API_BASE}/products`);
       return await res.json();
     } catch (err) {
       console.error('getAll failed', err);
@@ -50,7 +49,7 @@ window.dataSdk = {
   async update(id, updates) {
     try {
       const token = getToken();
-      const res = await fetch(`${API_BASE}/products/${id}`, {
+      const res = await fetch(`${window.API_BASE}/products/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +77,7 @@ window.dataSdk = {
       const token = getToken();
       const id = product._id || product.__backendId;
 
-      const res = await fetch(`${API_BASE}/products/${id}`, {
+      const res = await fetch(`${window.API_BASE}/products/${id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': token ? `Bearer ${token}` : ''
@@ -90,11 +89,6 @@ window.dataSdk = {
         console.error('Delete failed:', data);
         return { isOk: false, error: data.error || data.message };
       }
-
-      allProducts = allProducts.filter(p => (p._id || p.__backendId) !== id);
-      renderShop();
-      renderHomeProducts();
-      renderMyProducts();
 
       return { isOk: true };
     } catch (err) {

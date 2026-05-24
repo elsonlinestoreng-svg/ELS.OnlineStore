@@ -1,4 +1,7 @@
-node_modules
+node_modules/
 .env
-uploads.env
-.env.local
+server/uploads/
+*.log
+.DS_Store
+serve.ps1
+server/routes/*.backup

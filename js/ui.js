@@ -373,7 +373,7 @@ function enterApp() {
   document.getElementById('main-app').classList.remove('hidden');
   document.getElementById('user-avatar').textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
   lucide.createIcons();
-  loadProductsFromLocal();
+  loadProductsFromBackend();
   showToast('Welcome, ' + (currentUser.name || currentUser.email) + '!');
 }
 
@@ -390,7 +390,6 @@ function handleLogout() {
   cart = [];
   conversations = [];
   currentConversation = null;
-  try { saveProductsToLocal(); } catch (e) {}
   
   // Reset forms
   document.getElementById('login-form').reset();
@@ -456,43 +455,68 @@ function initHomeCarousel(images = [], speedPerImage = 6) {
 }
 
 // Restore session from localStorage on page load
-function restoreSession() {
+async function restoreSession() {
+
   const token = localStorage.getItem('els_token');
   const userData = localStorage.getItem('els_user');
-  
-  if (token && userData) {
-    try {
-      currentUser = JSON.parse(userData);
-      // Auto-login if token exists
-      document.getElementById('login-form').style.display = 'none';
-      document.getElementById('register-form').style.display = 'none';
-      enterApp();
-      return true;
-    } catch (err) {
-      console.error('Session restore failed:', err);
+
+  if (!token || !userData) return false;
+
+  try {
+
+    const response = await fetch(`${window.API_BASE}/auth/verify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ token })
+    });
+
+    const data = await response.json();
+
+    if (!data.success) {
       localStorage.removeItem('els_token');
       localStorage.removeItem('els_user');
+      return false;
     }
+
+    currentUser = JSON.parse(userData);
+
+    enterApp();
+
+    return true;
+
+  } catch (err) {
+
+    console.error('Session restore failed:', err);
+
+    localStorage.removeItem('els_token');
+    localStorage.removeItem('els_user');
+
+    return false;
+
   }
-  return false;
+
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initHomeCarousel();
-  
-  // Try to restore session
-  const sessionRestored = restoreSession();
+document.addEventListener('DOMContentLoaded', async () => {
 
-  // Wait for all functions/files to load first
-  setTimeout(() => {
-    try {
-      if (sessionRestored) {
-        loadProductsFromLocal();
-      }
-    } catch (e) {
-      console.error('Failed loading products:', e);
+  initHomeCarousel();
+
+  try {
+
+    const sessionRestored = await restoreSession();
+
+    if (sessionRestored) {
+      loadProductsFromLocal();
     }
-  }, 300);
+
+  } catch (e) {
+
+    console.error('Failed loading products:', e);
+
+  }
+
 });
 
 (async () => {
