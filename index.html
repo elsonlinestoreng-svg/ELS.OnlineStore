@@ -228,7 +228,7 @@
     <!-- PROFILE PAGE -->
     <section id="page-profile" class="page">
       <div class="max-w-2xl mx-auto px-4 py-12">
-        <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
+        <div class="rounded-2xl p-8" style="background:rgba(255, 255, 255, 0.363); border:1px solid #7c7b74;">
           <h2 class="text-2xl font-bold mb-4" style="color:#1a1a2e;">Edit Profile</h2>
           <form id="profile-form" onsubmit="saveProfile(event)">
             <div class="text-center mb-4">
@@ -253,7 +253,7 @@
               <textarea id="profile-bio" rows="3" class="w-full px-4 py-3 rounded-xl"></textarea>
             </div>
             <div class="flex gap-3">
-              <button type="submit" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Save Profile</button>
+              <button type="submit" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#2605bbb0;">Save Profile</button>
               <button type="button" onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold" style="background:#f3f4f6;">Cancel</button>
             </div>
           </form>
@@ -279,98 +279,89 @@
     </nav>
     <!-- PAGES -->
     <main class="w-full">
-     <!-- HOME PAGE -->
-     <section id="page-home" class="page active bg-slate-50 min-h-screen">
-  <div class="relative overflow-hidden bg-slate-950 py-24 px-6 text-center">
+     <!-- HOME PAGE --><section id="page-home" class="page active" style="background-color: #faf9f6; font-family: 'Inter', system-ui, sans-serif;">
+  <div class="relative overflow-hidden py-28 px-6 text-center" style="background: linear-gradient(180deg, #f3f4f6 0%, #fff 100%);">
+    <div id="home-bg-carousel"></div>
     
-    <div id="home-bg-carousel" class="absolute inset-0 pointer-events-none overflow-hidden">
-        <div class="carousel-track absolute inset-0 flex w-[400%] h-full opacity-20 transform-gpu">
-            <div class="carousel-panel w-full h-full bg-cover bg-center transition-all duration-1000 scale-105" style="background-image: url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80')"></div>
-            <div class="carousel-panel w-full h-full bg-cover bg-center transition-all duration-1000 scale-105" style="background-image: url('https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=1600&q=80')"></div>
-            <div class="carousel-panel w-full h-full bg-cover bg-center transition-all duration-1000 scale-105" style="background-image: url('https://images.unsplash.com/photo-1472851294608-062f824d29cc?w=1600&q=80')"></div>
-            <div class="carousel-panel w-full h-full bg-cover bg-center transition-all duration-1000 scale-105" style="background-image: url('https://images.unsplash.com/photo-1511556532299-8f662fc26c06?w=1600&q=80')"></div>
-        </div>
-        <div class="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/85 to-slate-950 z-[1]"></div>
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_20%,#020617_90%)] z-[2]"></div>
-    </div>
-
     <div class="max-w-3xl mx-auto relative z-10">
-      <span class="inline-flex items-center px-4 py-1.5 rounded-full text-xs font-semibold text-indigo-300 mb-6 bg-indigo-500/10 border border-indigo-500/20 tracking-wide animate-slide-up">
+      <span class="inline-block px-4 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-6 slide-up" 
+            style="background: rgba(26, 26, 46, 0.05); color: #1a1a2e; border: 1px solid rgba(26, 26, 46, 0.1);">
         Welcome to ELS.OnlineStore
       </span>
-      <h2 id="hero-heading" class="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tight leading-none font-serif text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-indigo-200">
+      
+      <h2 id="hero-heading" class="text-4xl md:text-6xl font-normal text-slate-900 mb-6 slide-up-d1 tracking-tight" style="font-family: 'Playfair Display', serif; line-height: 1.2;">
         Discover What You Love
       </h2>
-      <p class="text-slate-300 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed animate-slide-up-delayed">
+      
+      <p class="text-slate-600 text-lg mb-10 max-w-xl mx-auto slide-up-d2 font-normal leading-relaxed">
         Buy unique products from independent sellers or open your own store and start selling today.
       </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center animate-slide-up-deep">
-        <button onclick="goTo('shop')" class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/40 transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+      
+      <div class="flex flex-wrap gap-4 justify-center slide-up-d3">
+        <button onclick="goTo('shop')" class="px-8 py-3.5 rounded-lg font-medium text-white shadow-sm hover:bg-slate-800 transition-all duration-200 hero-cta" 
+                style="background: #3b0a27e7;">
           Browse Shop
         </button>
-        <button onclick="goTo('open-store')" class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-slate-200 bg-white/5 hover:bg-white/10 hover:text-white border border-slate-800 hover:border-slate-600 backdrop-blur-sm transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 active:scale-95">
+        <button onclick="goTo('open-store')" class="px-8 py-3.5 rounded-lg font-medium text-slate-800 bg-white shadow-sm border border-slate-200 hover:bg-slate-50 transition-all duration-200 hero-cta">
           Open a Store
         </button>  
       </div>
     </div>
-</div>
-<script src="js/home.js"></script>
-    <div class="absolute inset-0 opacity-20 pointer-events-none" aria-hidden="true">
-      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600 rounded-full blur-[120px]"></div>
-      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600 rounded-full blur-[120px]"></div>
+    
+    <div class="absolute inset-0 opacity-60 pointer-events-none"
+         style="background: radial-gradient(circle at 10% 20%, #440a91c4 0%, transparent 40%), radial-gradient(circle at 90% 80%, #36355cce 0%, transparent 40%);"></div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-6 py-24">
+    <div class="flex flex-col items-center mb-12">
+      <h3 class="text-3xl font-light tracking-tight text-slate-900" style="font-family: 'Playfair Display', serif;">
+        Shop by Category
+      </h3>
+      <div class="w-12 h-0.5 mt-3" style="background-color: #16106dcc;"></div>
+    </div>
+    
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+      
+      <div onclick="filterShopCategory('Electronics')" class="group cursor-pointer text-center">
+        <div class="aspect-square w-full overflow-hidden rounded-2xl mb-4 bg-white shadow-sm border border-slate-100 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+          <img src="images/gadgets.jpg" alt="Electronics" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style="max-height: 250px;">
+        </div> 
+        <span class="font-medium text-sm tracking-wide text-slate-800 group-hover:text-rose-600 transition-colors">Electronics</span>
+      </div>
+
+      <div onclick="filterShopCategory('Fashion')" class="group cursor-pointer text-center">
+        <div class="aspect-square w-full overflow-hidden rounded-2xl mb-4 bg-white shadow-sm border border-slate-100 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+          <img src="images/fashionimg.jpg" alt="Fashion" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style="max-height: 250px;">
+        </div>
+        <span class="font-medium text-sm tracking-wide text-slate-800 group-hover:text-rose-600 transition-colors">Fashion</span>
+      </div>
+
+      <div onclick="filterShopCategory('Home')" class="group cursor-pointer text-center">
+        <div class="aspect-square w-full overflow-hidden rounded-2xl mb-4 bg-white shadow-sm border border-slate-100 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+          <img src="images/home.jpg" alt="Home" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style="max-height: 250px;">
+        </div>
+        <span class="font-medium text-sm tracking-wide text-slate-800 group-hover:text-rose-600 transition-colors">Home</span>
+      </div>
+
+      <div onclick="filterShopCategory('Sports')" class="group cursor-pointer text-center">
+        <div class="aspect-square w-full overflow-hidden rounded-2xl mb-4 bg-white shadow-sm border border-slate-100 transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1">
+          <img src="images/sport.jpg" alt="Sports" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style="max-height: 250px;">
+        </div> 
+        <span class="font-medium text-sm tracking-wide text-slate-800 group-hover:text-rose-600 transition-colors">Sports</span>
+      </div>
+      
     </div>
   </div>
-  <div class="max-w-6xl mx-auto px-4 py-20">
-    <div class="text-center mb-12">
-      <h3 class="text-3xl font-bold tracking-tight text-slate-900">Shop by Category</h3>
-      <p class="text-slate-500 text-sm mt-2">Find exactly what you need across our tailored ecosystems</p>
-    </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-      <div onclick="filterShopCategory('Electronics')" class="group cursor-pointer rounded-2xl p-4 bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-100 mb-4 aspect-square">
-          <img src="images/gadgets.jpg" alt="Electronics" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        </div>
-        <span class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Electronics</span>
-      </div>
-       <div onclick="filterShopCategory('Fashion')" class="group cursor-pointer rounded-2xl p-4 bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-100 mb-4 aspect-square">
-          <img src="images/fashionimg.jpg" alt="Fashion" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        </div>
-        <span class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Fashion</span>
-      </div>
-       <div onclick="filterShopCategory('Home')" class="group cursor-pointer rounded-2xl p-4 bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-100 mb-4 aspect-square">
-          <img src="images/home.jpg" alt="Home" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        </div>
-        <span class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Home</span>
-      </div>
-       <div onclick="filterShopCategory('Sports')" class="group cursor-pointer rounded-2xl p-4 bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-100 mb-4 aspect-square">
-          <img src="images/sport.jpg" alt="Sports" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-        </div>
-        <span class="font-bold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Sports</span>
-      </div>
-    </div>
-  </div>
-   <div class="max-w-6xl mx-auto px-4 pb-24">
-    <div class="text-center mb-12">
-      <h3 class="text-2xl font-bold tracking-tight text-slate-900">Recently Listed</h3>
-      <p class="text-slate-500 text-sm mt-1">Explore fresh arrivals uploaded straight onto our live platform</p>
-    </div>
+
+  <div class="max-w-6xl mx-auto px-6 pb-28">
+    <h3 class="text-xl font-medium mb-8 text-center tracking-wide text-slate-500">
+      Dashboard - Recently Listed
+    </h3>
     <div id="home-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <div class="col-span-full text-center py-16 bg-white border border-slate-100 rounded-3xl shadow-sm">
-        <div class="inline-flex p-4 bg-slate-50 text-slate-400 rounded-full mb-3">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.5a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" />
-          </svg>
-        </div>
-        <p class="text-slate-500 font-medium text-lg">No products listed yet</p>
-        <p class="text-slate-400 text-sm mt-1 max-w-sm mx-auto">
-          Be the first to 
-          <button onclick="goTo('open-store')" class="text-indigo-600 hover:text-indigo-700 font-semibold underline focus:outline-none transition-colors">
-            open a store
-          </button> 
-          and put your catalog online!
+      <div class="col-span-full text-center py-20 bg-white rounded-3xl border border-slate-200/60 shadow-sm px-6">
+        <p class="text-slate-400 text-base font-light">No products yet.</p>
+        <p class="text-slate-500 text-sm mt-2">
+          Be the first to <button onclick="goTo('open-store')" class="underline font-medium hover:text-rose-600 transition-colors focus:outline-none" style="color: #e94560;">open a store</button> and list something!
         </p>
       </div>
     </div>
@@ -444,9 +435,8 @@
     </div>
     </section>
    <!-- OPEN STORE PAGE -->
-    <section id="page-open-store" class="page bg-slate-50 min-h-screen">
+   <section id="page-open-store" class="page bg-slate-50 min-h-screen">
   <div class="max-w-5xl mx-auto px-4 py-12">
-    <!-- Header Section -->
     <div class="text-center mb-12">
       <div class="inline-flex justify-center items-center mb-4 p-3 bg-white rounded-2xl shadow-sm">
         <img src="images/timesetup.png" alt="Setup Time" width="80" height="80" class="object-contain" />
@@ -458,9 +448,8 @@
         Start selling in minutes. List your products and reach customers worldwide seamlessly.
       </p>
     </div>
-     <!-- Store Benefits Section -->
+
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <!-- Card 1 -->
       <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
           <img src="images/setupimg.png" alt="Quick Setup" width="64" height="64" class="mx-auto" />
@@ -468,7 +457,6 @@
         <h4 class="font-bold text-lg text-slate-900 mb-1">Quick Setup</h4>
         <p class="text-slate-500 text-sm">List a product in under a minute</p>
       </div>
-      <!-- Card 2 -->
       <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
           <img src="images/globe.png" alt="Global Reach" width="64" height="64" class="mx-auto" />
@@ -476,7 +464,6 @@
         <h4 class="font-bold text-lg text-slate-900 mb-1">Global Reach</h4>
         <p class="text-slate-500 text-sm">Your products visible to everyone</p>
       </div>
-      <!-- Card 3 -->
       <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
           <img src="images/feeimg.png" alt="Zero Fees" width="64" height="64" class="mx-auto" />
@@ -485,16 +472,16 @@
         <p class="text-slate-500 text-sm">No listing or commission fees</p>
       </div>
     </div>
-<!-- Store Creation Form & Status Dashboard -->
+
     <div class="grid grid-cols-1 lg:grid-cols-[1.4fr_0.6fr] gap-8 mb-12">
-      <!-- Main Setup Block -->
       <section class="rounded-3xl p-8 bg-slate-900 text-white relative overflow-hidden shadow-xl border border-slate-800">
         <span class="absolute right-6 top-6 text-7xl opacity-5 select-none" aria-hidden="true">🏬</span>
         <h3 class="text-2xl font-bold mb-2 tracking-tight">Create your store instantly</h3>
         <p class="text-slate-400 text-sm mb-8 max-w-xl">
           Upload your store details from this page, then list products and route them to the right category automatically.
         </p>
-         <form id="open-store-create-form" class="space-y-5">
+
+        <form id="open-store-create-form" class="space-y-5" onsubmit="handleStorePaymentPipeline(event)">
           <div>
             <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Store Name</label>
             <input id="open-store-name" type="text" placeholder="e.g. ELS Gadget Shop" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
@@ -513,37 +500,49 @@
               <input id="open-store-banner" type="file" accept="image/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 file:cursor-pointer transition-all" />
             </div>
           </div>
-           <hr class="border-slate-800 my-6" />
-           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <hr class="border-slate-800 my-6" />
+
+          <h4 class="text-sm font-bold text-indigo-400 tracking-wide uppercase mb-1">Billing & Settlement Details</h4>
+          <p class="text-xs text-slate-400 mb-4">Your details will be remembered locally for quick processing and passed safely to our payment partner setup wizard.</p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Bank Account Name</label>
-              <input id="open-store-bank-account-name" type="text" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
+              <input id="open-store-bank-account-name" type="text" placeholder="John Doe" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
             </div>
             <div>
               <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Bank Account Number</label>
-              <input id="open-store-bank-account-number" type="text" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
+              <input id="open-store-bank-account-number" type="text" placeholder="0123456789" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
             </div>
           </div>
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Bank Name</label>
-            <select id="open-store-bank-name" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-              <option value="" class="bg-slate-900">Select bank</option>
-              <option class="bg-slate-900">Access Bank</option>
-              <option class="bg-slate-900">GTBank</option>
-              <option class="bg-slate-900">Zenith Bank</option>
-              <option class="bg-slate-900">First Bank</option>
-              <option class="bg-slate-900">UBA</option>
-            </select>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Settlement Bank</label>
+              <select id="open-store-bank-name" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required>
+                <option value="" class="bg-slate-900">Select bank</option>
+                <option class="bg-slate-900" value="Access Bank">Access Bank</option>
+                <option class="bg-slate-900" value="GTBank">GTBank</option>
+                <option class="bg-slate-900" value="Zenith Bank">Zenith Bank</option>
+                <option class="bg-slate-900" value="First Bank">First Bank</option>
+                <option class="bg-slate-900" value="UBA">UBA</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Setup Verification Fee (USD)</label>
+              <input id="open-store-setup-amount" type="text" value="10.00" readonly class="w-full rounded-xl px-4 py-3 border border-slate-800 bg-slate-800/30 text-slate-400 font-mono focus:outline-none cursor-not-allowed" />
+            </div>
           </div>
-          <div class="text-right pt-2">
-            <button id="open-store-submit-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 font-semibold shadow-lg transition-all duration-150">
-              Create Store
+
+          <div class="text-right pt-4">
+            <button id="open-store-submit-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 font-semibold shadow-lg transition-all duration-150">
+              <span>Save & Pay Now</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
             </button>
           </div>
         </form>
       </section>
 
-      <!-- Sidebar Status Block -->
       <aside class="rounded-3xl p-6 bg-white shadow-md border border-slate-100 flex flex-col justify-between">
         <div>
           <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
@@ -560,7 +559,7 @@
         </div>
       </aside>
     </div>
-     <!-- Product Creation Module -->
+
     <div class="rounded-3xl p-8 bg-white border border-slate-100 shadow-md mb-12">
       <h3 class="text-xl font-bold mb-6 text-slate-900">List a New Product</h3>
       <form id="add-product-form" onsubmit="handleAddProduct(event)">
@@ -576,7 +575,7 @@
             <p id="err-prod-price" class="hidden text-xs text-rose-500 mt-1.5"></p>
           </div>
         </div>
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
           <div>
             <label for="prod-category" class="block text-sm font-medium text-slate-700 mb-2">Category</label> 
             <select id="prod-category" required class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"> 
@@ -593,7 +592,7 @@
             </p>
           </div>
         </div>
-         <!-- Optimized File Upload Drop Zone -->
+
         <div class="mb-5">
           <label class="block text-sm font-medium text-slate-700 mb-2">Product Image</label>
           <div id="image-upload-area" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-slate-50 rounded-2xl p-6 text-center cursor-pointer transition-all duration-150" aria-label="Product image upload area">
@@ -611,8 +610,8 @@
                 <span class="text-sm text-slate-500"> or drag and drop</span>
                 <p class="text-xs text-slate-400 mt-1">JPG, PNG, or WebP up to 5MB (Recommended: 250x250px)</p>
               </div>
-            </div>
-             <!-- Previews Container -->
+            </div> 
+
             <div id="image-preview-section" class="hidden mt-6 pt-6 border-t border-slate-200 w-full text-left">
               <div id="image-gallery" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4 bg-white p-3 rounded-xl border border-slate-100">
@@ -633,12 +632,13 @@
             </div>
           </div>
         </div>
-         <div class="mb-6">
+
+        <div class="mb-6">
           <label for="prod-desc" class="block text-sm font-medium text-slate-700 mb-2">Description</label> 
           <textarea id="prod-desc" rows="4" required placeholder="Provide a detailed overview of your item..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"></textarea>
           <p id="err-prod-desc" class="hidden text-xs text-rose-500 mt-1.5"></p>
         </div>
-        <!-- Action Management Buttons -->
+
         <div class="flex flex-col sm:flex-row gap-3 w-full mt-4">
           <button id="save-draft-btn" type="submit" data-publish="false" disabled class="flex-1 py-3.5 rounded-xl font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150">
             Save Draft
@@ -653,13 +653,14 @@
         </p>
       </form>
     </div>
-    <!-- Management Section Table/List Container -->
+
     <div class="mt-12">
       <h3 class="text-xl font-bold mb-4 text-slate-900">My Listed Products</h3>
       <div id="my-products" class="bg-white border border-slate-100 rounded-2xl shadow-sm min-h-[140px] flex items-center justify-center p-6">
         <p class="text-slate-400 text-sm text-center">You haven't listed any products yet.</p>
       </div>
-    </div></div>
+    </div>
+  </div>
 </section>
      <!-- ORDERS PAGE -->
   <section id="page-orders" class="page bg-slate-50 min-h-screen">
@@ -1439,7 +1440,6 @@
   </div>
 </section>
 <script src="js/home.js"></script>
- <script src="js/els2app.js"></script>
   <script src="js/cloudupload.js"></script>
  <script src="js/ui.js"></script>
  <script src="js/products.js"></script>
@@ -1451,6 +1451,11 @@
  <script src="js/profile.js"></script>
  <script src="js/dataSdk.js"></script>
 <script src="js/register.js"></script>
+<script src="js/login.js"></script>
+<script src="js/logistics.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/notifications.js"></script>
+
 
 </body>
   </html>
