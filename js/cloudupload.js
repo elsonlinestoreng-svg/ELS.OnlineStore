@@ -1,4 +1,7 @@
 // ===== IMAGE UPLOAD (Open Store) =====
+window.selectedImages = window.selectedImages || [];
+window.primaryImageIndex = window.primaryImageIndex || 0;
+
 function handleImageUpload(event) {
   const files = Array.from(event?.target?.files || []);
   if (!files.length) return;
@@ -21,9 +24,9 @@ function processProductImageFile(file) {
     showToast('You can upload up to ' + maxImages + ' images per product.');
     return;
   }
-sss
+
   const reader = new FileReader();
-  reader.onload = async (e) => {ss
+  reader.onload = async (e) => {
     try {
       const dataUrl = e.target.result;
       const optimize = document.getElementById('optimize-image')?.checked ?? true;
