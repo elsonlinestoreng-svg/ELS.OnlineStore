@@ -198,35 +198,32 @@
     <div id="main-app" class="hidden h-full w-full">
     <!-- TOP NAV -->
     <header id="topnav" class="sticky top-0 z-30 w-full" style="background:#547f97; border-bottom:1px solid rgba(255,255,255,0.08);">
-     <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-      <div class="flex items-center gap-3">
-       <button onclick="toggleSidebar()" class="text-white p-2 rounded-lg hover:bg-white/10 transition"><i data-lucide="menu" class="w-5 h-5"></i></button>
-       <h1 id="nav-site-name" class="text-lg font-bold text-white cursor-pointer" onclick="goTo('home')" style="font-family:'Playfair Display',serif;">ELS.OnlineStore</h1>
-      </div>
-      <nav class="hidden md:flex items-center gap-1">
-       <a href="index.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Home</a>
-       <a href="index.html#shop" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Shop</a>
-       <a href="seller-register.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Seller Register</a>
-       <a href="product-upload.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Upload Product</a>
-       <button onclick="goTo('open-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="open-store">Open Store</button>
-       <button onclick="goTo('messages')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="messages">Messages</button>
-       <button onclick="goTo('about')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="about">About</button>
-       <button onclick="goTo('contact')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="contact">Contact</button>
-      </nav>
-       <div class="flex items-center gap-2">
-         <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders">
-           <i data-lucide="package" class="w-5 h-5"></i>
-         </button>
-         <button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition">
-           <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-           <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" style="background:#e94560;">0</span>
-         </button>
-         <button id="user-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden" title="Edit profile" onclick="goTo('profile')" style="background:#e94560;">
-           <img id="user-avatar-img" src="" alt="avatar" class="hidden w-full h-full object-cover" />
-           <span id="user-avatar-initial">J</span>
-         </button>
-       </div>
-       </div>
+    <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+  <div class="flex items-center gap-3">
+    <button onclick="toggleSidebar()" class="text-white p-2 rounded-lg hover:bg-white/10 transition"><i data-lucide="menu" class="w-5 h-5"></i></button>
+    <h1 id="nav-site-name" class="text-lg font-bold text-white cursor-pointer" onclick="goTo('home')" style="font-family:'Playfair Display',serif;">ELS.OnlineStore</h1>
+  </div>
+  <nav class="hidden md:flex items-center gap-1">
+    <button onclick="goTo('home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="home">Home</button>
+    <button onclick="goTo('shop')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="shop">Shop</button>
+    <button onclick="goTo('open-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="open-store">Open Store</button>
+    <button onclick="goTo('about')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="about">About</button>
+    <button onclick="goTo('contact')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="contact">Contact</button>
+  </nav>
+  <div class="flex items-center gap-2">
+    <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders">
+      <i data-lucide="package" class="w-5 h-5"></i>
+    </button>
+    <button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition">
+      <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+      <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" style="background:#e94560;">0</span>
+    </button>
+    <button id="user-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden" title="Edit profile" onclick="goTo('profile')" style="background:#e94560;">
+      <img id="user-avatar-img" src="" alt="avatar" class="hidden w-full h-full object-cover" />
+      <span id="user-avatar-initial">J</span>
+    </button>
+  </div>
+</div>
      </header>
     <!-- PROFILE PAGE -->
     <section id="page-profile" class="page">
@@ -273,8 +270,22 @@
         <i data-lucide="x" class="w-5 h-5"></i></button>
      </div>
      <div class="flex-1 py-4 px-3 flex flex-col gap-1 overflow-auto">
-      <button onclick="goTo('home');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="home"><i data-lucide="home" class="w-4 h-4"></i>Home</button> <button onclick="goTo('shop');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="shop"><i data-lucide="shopping-bag" class="w-4 h-4"></i>Shop</button>
-       <button onclick="goTo('open-store');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="open-store"><i data-lucide="store" class="w-4 h-4"></i>Open Store</button> <button onclick="goTo('cart');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="cart"><i data-lucide="shopping-cart" class="w-4 h-4"></i>Cart</button> <button onclick="goTo('orders');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="orders"><i data-lucide="package" class="w-4 h-4"></i>Orders</button> <button onclick="goTo('logistics');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="logistics"><i data-lucide="truck" class="w-4 h-4"></i>Logistics</button> <button onclick="goTo('messages');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="messages"><i data-lucide="message-circle" class="w-4 h-4"></i>Messages</button> <button onclick="goTo('payment');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="payment"><i data-lucide="credit-card" class="w-4 h-4"></i>Payment</button> <button onclick="goTo('about');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="about"><i data-lucide="info" class="w-4 h-4"></i>About</button> <button onclick="goTo('contact');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="contact"><i data-lucide="mail" class="w-4 h-4"></i>Contact</button>
+      <button onclick="goTo('home');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="home">
+        <i data-lucide="home" class="w-4 h-4"></i>Home</button> 
+        <button onclick="goTo('shop');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="shop"><i data-lucide="shopping-bag" class="w-4 h-4">
+
+        </i>Shop</button>
+       <button onclick="goTo('open-store');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="open-store">
+        <i data-lucide="store" class="w-4 h-4"></i>Open Store</button>
+         <button onclick="goTo('cart');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="cart">
+          <i data-lucide="shopping-cart" class="w-4 h-4"></i>Cart</button>
+           <button onclick="goTo('orders');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="orders">
+            <i data-lucide="package" class="w-4 h-4"></i>Orders</button> 
+            <button onclick="goTo('logistics');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="logistics"><i data-lucide="truck" class="w-4 h-4"></i>Logistics</button> 
+            <button onclick="goTo('messages');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="messages"><i data-lucide="message-circle" class="w-4 h-4"></i>Messages</button> 
+            <button onclick="goTo('payment');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="payment"><i data-lucide="credit-card" class="w-4 h-4"></i>Payment</button>
+             <button onclick="goTo('about');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="about"><i data-lucide="info" class="w-4 h-4"></i>About</button>
+              <button onclick="goTo('contact');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="contact"><i data-lucide="mail" class="w-4 h-4"></i>Contact</button>
      </div>
      <div class="p-4" style="border-top:1px solid rgba(255,255,255,0.08);">
       <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-sm font-medium"><i data-lucide="log-out" class="w-4 h-4"></i>Sign Out</button>
@@ -697,6 +708,7 @@
       <div>
         <h2 class="text-3xl font-black text-slate-900 tracking-tight font-serif">Order Tracking</h2>
         <p class="text-xs text-slate-500 mt-0.5 font-medium">Monitor real-time status and deployment workflows of your shipments</p>
+        <div id="order-appreciation-message" class="hidden rounded-3xl border border-emerald-200 bg-emerald-50 text-emerald-900 px-6 py-4 mt-4 shadow-sm"></div>
       </div>
     </div>
      <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
@@ -761,9 +773,10 @@
 
   </div>
 </section>
-     <!-- LOGISTICS PAGE -->
-    <section id="page-logistics" class="page bg-slate-50/60 min-h-screen py-8">
+   <!-- LOGISTICS PAGE -->  
+<section id="page-logistics" class="page bg-slate-50/60 min-h-screen py-8">
   <div class="max-w-7xl mx-auto px-4 sm:px-6">
+    
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
       <div class="flex items-center gap-3">
         <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shadow-inner">
@@ -771,10 +784,10 @@
         </div>
         <div>
           <h2 class="text-2xl font-black text-slate-900 tracking-tight">Logistics Hub Terminal</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Manage tracking pipelines and direct driver distribution networks.</p>
+          <p class="text-xs text-slate-500 mt-0.5">Manage tracking pipelines, direct driver networks, and secure live communication.</p>
         </div>
       </div>
-       <div id="logisticsIndicator" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
+      <div id="logisticsIndicator" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
         <span class="relative flex h-2 w-2">
           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
           <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -782,7 +795,8 @@
         <div id="logisticsStatus" class="text-xs font-bold text-slate-700 tracking-wide">Syncing Nodes...</div>
       </div>
     </div>
-     <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 mb-8 relative overflow-hidden">
+
+    <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 mb-8 relative overflow-hidden">
       <div class="absolute right-0 top-0 translate-x-10 -translate-y-10 opacity-[0.03] text-white pointer-events-none select-none">
         <i data-lucide="globe" class="w-64 h-64"></i>
       </div>
@@ -809,8 +823,50 @@
         </div>
       </div>
     </div>
-     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-8">
-    <div class="lg:col-span-2 space-y-6">
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <div class="lg:col-span-7 space-y-6">
+        
+        <div class="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm space-y-5">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Satellite Vector</span>
+              <h3 class="text-sm font-bold text-white mt-0.5">GPS Route Tracking</h3>
+            </div>
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wide">Sync State</span>
+          </div>
+          
+          <div id="gpsGuidePanel" class="bg-slate-950 border border-slate-850 rounded-xl p-4 text-xs font-mono space-y-2.5">
+            <div class="flex justify-between items-center text-slate-400">
+              <span>Next Checkpoint:</span>
+              <span id="gpsNextStop" class="text-white font-bold">Awaiting Input...</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-400">
+              <span>Remaining Scope:</span>
+              <span id="gpsDistance" class="text-indigo-400 font-bold">— km</span>
+            </div>
+            <div class="flex justify-between items-center text-slate-400">
+              <span>System Clock ETA:</span>
+              <span id="gpsEta" class="text-amber-400 font-bold">— min</span>
+            </div>
+          </div>
+          
+          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden h-60 flex flex-col relative group">
+            <div id="mapPlaceholder" class="flex-1 text-slate-500 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest relative z-10 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px]">
+              Map Rendering Interface
+            </div>
+            <div class="absolute bottom-2 left-2 right-2 px-3 py-1.5 bg-slate-900/90 border border-white/5 backdrop-blur rounded-lg flex justify-between text-[10px] font-mono tracking-wider text-slate-400 z-20">
+              <div>SPD: <strong id="tel-speed" class="text-white font-bold">—</strong></div>
+              <div>ETA: <strong id="tel-eta" class="text-white font-bold">—</strong></div>
+            </div>
+          </div>
+          
+          <button class="w-full py-3 rounded-xl text-xs font-bold bg-emerald-400 hover:bg-emerald-500 text-slate-950 active:scale-[0.99] transition shadow-md shadow-emerald-400/5 flex items-center justify-center gap-1.5" onclick="startDeliveryGuide()">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Launch GPS Route Monitor
+          </button>
+        </div>
+
         <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
             <div>
@@ -819,7 +875,6 @@
             </div>
             <span id="logisticsChannelBadge" class="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">Receiver View</span>
           </div>
-          <p class="text-xs text-slate-500 leading-relaxed mb-6">Select your portal orientation. Customers can monitor live order locations, while verified dispatch couriers can sign in to claim local fulfillment jobs.</p>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col justify-between">
               <div>
@@ -831,7 +886,7 @@
                 <button class="w-full rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 transition active:scale-[0.99]" onclick="trackOrderInLogistics()">Track Order Profile</button>
               </div>
             </div>
-             <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col justify-between">
+            <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col justify-between">
               <div>
                 <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i> Network Partner</h4>
                 <p class="text-[11px] text-slate-400 font-medium mt-1 mb-4">Access active routes, update dispatch states, and toggle GPS live streaming tools.</p>
@@ -843,9 +898,10 @@
             </div>
           </div>
         </div>
+
         <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
           <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5"><i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-400"></i> Dispatch Network Filters</h4>
-           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Channel Filter</label>
               <select id="logisticsChannelFilter" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium outline-none focus:border-slate-400 transition cursor-pointer">
@@ -854,7 +910,7 @@
                 <option value="partner">Delivery Partner</option>
               </select>
             </div>
-             <div>
+            <div>
               <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Region Pool</label>
               <select id="partnerRegionFilter" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium outline-none focus:border-slate-400 transition cursor-pointer">
                 <option value="initial">All Regions</option>
@@ -873,102 +929,69 @@
                 <option value="rating">Highest Rating</option>
               </select>
             </div>
-               <div>
-                </div>
-              </div>
-         <div id="logisticsPartnersList" class="grid grid-cols-1 gap-3">
           </div>
+          <div id="logisticsPartnersList" class="grid grid-cols-1 gap-3 mt-4"></div>
+        </div>
       </div>
-      <div class="lg:col-span-1 space-y-6">
-        <div class="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm space-y-5">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+      
+      <div class="lg:col-span-5 h-[715px] flex flex-col bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        
+        <div class="p-4 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-indigo-600 text-white rounded-lg">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+            </div>
             <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Satellite Vector</span>
-              <h3 class="text-sm font-bold text-white mt-0.5">GPS Route Tracking</h3>
-            </div>
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wide">Sync State</span>
-          </div>
-          <div id="gpsGuidePanel" class="bg-slate-950 border border-slate-850 rounded-xl p-4 text-xs font-mono space-y-2.5">
-            <div class="flex justify-between items-center text-slate-400">
-              <span>Next Checkpoint:</span>
-              <span id="gpsNextStop" class="text-white font-bold">Awaiting Input...</span>
-            </div>
-            <div class="flex justify-between items-center text-slate-400">
-              <span>Remaining Scope:</span>
-              <span id="gpsDistance" class="text-indigo-400 font-bold">— km</span>
-            </div>
-            <div class="flex justify-between items-center text-slate-400">
-              <span>System Clock ETA:</span>
-              <span id="gpsEta" class="text-amber-400 font-bold">— min</span>
+              <h3 class="text-xs font-black text-slate-900 tracking-tight">Terminal Chat Gateway</h3>
+              <p class="text-[10px] text-slate-400 font-medium">Direct Driver/Buyer Channels</p>
             </div>
           </div>
-          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden h-40 flex flex-col relative group">
-            <div id="mapPlaceholder" class="flex-1 text-slate-500 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest relative z-10 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px]">
-              Map Rendering Interface
-            </div>
-           <div class="absolute bottom-2 left-2 right-2 px-3 py-1.5 bg-slate-900/90 border border-white/5 backdrop-blur rounded-lg flex justify-between text-[10px] font-mono tracking-wider text-slate-400 z-20">
-              <div>SPD: <strong id="tel-speed" class="text-white font-bold">—</strong></div>
-              <div>ETA: <strong id="tel-eta" class="text-white font-bold">—</strong></div>
-            </div>
-          </div>
-          <button class="w-full py-3 rounded-xl text-xs font-bold bg-emerald-400 hover:bg-emerald-500 text-slate-950 active:scale-[0.99] transition shadow-md shadow-emerald-400/5 flex items-center justify-center gap-1.5" onclick="startDeliveryGuide()">
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Launch GPS Route Monitor
-          </button>
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
         </div>
-      </div>
-     </div>
-  </div>
-</section>
-<section id="page-messages" class="page bg-slate-50/60 min-h-screen py-8 px-4 sm:px-6">
-  <div class="max-w-6xl mx-auto flex flex-col h-[680px]">
-    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-100">
-          <i data-lucide="message-square" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <h2 class="text-xl font-black text-slate-900 tracking-tight">Direct Support Channels</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Coordinate delivery details directly with buyers and local dispatchers.</p>
-        </div>
-      </div>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 min-h-0">
-      <div class="md:col-span-1 border-r border-slate-200 bg-slate-50/40 flex flex-col h-full min-h-0">
-        <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
-          <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5"><i data-lucide="folder-heart" class="w-3.5 h-3.5"></i> Open Dialog Threads</h3>
-          <span class="h-2 w-2 rounded-full bg-indigo-600"></span>
-        </div>
-         <div id="conversations-list" class="flex-1 overflow-y-auto p-3 space-y-1">
-          <div class="text-center py-20 px-4">
-            <div class="w-10 h-10 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-200">
-              <i data-lucide="message-circle" class="w-4 h-4"></i>
-            </div>
-            <p class="text-xs font-bold text-slate-700">No active sessions logs</p>
-            <p class="text-[10px] text-slate-400 mt-1 max-w-[180px] mx-auto leading-relaxed">Select a verification partner row card item to spin up communication vectors.</p>
-          </div>
-        </div>
-      </div>
-      <div class="md:col-span-2 flex flex-col h-full min-h-0 bg-white">
-      <div id="chat-header" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 z-10 min-h-[53px]">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center w-full flex items-center justify-center gap-1.5"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-indigo-500"></i> Select an operational conversation row to review history</p>
-        </div>
-        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/20"></div>
-        <div id="chat-input-area" class="hidden p-4 border-t border-slate-200 bg-white">
-          <form class="flex items-center gap-2.5" onsubmit="event.preventDefault();">
-            <div class="relative flex-1">
-              <input id="message-input" type="text" placeholder="Type your secure message..." 
-                class="w-full pl-4 pr-10 py-3 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-300">
-                <i data-lucide="shield" class="w-4 h-4"></i>
+        
+        <div class="flex flex-col flex-1 min-h-0 divide-y divide-slate-100">
+          
+          <div class="h-44 bg-slate-50/30 flex flex-col min-h-0">
+            <div id="conversations-list" class="flex-1 overflow-y-auto p-3 space-y-1">
+              <div class="text-center py-6 px-4">
+                <div class="w-8 h-8 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mx-auto mb-1.5 border border-slate-200">
+                  <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
+                </div>
+                <p class="text-[11px] font-bold text-slate-700">No Active Sessions Loaded</p>
+                <p class="text-[9px] text-slate-400 mt-0.5 max-w-[220px] mx-auto leading-relaxed">Select a live vehicle terminal dispatch line item to engage encryption keys.</p>
               </div>
-            </div> 
-            <button id="send-btn" type="submit" onclick="sendMessage()" disabled
-              class="inline-flex items-center justify-center p-3 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:pointer-events-none transition shadow-md shadow-indigo-100">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            </button>
-          </form>
+            </div>
+          </div>
+          
+          <div class="flex-1 flex flex-col min-h-0 bg-white">
+            <div id="chat-header" class="px-4 py-2 border-b border-slate-100 flex items-center justify-between bg-slate-50/40 min-h-[36px]">
+              <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider text-center w-full flex items-center justify-center gap-1.5">
+                <i data-lucide="mouse-pointer-click" class="w-3 h-3 text-indigo-500"></i> Open active vector timeline stream
+              </p>
+            </div>
+            
+            <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/10 text-xs"></div>
+            
+            <div id="chat-input-area" class="p-3 border-t border-slate-200 bg-white">
+              <form class="flex items-center gap-2" onsubmit="event.preventDefault();">
+                <div class="relative flex-1">
+                  <input id="message-input" type="text" placeholder="Type encrypted message..." 
+                    class="w-full pl-3 pr-8 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
+                  <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-300">
+                    <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                  </div>
+                </div> 
+                <button id="send-btn" type="submit" onclick="sendMessage()" disabled
+                  class="inline-flex items-center justify-center p-2 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:pointer-events-none transition shadow-md">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                </button>
+              </form>
+            </div>
+            
+          </div>
         </div>
       </div>
+      
     </div>
   </div>
 </section>

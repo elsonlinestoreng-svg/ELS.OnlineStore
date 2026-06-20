@@ -481,6 +481,8 @@ function goTo(page) {
   if (page === 'cart') renderCart();
   if (page === 'payment') renderPayment();
   if (page === 'shop') renderShop();
+  if (page === 'orders' && typeof renderOrders === 'function') renderOrders();
+  if (page === 'logistics' && typeof renderLogisticsView === 'function') renderLogisticsView();
   if (page === 'messages') renderConversations();
   window.scrollTo(0, 0);
 }

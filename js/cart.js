@@ -59,8 +59,33 @@ function renderPayment() {
 function handlePayment(e) {
   e.preventDefault();
   const method = document.getElementById('delivery-method').value;
+  const buyerName = (window.currentUser && window.currentUser.name) || (typeof currentUser !== 'undefined' && currentUser.name) || 'Valued Customer';
+  const subtotal = cart.reduce((sum, item) => sum + ((item.price || 0) * (item.qty || 1)), 0);
+  const orderId = `ORD-${Date.now().toString(36).toUpperCase().slice(-8)}`;
+  const trackingNumber = `TRK-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+  const order = {
+    order_id: orderId,
+    buyer: buyerName,
+    buyer_name: buyerName,
+    items: cart.map(item => ({ name: item.name, price: item.price, qty: item.qty || 1 })),
+    total_amount: parseFloat(subtotal.toFixed(2)),
+    delivery_method: method || 'Standard',
+    order_status: 'Pending Logistics',
+    tracking_number: trackingNumber,
+    created_at: new Date().toISOString()
+  };
+
+  allOrders.push(order);
   cart = [];
   updateCartBadge();
-  showToast(` Order placed! Delivery: ${method}`);
-  goTo('home');
+
+  if (typeof setAppreciationMessage === 'function') {
+    setAppreciationMessage(order);
+  }
+  if (typeof renderOrders === 'function') {
+    renderOrders();
+  }
+
+  showToast(`Thank you ${buyerName}! Your order ${orderId} is confirmed.`);
+  goTo('orders');
 }

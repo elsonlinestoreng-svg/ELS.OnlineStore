@@ -83,14 +83,97 @@
                         <p class="font-medium text-slate-700 mb-1">${itemNames}</p>
                         <p class="text-slate-400 font-medium">Method: ${order.delivery_method || 'Standard'} • Total: <span class="font-bold text-rose-500">$${displayTotal}</span></p>
                     </div>
-                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        ${order.tracking_number 
-                            ? `<p class="text-[10px] font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded">Track: ${order.tracking_number}</p>` 
-                            : `<p class="text-[10px] text-amber-500 font-medium flex items-center gap-1">🕒 Awaiting logistics node routing...</p>`
-                        }
+                    <div class="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                          ${order.tracking_number 
+                              ? `<p class="text-[10px] font-mono text-slate-500 bg-slate-50 px-2 py-0.5 rounded">Track: ${order.tracking_number}</p>` 
+                              : `<p class="text-[10px] text-amber-500 font-medium flex items-center gap-1">🕒 Awaiting logistics node routing...</p>`
+                          }
+                        </div>
+                        <button onclick="viewOrderLogistics('${order.order_id}')" class="inline-flex items-center justify-center rounded-xl bg-slate-900 text-white text-xs font-bold px-3 py-2 hover:bg-black transition">
+                          View Order Logistic Hub
+                        </button>
                     </div>
                 </div>`;
         }).join('');
+    }
+
+    function setAppreciationMessage(order) {
+        const msgEl = document.getElementById('order-appreciation-message');
+        if (!msgEl || !order) return;
+        const buyerName = order.buyer_name || order.buyer || ((window.currentUser && window.currentUser.name) || 'Valued customer');
+        msgEl.textContent = `Thank you ${buyerName}! Your order ${order.order_id} is confirmed and is now being routed through our logistics hub.`;
+        msgEl.classList.remove('hidden');
+    }
+
+    function updateLogisticsHubPanel(order) {
+        if (!order) return;
+        const statusText = order.order_status || 'Pending Logistics';
+        const statusEl = document.getElementById('logisticsStatus');
+        if (statusEl) statusEl.textContent = `Order ${order.order_id} • ${statusText}`;
+
+        const nextStop = document.getElementById('gpsNextStop');
+        const distance = document.getElementById('gpsDistance');
+        const eta = document.getElementById('gpsEta');
+        if (nextStop) {
+            nextStop.textContent = statusText === 'Delivered'
+                ? 'Delivered to recipient'
+                : statusText === 'In Transit'
+                    ? 'En route to delivery address'
+                    : statusText === 'Pending Logistics'
+                        ? 'Awaiting pickup from dispatch hub'
+                        : 'Preparing shipment for dispatch';
+        }
+        if (distance) distance.textContent = statusText === 'In Transit' ? `${Math.floor(Math.random() * 10) + 3} km` : '— km';
+        if (eta) eta.textContent = statusText === 'Delivered' ? 'Delivered' : statusText === 'In Transit' ? `${Math.max(5, Math.floor(Math.random() * 35) + 10)} mins` : 'Waiting';
+
+        const partnerCount = document.getElementById('availablePartnersCount');
+        const readyCount = document.getElementById('readyPickupCount');
+        if (partnerCount) partnerCount.textContent = statusText === 'In Transit' ? '01' : '05';
+        if (readyCount) readyCount.textContent = statusText === 'Pending Logistics' ? '01' : '00';
+
+        const list = document.getElementById('logisticsPartnersList');
+        if (list) {
+            list.innerHTML = `
+              <div class="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                <p class="text-xs uppercase tracking-wide text-slate-400 mb-2">Order Reference</p>
+                <p class="font-bold text-slate-900 mb-1">${order.order_id}</p>
+                <p class="text-[11px] text-slate-500">Tracking: ${order.tracking_number || 'Not assigned'}</p>
+                <p class="text-[11px] text-slate-500 mt-2">${order.delivery_method || 'Standard delivery'} • ${statusText}</p>
+              </div>`;
+        }
+
+        if (statusText === 'In Transit' && typeof simulateLogistics === 'function') simulateLogistics(order.order_id);
+    }
+
+    function trackOrderInLogistics() {
+        const input = document.getElementById('logisticsTrackOrderId');
+        if (!input) return;
+        const query = input.value.trim();
+        if (!query) {
+            showToast('Enter order number or tracking code');
+            return;
+        }
+        const order = (window.allOrders || []).find(o => o.order_id === query || o.tracking_number === query);
+        if (!order) {
+            showToast('Could not find that order.');
+            return;
+        }
+        viewOrderLogistics(order.order_id);
+    }
+
+    function viewOrderLogistics(orderId) {
+        const order = (window.allOrders || []).find(o => o.order_id === orderId);
+        if (!order) {
+            showToast('Order not found.');
+            return;
+        }
+        if (typeof goTo === 'function') goTo('logistics');
+        setTimeout(() => {
+            const input = document.getElementById('logisticsTrackOrderId');
+            if (input) input.value = order.tracking_number || order.order_id;
+            updateLogisticsHubPanel(order);
+        }, 80);
     }
 
     /**
@@ -467,4 +550,9 @@
         simulateLogistics
     };
 
+    window.renderOrders = renderOrders;
+    window.setAppreciationMessage = setAppreciationMessage;
+    window.viewOrderLogistics = viewOrderLogistics;
+    window.trackOrderInLogistics = trackOrderInLogistics;
+    window.updateLogisticsHubPanel = updateLogisticsHubPanel;
 })();
