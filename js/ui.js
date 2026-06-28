@@ -1,6 +1,5 @@
 // ===== STATE =====
 let allProducts = [];
-let cart = [];
 let currentCategory = 'All';
 let currentUser = { name: 'User', email: '' };
 let selectedImages = []; // array of data URLs
@@ -104,18 +103,18 @@ function setupHomeCarousel(keywords) {
     const track = document.createElement('div');
     track.className = 'bg-track';
 
-    const kws = Array.isArray(keywords) && keywords.length ? keywords : ['ecommerce','shopping','storefront','marketplace','products','retail'];
+    const kws = Array.isArray(keywords) && keywords.length ? keywords : ['ecommerce','shopping','storefront','marketplace','products','fashion','electronics','online store'];
     const images = kws.map(k => `https://source.unsplash.com/1600x900/?${encodeURIComponent(k)}`);
     const items = images.concat(images);
     items.forEach(url => {
       const d = document.createElement('div');
       d.className = 'bg-carousel-item';
-      d.style.backgroundImage = `url(${url})`;
+      d.style.backgroundImage = `linear-gradient(rgba(15,23,42,0.45), rgba(15,23,42,0.45)), url(${url})`;
       track.appendChild(d);
     });
     container.appendChild(track);
 
-    const duration = Math.max(20, images.length * 6);
+    const duration = Math.max(30, images.length * 8);
     track.style.animationDuration = duration + 's';
   } catch (e) {
     console.warn('Carousel init failed', e);
@@ -341,7 +340,7 @@ function switchAuthTab(tab) {
 async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const password = document.getElementById('login-pass').value;
 
   if (!email || !password) {
     showToast('Please enter email and password');
@@ -350,7 +349,7 @@ async function handleLogin(e) {
 
   try {
     showToast('Logging in...', 'loading');
-    const response = await fetch('http://localhost:8001/api/auth/login', {
+    const response = await fetch(window.API_BASE + '/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -386,8 +385,8 @@ async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById('reg-name').value;
   const email = document.getElementById('reg-email').value;
-  const password = document.getElementById('reg-password').value;
-  const confirmPassword = document.getElementById('reg-confirm-password').value;
+  const password = document.getElementById('reg-pass').value;
+  const confirmPassword = document.getElementById('reg-confirm-pass').value;
 
   if (!name || !email || !password || !confirmPassword) {
     showToast('Please fill all fields');
@@ -406,7 +405,7 @@ async function handleRegister(e) {
 
   try {
     showToast('Creating account...', 'loading');
-    const response = await fetch('http://localhost:8001/api/auth/register', {
+    const response = await fetch(window.API_BASE + '/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password, confirmPassword })
@@ -445,24 +444,24 @@ function enterApp() {
   document.getElementById('user-avatar').textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
   lucide.createIcons();
   loadProductsFromBackend();
+  updateCartBadge();
   showToast('Welcome, ' + (currentUser.name || currentUser.email) + '!');
 }
 
 function handleLogout() {
-  // Clear auth data
   localStorage.removeItem('els_token');
   localStorage.removeItem('els_user');
   currentUser = {};
   
-  // Clear UI
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
   toggleSidebar();
-  cart = [];
   conversations = [];
   currentConversation = null;
   
-  // Reset forms
+  const badge = document.getElementById('cart-badge');
+  if (badge) badge.classList.add('hidden');
+  
   document.getElementById('login-form').reset();
   document.getElementById('register-form').reset();
   switchAuthTab('login');
@@ -482,6 +481,8 @@ function goTo(page) {
   if (page === 'payment') renderPayment();
   if (page === 'shop') renderShop();
   if (page === 'messages') renderConversations();
+  if (page === 'my-store') { if (window.MyStore) window.MyStore.init(); }
+  if (page === 'orders') { if (typeof loadBuyerOrders === 'function') loadBuyerOrders(); }
   window.scrollTo(0, 0);
 }
 

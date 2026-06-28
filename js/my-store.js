@@ -46,7 +46,7 @@
         else {
           const r = await authFetch(`${API}/orders/seller`);
           if(!r.ok){ console.error('failed load orders', r); tbody.innerHTML = '<tr><td colspan="6">Failed to load orders</td></tr>'; return; }
-          orders = r.data.orders || r.data || [];
+          orders = Array.isArray(r.data) ? r.data : (r.data.orders || []);
         }
       }catch(e){ console.error('loadSellerOrders error', e); tbody.innerHTML = '<tr><td colspan="6">Failed to load orders</td></tr>'; return; }
 

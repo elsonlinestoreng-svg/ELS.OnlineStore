@@ -10,8 +10,7 @@ const auth = require('../middleware/auth');
 async function findStoreForProduct(product) {
   // Try by seller field (could be email or ObjectId)
   if (product.seller) {
-    // If seller is an ObjectId
-    if (product.seller.match && product.seller.match(/^[0-9a-fA-F]{24}$/)) {
+    if (typeof product.seller === 'string' && /^[0-9a-fA-F]{24}$/.test(product.seller)) {
       const store = await Store.findOne({ owner_id: product.seller });
       if (store) return store;
     }

@@ -21,14 +21,9 @@ router.get('/', async (req, res) => {
   try {
     const filter = { public: true };
     
-    // Optional: filter by store
-    if (req.query.store_id) {
-      filter.store_id = req.query.store_id;
-    }
-    
-    // Optional: filter by seller
-    if (req.query.seller_id) {
-      filter.seller_id = req.query.seller_id;
+    // Optional: filter by seller name/email
+    if (req.query.seller) {
+      filter.seller = req.query.seller;
     }
     
     const products = await Product.find(filter).sort({ created_at: -1 });
@@ -67,7 +62,7 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Price must be a positive number' });
     }
 
-    productData.seller = req.user.email;
+    productData.seller = req.user.name || req.user.email;
     productData.category = productData.category || 'Other';
     productData.description = productData.description || '';
 

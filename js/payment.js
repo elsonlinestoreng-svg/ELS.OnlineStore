@@ -53,7 +53,7 @@ async function payWithPaystack() {
 
     // Step 3: Open Paystack with real transaction data
     const handler = PaystackPop.setup({
-      key: 'pk_test_xxxxxxxxxxxxxxxxxxxxxxxx', // Replace with real Paystack public key
+      key: 'pk_test_e03176ae4b6a4910ea2bf5cb740923ccd27e877d',
       email: email,
       amount: Math.round(checkoutData.transaction.total_amount * 100), // Convert to kobo
       currency: checkoutData.transaction.currency || 'NGN',

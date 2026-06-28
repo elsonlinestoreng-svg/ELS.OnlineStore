@@ -14,6 +14,7 @@ const checkoutRoutes = require('./routes/checkout');
 const authRoutes = require('./routes/auth');
 const earningsRoutes = require('./routes/earnings');
 const paymentRoutes = require('./routes/payment');
+const reconciliation = require('./services/reconciliation');
 const connectDB = require('./config/db');
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
@@ -76,5 +77,6 @@ app.get('/', (req, res) => res.send('ELS upload server is running'));
 const port = process.env.PORT || 8001;
 
 connectDB().then(() => {
+  reconciliation.start();
   app.listen(port, () => console.log(`ELS server running on http://localhost:${port}`));
 });

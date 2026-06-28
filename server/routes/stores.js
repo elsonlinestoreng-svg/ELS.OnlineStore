@@ -3,6 +3,8 @@ const router = express.Router();
 const Store = require('../models/Store');
 const auth = require('../middleware/auth');
 
+const PAYMENT_METHODS = ['bank_transfer', 'cash_on_delivery', 'google_pay', 'international_card'];
+
 // Create store
 router.post('/', auth, async (req, res) => {
   try {
@@ -15,12 +17,19 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    const { store_name, description, bank_account_name, bank_account_number, bank_name } = req.body;
+    const { store_name, description, bank_account_name, bank_account_number, bank_name, preferred_payment_method } = req.body;
 
     if (!store_name || !bank_account_name || !bank_account_number || !bank_name) {
       return res.status(400).json({
         success: false,
         message: 'Store name, bank account name, number, and bank name are required'
+      });
+    }
+
+    if (preferred_payment_method && !PAYMENT_METHODS.includes(preferred_payment_method)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Selected payment method is not supported.'
       });
     }
 
@@ -31,6 +40,7 @@ router.post('/', auth, async (req, res) => {
       bank_account_name,
       bank_account_number,
       bank_name,
+      preferred_payment_method: preferred_payment_method || 'bank_transfer',
       logo_url: req.body.logo_url || '',
       banner_url: req.body.banner_url || ''
     });
@@ -126,7 +136,8 @@ router.put('/:id', auth, async (req, res) => {
 
     const allowedUpdates = [
       'store_name', 'description', 'logo_url', 'banner_url',
-      'bank_account_name', 'bank_account_number', 'bank_name'
+      'bank_account_name', 'bank_account_number', 'bank_name',
+      'preferred_payment_method'
     ];
 
     allowedUpdates.forEach(field => {

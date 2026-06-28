@@ -141,7 +141,7 @@ goTo('create-store');
 
 ---
 
-# PHASE 2 — MARKETPLACE CORE 🔴 IN PROGRESS (May 24–June 7)
+# PHASE 2 — MARKETPLACE CORE ✅ COMPLETE (May 24–June 27)
 
 # OBJECTIVE
 
@@ -652,13 +652,13 @@ Phone
 # DATABASE COLLECTIONS
 
 | Collection | Purpose | Status |
-|---|---|---|
+|---|---|---|---|
 | users | Authentication | ✅ |
 | products | Product listings | ✅ |
-| stores | Seller stores | 🔴 |
-| carts | Buyer carts | 🔴 |
-| orders | Seller orders | 🔴 |
-| transactions | Payment tracking | 🔴 |
+| stores | Seller stores | ✅ |
+| carts | Buyer carts | ✅ |
+| orders | Seller orders | ✅ |
+| transactions | Payment tracking | ✅ |
 | messages | Buyer-seller chat | 🟡 |
 | notifications | Alerts system | 🟡 |
 

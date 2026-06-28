@@ -1,4 +1,7 @@
 // ===== IMAGE UPLOAD (Open Store) =====
+window.selectedImages = window.selectedImages || [];
+window.primaryImageIndex = window.primaryImageIndex || 0;
+
 function handleImageUpload(event) {
   const files = Array.from(event?.target?.files || []);
   if (!files.length) return;
@@ -21,9 +24,9 @@ function processProductImageFile(file) {
     showToast('You can upload up to ' + maxImages + ' images per product.');
     return;
   }
-sss
+
   const reader = new FileReader();
-  reader.onload = async (e) => {ss
+  reader.onload = async (e) => {
     try {
       const dataUrl = e.target.result;
       const optimize = document.getElementById('optimize-image')?.checked ?? true;
@@ -266,7 +269,7 @@ async function loadFirebaseSdkOnce() {
 async function uploadToFirebaseStorage(dataUrl) {
   if (!window.FIREBASE_CONFIG) throw new Error('FIREBASE_CONFIG not set');
   await loadFirebaseSdkOnce();
-  if (!window.firebase) throw new Error('Firebase SDK failed to load');s
+  if (!window.firebase) throw new Error('Firebase SDK failed to load');
   if (!window.__firebaseApp) {
     window.__firebaseApp = window.firebase.initializeApp(window.FIREBASE_CONFIG);
   }

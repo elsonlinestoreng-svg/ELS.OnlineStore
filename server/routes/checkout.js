@@ -5,7 +5,9 @@ const Order = require('../models/Order');
 const Transaction = require('../models/Transaction');
 const Product = require('../models/Product');
 const Store = require('../models/Store');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { initializeTransaction } = require('../services/paystack');
 
 // Generate unique reference
 function generateRef(prefix) {
@@ -119,8 +121,23 @@ router.post('/', auth, async (req, res) => {
     // Clear cart
     await Cart.findOneAndDelete({ buyer_id: req.user.userId });
 
-    // TODO: Integrate with Paystack/Flutterwave here
-    // For now, return transaction details for manual payment testing
+    // Initialize Paystack transaction
+    const user = await User.findById(req.user.userId);
+    const email = user ? user.email : 'customer@els.store';
+    const callbackUrl = (process.env.APP_URL || 'http://localhost:8001') + '/payment-callback.html?trxref=' + parentTxnId;
+
+    const paystackRes = await initializeTransaction({
+      email: email,
+      amount: Math.round(totalAmount * 100),
+      currency: 'NGN',
+      reference: parentTxnId,
+      callback_url: callbackUrl,
+      metadata: {
+        buyer_id: req.user.userId,
+        transaction_id: parentTxnId,
+        order_ids: orderIds
+      }
+    });
 
     res.status(201).json({
       success: true,
@@ -128,7 +145,7 @@ router.post('/', auth, async (req, res) => {
       transaction: {
         parent_transaction_id: parentTxnId,
         total_amount: totalAmount,
-        currency: 'KES',
+        currency: 'NGN',
         split_summary: splitDetails.map(s => ({
           seller: s.seller_id || 'Platform',
           amount: s.amount,
@@ -138,7 +155,8 @@ router.post('/', auth, async (req, res) => {
         order_count: orderIds.length,
         orders: orderIds
       },
-      payment_url: null // Will be set when gateway is integrated
+      payment_url: paystackRes.data ? paystackRes.data.authorization_url : null,
+      access_code: paystackRes.data ? paystackRes.data.access_code : null
     });
   } catch (err) {
     console.error('Checkout error:', err);

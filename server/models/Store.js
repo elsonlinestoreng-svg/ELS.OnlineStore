@@ -50,6 +50,11 @@ const storeSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  preferred_payment_method: {
+    type: String,
+    enum: ['bank_transfer', 'cash_on_delivery', 'google_pay', 'international_card'],
+    default: 'bank_transfer'
+  },
   commission_rate: {
     type: Number,
     default: 10,
