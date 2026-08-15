@@ -3,6 +3,7 @@ const router = express.Router();
 const Transaction = require('../models/Transaction');
 const Order = require('../models/Order');
 const auth = require('../middleware/auth');
+const { notify } = require('../services/notify');
 
 // Verify payment after Paystack callback
 router.post('/callback', auth, async (req, res) => {
@@ -29,6 +30,22 @@ router.post('/callback', auth, async (req, res) => {
       { parent_transaction_id: reference },
       { $set: { payment_status: 'paid', order_status: 'confirmed' } }
     );
+
+    // Notify each seller that payment is confirmed
+    try {
+      const paidOrders = await Order.find({ parent_transaction_id: reference });
+      const sellerIds = [...new Set(paidOrders.map(o => o.seller_id.toString()))];
+      for (const sellerId of sellerIds) {
+        await notify(sellerId, {
+          type: 'payment',
+          title: 'Payment confirmed',
+          message: 'Payment for order ' + reference + ' has been confirmed. Prepare the order for shipping.',
+          data: { parent_transaction_id: reference }
+        });
+      }
+    } catch (err) {
+      console.error('Payment confirmation notification error:', err);
+    }
 
     res.json({ 
       success: true, 

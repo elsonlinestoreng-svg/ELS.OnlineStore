@@ -6,6 +6,7 @@ const Transaction = require('../models/Transaction');
 const Product = require('../models/Product');
 const Store = require('../models/Store');
 const auth = require('../middleware/auth');
+const { notify } = require('../services/notify');
 
 // Generate unique reference
 function generateRef(prefix) {
@@ -94,6 +95,18 @@ router.post('/', auth, async (req, res) => {
         payout: payout,
         is_platform: false
       });
+
+      // Notify the seller of the new order
+      try {
+        await notify(group.seller_id, {
+          type: 'order',
+          title: 'New order received',
+          message: 'You have a new order (' + orderRef + ') worth ' + group.subtotal,
+          data: { order_id: order._id, order_reference: orderRef, store_id: group.store_id, amount: group.subtotal }
+        });
+      } catch (err) {
+        console.error('Seller order notification error:', err);
+      }
     }
 
     // Add platform commission split
@@ -115,6 +128,18 @@ router.post('/', auth, async (req, res) => {
     });
 
     await transaction.save();
+
+    // Notify the buyer that the order was placed
+    try {
+      await notify(req.user.userId, {
+        type: 'order',
+        title: 'Order placed successfully',
+        message: 'Your order ' + parentTxnId + ' was placed for ' + totalAmount,
+        data: { parent_transaction_id: parentTxnId, total_amount: totalAmount, order_ids: orderIds }
+      });
+    } catch (err) {
+      console.error('Buyer order notification error:', err);
+    }
 
     // Clear cart
     await Cart.findOneAndDelete({ buyer_id: req.user.userId });
