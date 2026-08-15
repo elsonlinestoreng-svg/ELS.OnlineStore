@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Order = require('../models/Order');
 const auth = require('../middleware/auth');
+const { notify } = require('../services/notify');
 
 // ==========================================
 // 1. GET BUYER'S ORDERS
@@ -56,7 +57,8 @@ router.get('/:id/track', auth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Tracking node not found' });
     }
 
-    const buyerId = (order.buyer_id && order.buyer_id._id) ? order.buyer_id._id.toString() : (order.buyer_id ? order.buyer_id.toString() : '');
+    // Authenticate visibility (Only assigned Buyer or Seller can intercept tracking arrays)
+    const buyerId = order.buyer_id._id ? order.buyer_id._id.toString() : order.buyer_id.toString();
     if (buyerId !== req.user.userId && order.seller_id.toString() !== req.user.userId) {
       return res.status(403).json({ success: false, message: 'Access Denied' });
     }
@@ -64,7 +66,7 @@ router.get('/:id/track', auth, async (req, res) => {
     // Dynamic Mock Coordinates Generation Engine (Simulating live motorcycle transit via Lekki, Lagos)
     // In production, these parameters read directly from an active Redis or MongoDB Courier Location schema.
     let trackingCoordinates = null;
-    if (order.order_status === 'Shipped') {
+    if (order.order_status === 'shipped') {
       const secondsPulse = Math.floor(Date.now() / 1000) % 60;
       trackingCoordinates = {
         lat: 6.4281 + (secondsPulse * 0.0001), // Dynamic shifting latitude vector
@@ -129,7 +131,7 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const buyerId = (order.buyer_id && order.buyer_id._id) ? order.buyer_id._id.toString() : (order.buyer_id ? order.buyer_id.toString() : '');
+    const buyerId = order.buyer_id._id ? order.buyer_id._id.toString() : order.buyer_id.toString();
     if (buyerId !== req.user.userId && order.seller_id.toString() !== req.user.userId) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
@@ -163,21 +165,35 @@ router.put('/:id/status', auth, async (req, res) => {
       return res.status(403).json({ success: false, message: 'Only the seller can update order status' });
     }
 
-    // Unified casing pattern matches frontend milestone element ID declarations ('Pending','Paid','Processing','Shipped','Delivered')
-    const validStatuses = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'disputed'];
+    // Stored lowercase to match the Order model enum; accepts any casing from callers
+    const validStatuses = ['pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled', 'confirmed'];
     
+    // Auto-normalize common casing formats sent via raw testing agents to preserve system synchronization
     let standardizedInput = status;
     if (status) {
-      standardizedInput = status.toLowerCase();
+      standardizedInput = status.trim().toLowerCase();
     }
 
     if (!validStatuses.includes(standardizedInput)) {
-      return res.status(400).json({ success: false, message: 'Invalid status. Must be: ' + validStatuses.join(', ') });
+      return res.status(400).json({ success: false, message: 'Invalid status. Must be one of: ' + validStatuses.join(', ') });
     }
 
     order.order_status = standardizedInput;
     if (tracking_number) order.tracking_number = tracking_number;
     await order.save();
+
+    // Notify the buyer of the status change
+    try {
+      await notify(order.buyer_id, {
+        type: 'order',
+        title: 'Order status updated',
+        message: 'Your order ' + order.order_reference + ' is now ' + standardizedInput +
+          (tracking_number ? ' (Tracking: ' + tracking_number + ')' : ''),
+        data: { order_id: order._id, order_reference: order.order_reference, status: standardizedInput }
+      });
+    } catch (err) {
+      console.error('Order status notification error:', err);
+    }
 
     res.json({ success: true, message: 'Order status updated to ' + standardizedInput, order });
   } catch (err) {

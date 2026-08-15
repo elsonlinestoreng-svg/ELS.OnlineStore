@@ -46,6 +46,18 @@ const ProductSchema = new mongoose.Schema({
     default: true
   },
 
+  average_rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+
+  rating_count: {
+    type: Number,
+    default: 0
+  },
+
   created_at: {
     type: Date,
     default: Date.now

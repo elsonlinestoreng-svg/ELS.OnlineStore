@@ -5,3 +5,4 @@ server/uploads/
 .DS_Store
 serve.ps1
 server/routes/*.backup
+.env

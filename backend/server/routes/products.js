@@ -17,16 +17,70 @@ function filterBody(body) {
 }
 
 // GET all public products
+// Supports: q (search), category, min_price, max_price, sort, page, limit
 router.get('/', async (req, res) => {
   try {
     const filter = { public: true };
-    
-    // Optional: filter by seller name/email
-    if (req.query.seller) {
-      filter.seller = req.query.seller;
+    const { q, category, min_price, max_price, sort, page, limit } = req.query;
+
+    // Optional: filter by store
+    if (req.query.store_id) {
+      filter.store_id = req.query.store_id;
     }
-    
-    const products = await Product.find(filter).sort({ created_at: -1 });
+
+    // Optional: filter by seller
+    if (req.query.seller_id) {
+      filter.seller_id = req.query.seller_id;
+    }
+
+    // Search: name or description, case-insensitive
+    if (q && q.trim()) {
+      const term = q.trim();
+      filter.$or = [
+        { name: { $regex: term, $options: 'i' } },
+        { description: { $regex: term, $options: 'i' } },
+        { category: { $regex: term, $options: 'i' } }
+      ];
+    }
+
+    // Category filter
+    if (category && category.trim()) {
+      filter.category = category;
+    }
+
+    // Price range
+    if (min_price !== undefined) {
+      const min = parseFloat(min_price);
+      if (!isNaN(min)) filter.price = { ...(filter.price || {}), $gte: min };
+    }
+    if (max_price !== undefined) {
+      const max = parseFloat(max_price);
+      if (!isNaN(max)) filter.price = { ...(filter.price || {}), $lte: max };
+    }
+
+    // Sorting
+    let sortOptions = { created_at: -1 };
+    switch (sort) {
+      case 'price_asc': sortOptions = { price: 1 }; break;
+      case 'price_desc': sortOptions = { price: -1 }; break;
+      case 'rating': sortOptions = { average_rating: -1 }; break;
+      case 'newest': sortOptions = { created_at: -1 }; break;
+      case 'name': sortOptions = { name: 1 }; break;
+    }
+
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 0, 0), 100);
+
+    const total = await Product.countDocuments(filter);
+    let query = Product.find(filter).sort(sortOptions);
+
+    if (parsedLimit > 0) {
+      query = query.skip((parsedPage - 1) * parsedLimit).limit(parsedLimit);
+    }
+
+    const products = await query;
+
+    res.set('X-Total-Count', String(total));
     res.json(products);
   } catch (err) {
     console.error('Get products error:', err);
@@ -62,7 +116,7 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ error: 'Price must be a positive number' });
     }
 
-    productData.seller = req.user.name || req.user.email;
+    productData.seller = req.user.email;
     productData.category = productData.category || 'Other';
     productData.description = productData.description || '';
 

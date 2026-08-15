@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '..', '.env') });
 
 const express = require('express');
 const multer = require('multer');
@@ -14,8 +14,14 @@ const checkoutRoutes = require('./routes/checkout');
 const authRoutes = require('./routes/auth');
 const earningsRoutes = require('./routes/earnings');
 const paymentRoutes = require('./routes/payment');
-const reconciliation = require('./services/reconciliation');
+const notificationRoutes = require('./routes/notifications');
+const messageRoutes = require('./routes/messages');
+const logisticsRoutes = require('./routes/logistics');
+const reviewRoutes = require('./routes/reviews');
+const adminRoutes = require('./routes/admin');
 const connectDB = require('./config/db');
+const User = require('./models/User');
+const { start: startReconciliationCron } = require('./services/reconciliation');
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -55,6 +61,11 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/checkout', checkoutRoutes);
 app.use('/api/earnings', earningsRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/logistics', logisticsRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -76,7 +87,22 @@ app.get('/', (req, res) => res.send('ELS upload server is running'));
 
 const port = process.env.PORT || 8001;
 
-connectDB().then(() => {
-  reconciliation.start();
-  app.listen(port, () => console.log(`ELS server running on http://localhost:${port}`));
+connectDB().then(async () => {
+  // Backfill users created before the role field existed
+  await User.updateMany({ role: { $exists: false } }, { $set: { role: 'user' } });
+
+  // Optional: promote a user to admin at boot via ADMIN_EMAIL
+  if (process.env.ADMIN_EMAIL) {
+    const admin = await User.findOneAndUpdate(
+      { email: process.env.ADMIN_EMAIL.toLowerCase() },
+      { $set: { role: 'admin' } },
+      { new: true }
+    );
+    if (admin) console.log('👑 Admin ready: ' + admin.email);
+  }
+
+  app.listen(port, () => {
+  console.log(`ELS server running on http://localhost:${port}`);
+  startReconciliationCron();
+});
 });
