@@ -1,0 +1,2618 @@
+﻿<!doctype html>
+<html lang="en" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Jovali Market is a polished e-commerce experience for buyers, sellers, and delivery partners with secure checkout, logistics, and store management.">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="robots" content="index,follow">
+  <title>Jovali Market</title>
+  <link rel="icon" href="images/jaslogo.png" type="image/png">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
+  <!--
+    Optional: For Firebase Storage uploads, set `window.FIREBASE_CONFIG` before the app script runs.
+    Example (development only - keep secrets out of public repos):
+
+    <script>
+      window.FIREBASE_CONFIG = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "your-project.firebaseapp.com",
+        projectId: "your-project-id",
+        storageBucket: "your-project-id.appspot.com",
+        messagingSenderId: "0123456789",
+        appId: "1:0123456789:web:abcdef123456"
+      };
+    </script>
+
+    You can paste this object into the browser console while testing, or add it to the page
+    before the main script. The demo will call `uploadToFirebaseStorage()` when this is present.
+  -->
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/els2.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Form Completion Indicator Styles -->
+  <style>
+    /* Pulse animation for form-ready button */
+    @keyframes pulse-glow {
+      0% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+      }
+    }
+
+    @keyframes bounce-subtle {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.05);
+      }
+    }
+
+    @keyframes slide-in-up {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fade-out {
+      from {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+    }
+
+    /* Form ready button state */
+    #contact-submit.form-ready {
+      animation: pulse-glow 2s infinite, bounce-subtle 2s infinite;
+      box-shadow: 0 0 20px rgba(79, 70, 229, 0.4);
+    }
+
+    /* Form ready badge */
+    .form-ready-badge {
+      animation: slide-in-up 0.4s ease-out;
+      background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+      border: 2px solid #3b82f6;
+      color: #1e40af;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+    }
+
+    .form-ready-badge.fade-out {
+      animation: fade-out 0.3s ease-out forwards;
+    }
+
+    /* Toast animation classes */
+    .animation-slide-in {
+      animation: slide-in-up 0.4s ease-out;
+    }
+
+    /* Conversation Menu Styles */
+    .conversation-menu {
+      animation: slide-in-up 0.2s ease-out;
+    }
+
+    .conversation-menu.hidden {
+      display: none;
+    }
+
+    .conversation-card {
+      position: relative;
+    }
+
+    .conversation-card .conversation-menu button {
+      border-radius: 0;
+    }
+
+    .conversation-card .conversation-menu button:first-child {
+      border-radius: 8px 8px 0 0;
+    }
+
+    .conversation-card .conversation-menu button:last-child {
+      border-radius: 0 0 8px 8px;
+    }
+
+    /* Message bubble styles for better display */
+    .message-bubble {
+      display: flex;
+      margin-bottom: 8px;
+      animation: slide-in-up 0.3s ease-out;
+    }
+
+    .message-bubble--mine {
+      justify-content: flex-end;
+    }
+
+    .message-bubble--other {
+      justify-content: flex-start;
+    }
+
+    .message-bubble__card {
+      max-width: 70%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      word-wrap: break-word;
+    }
+
+    .message-bubble--mine .message-bubble__card {
+      background-color: #dcfce7;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-bubble--other .message-bubble__card {
+      background-color: #f0f2f5;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-bubble__meta {
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .message-bubble__text {
+      font-size: 14px;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .message-bubble--mine .message-bubble__text {
+      color: #166534;
+    }
+
+    .message-bubble__time {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .message-bubble--mine .message-bubble__time {
+      color: #65a30d;
+    }
+  </style>
+ </head>
+
+ <body class="h-full">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[400] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-slate-900">Skip to main content</a>
+  <div id="toast" class="toast-msg hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div id="loading-overlay" class="hidden fixed inset-0 z-[300] items-center justify-center bg-slate-950/70 backdrop-blur-sm" role="status" aria-live="polite">
+    <div class="rounded-2xl border border-white/10 bg-slate-900/90 px-6 py-5 text-center text-white shadow-2xl">
+      <div class="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-indigo-400"></div>
+      <div class="text-sm font-semibold" data-loading-text>Loading...</div>
+    </div>
+  </div>
+  <div id="app" class="h-full w-full overflow-auto" style="background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);">
+   <!-- AUTH SCREEN -->
+    <div id="auth-screen" class="min-h-screen w-full flex items-center justify-center py-12 px-4 relative overflow-hidden" 
+     style="background-image: linear-gradient(135deg, rgba(15, 23, 42, 0.78), rgba(30, 27, 75, 0.78)), url('images/Ecommerceimg.jpg'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+  
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]" aria-hidden="true"></div>
+
+  <div class="w-full max-w-md relative z-10 fade-in">
+    
+    <div class="text-center mb-8" id="auth-branding">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl mb-4 bg-white/5 border border-white/10 shadow-xl backdrop-blur-md">
+        <img src="images/jaslogo.png" alt="ELS Logo" class="w-14 h-14 object-contain" style="filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));">
+      </div>
+      <h1 id="auth-site-name" class="text-3xl md:text-4xl font-extrabold text-white tracking-tight" style="font-family: 'Playfair Display', Georgia, serif;">
+        Welcome to Jovali Market
+      </h1>
+      <p id="auth-tagline" class="text-slate-400 mt-2 text-sm font-medium tracking-wide">
+        Shop with confidence, sell with ease.
+      </p>
+    </div>
+
+    <div class="rounded-3xl p-8 bg-slate-900/60 border border-white/10 shadow-2xl backdrop-blur-xl relative">
+      
+      <div class="flex mb-8 rounded-xl p-1 bg-slate-950/60 border border-white/5" role="tablist" aria-label="Authentication tabs">
+        <button id="login-tab" onclick="switchAuthTab('login')" 
+                class="flex-1 py-3 text-sm font-semibold rounded-lg text-white bg-indigo-600 shadow-md transition-all duration-300" 
+                aria-pressed="true" role="tab">
+          Login
+        </button>
+        <button id="register-tab" onclick="switchAuthTab('register')" 
+                class="flex-1 py-3 text-sm font-semibold rounded-lg text-slate-400 hover:text-white transition-all duration-300" 
+                aria-pressed="false" role="tab">
+          Register
+        </button>
+      </div>
+
+      <form id="login-form" onsubmit="handleLogin(event)" class="space-y-5">
+        <div>
+          <label for="login-email" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Email Address</label> 
+          <input id="login-email" type="email" required placeholder="Alex002ng@gmail.com"
+                 class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label for="login-pass" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase">Password</label>
+            <a href="#" onclick="openResetRequestModal();return false;" class="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">Forgot password?</a>
+          </div>
+          <div class="relative">
+            <input id="login-pass" type="password" required placeholder="••••••••" 
+                   class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300 pr-16">
+            <button type="button" 
+                    class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-white/10 text-slate-300 hover:text-white hover:bg-white/15 transition-all text-xs" 
+                    aria-pressed="false" onclick="togglePasswordVisibility('login-pass', this)">
+              <i data-lucide="eye" class="w-4 h-4 inline-block"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="login-role" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Login Channel</label>
+            <select id="login-role" class="w-full px-4 py-3 rounded-xl text-white bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all cursor-pointer">
+              <option value="buyer" class="bg-slate-900">Order Receiver / Buyer</option>
+              <option value="seller" class="bg-slate-900">Seller / Merchant</option>
+              <option value="delivery" class="bg-slate-900">Delivery Partner</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="login-region" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Region</label>
+            <select id="login-region" class="w-full px-4 py-3 rounded-xl text-white bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all cursor-pointer">
+              <option value="global" class="bg-slate-900">Global</option>
+              <option value="lagos" class="bg-slate-900">Lagos</option>
+              <option value="abuja" class="bg-slate-900">Abuja</option>
+              <option value="port-harcourt" class="bg-slate-900">Port Harcourt</option>
+              <option value="drive-hub" class="bg-slate-900">Delivery Hub</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex items-center pt-2">
+          <input id="remember-login" type="checkbox" class="h-4 w-4 rounded border-white/10 text-indigo-600 bg-slate-950/40 focus:ring-indigo-500 cursor-pointer">
+          <label for="remember-login" class="ml-2 block text-sm text-slate-300 cursor-pointer select-none">Keep me logged in</label>
+        </div>
+
+        <button type="submit"
+                class="w-full py-3.5 mt-2 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-500 active:scale-[0.99] shadow-[0_0_20px_rgba(79,70,229,0.3)] hover:shadow-[0_0_25px_rgba(79,70,229,0.5)] transition-all duration-300">
+          Sign In to Account
+        </button>
+
+        <div class="relative py-4">
+          <div class="absolute inset-0 flex items-center" aria-hidden="true">
+            <div class="w-full border-t border-white/10"></div>
+          </div>
+          <div class="relative flex justify-center text-xs uppercase">
+            <span class="bg-slate-900 px-3 text-slate-400 tracking-wider">Credential Access Only</span>
+          </div>
+        </div>
+      </form>
+
+
+      <form id="register-form" class="hidden space-y-5" onsubmit="handleRegister(event)" aria-hidden="true">
+        <div>
+          <label for="reg-name" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Full Name</label> 
+          <input id="reg-name" type="text" required placeholder="Peter Edward" 
+                 class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300">
+        </div>
+
+        <div>
+          <label for="reg-email" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Email Address</label> 
+          <input id="reg-email" type="email" required placeholder="Alex002ng@gmail.com" 
+                 class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label for="reg-pass" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Password</label>
+            <div class="relative">
+              <input id="reg-pass" type="password" required placeholder="••••••••"
+                     class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300 pr-12">
+              <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-white/10 text-slate-300 hover:text-white transition-all text-xs" onclick="togglePasswordVisibility('reg-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+            </div>
+          </div>
+
+          <div>
+            <label for="reg-confirm-pass" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Confirm Password</label>
+            <div class="relative">
+              <input id="reg-confirm-pass" type="password" required placeholder="••••••••"
+                     class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300">
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label for="reg-dob" class="block text-slate-300 text-xs font-semibold tracking-wider uppercase mb-2">Date Of Birth</label>
+          <input id="reg-dob" type="date" required 
+                 class="w-full px-4 py-3 rounded-xl text-white bg-slate-950/40 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300">
+        </div>
+
+        <div class="flex items-center pt-1">
+          <input id="remember-register" type="checkbox" class="h-4 w-4 rounded border-white/10 text-indigo-600 bg-slate-950/40 focus:ring-indigo-500 cursor-pointer" checked>
+          <label for="remember-register" class="ml-2 block text-sm text-slate-300 cursor-pointer select-none">Agree to promotional terms</label>
+        </div>
+
+        <button type="submit"
+                class="w-full py-3.5 rounded-xl font-semibold text-white bg-emerald-600 hover:bg-emerald-500 active:scale-[0.99] shadow-[0_0_20px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.4)] transition-all duration-300 text-md">
+          Create Free Account
+        </button>
+
+        <p class="text-center text-slate-500 text-xs mt-4">Simulation mode: changes will not save instantly.</p>
+      </form>
+
+    </div>
+  </div>
+
+  <div id="reset-password-modal" class="hidden fixed inset-0 flex items-center justify-center z-50 px-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl text-white z-10">
+      <h3 class="text-xl font-bold text-white mb-2">Reset Password</h3>
+      <p class="text-slate-400 text-sm mb-5">Provide your registered email so we can verify your user status.</p>
+      
+      <form id="reset-request-form" onsubmit="sendPasswordResetRequest(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">Your Email address</label>
+          <input id="reset-email" type="email" required class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300" placeholder="Alex002ng@gmail.com" />
+        </div>
+        <div class="flex gap-3 justify-end pt-2">
+          <button type="button" onclick="closeResetRequestModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all text-white">Send Reset Code</button>
+        </div>
+      </form>
+      <div id="reset-request-result" class="mt-3 text-sm text-emerald-400 font-medium"></div>
+    </div>
+  </div>
+
+  <div id="reset-set-modal" class="hidden fixed inset-0 flex items-center justify-center z-50 px-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl text-white z-10">
+      <h3 class="text-xl font-bold text-white mb-2">Choose a new password</h3>
+      <p class="text-slate-400 text-sm mb-5">Please specify a strong, secure password containing numbers and uppercase letters.</p>
+      
+      <form id="reset-set-form" onsubmit="completePasswordReset(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">New Password</label>
+          <div class="relative">
+            <input id="reset-new-pass" type="password" required class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300 pr-12" placeholder="••••••••" />
+            <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-white/5 text-slate-300 hover:text-white transition-all text-xs" onclick="togglePasswordVisibility('reset-new-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">Confirm Password</label>
+          <div class="relative">
+            <input id="reset-new-pass-confirm" type="password" required class="w-full px-4 py-3 rounded-xl text-white placeholder-slate-500 bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300 pr-12" placeholder="••••••••" />
+            <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 rounded bg-white/5 text-slate-300 hover:text-white transition-all text-xs" onclick="togglePasswordVisibility('reset-new-pass-confirm', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+        <div class="flex gap-3 justify-end pt-2">
+          <button type="button" onclick="closeResetSetModal()" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all text-white">Set Password</button>
+        </div>
+      </form>
+      <div id="reset-set-result" class="mt-3 text-sm text-red-400 font-medium"></div>
+    </div>
+  </div>
+
+  <div id="reset-otp-modal" class="hidden fixed inset-0 flex items-center justify-center z-50 px-4">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"></div>
+    <div class="relative bg-slate-900 border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl text-white z-10">
+      <h3 class="text-xl font-bold text-white mb-2">Enter verification code</h3>
+      <p class="text-slate-400 text-sm mb-5 font-light">We sent a 6-digit one-time code to your verified email address.</p>
+      
+      <form id="reset-otp-form" onsubmit="verifyOtp(event)" class="space-y-5">
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wide text-slate-300 mb-2">6-Digit Code</label>
+          <input id="reset-otp-code" type="text" required class="w-full text-center tracking-[1em] font-mono text-xl px-4 py-3.5 rounded-xl text-white bg-slate-950 border border-white/10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all duration-300" placeholder="000000" pattern="[0-9]{6}" />
+        </div>
+        <div class="flex gap-2.5 justify-end">
+          <button type="button" onclick="closeResetOtpModal()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/5 border border-white/10 hover:bg-white/10 transition-colors text-white">Cancel</button>
+          <button type="button" id="resend-reset-code-btn" onclick="resendResetCode()" class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-amber-600/20 text-amber-300 border border-amber-500/20 hover:bg-amber-600/30 transition-colors">Resend code</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/20 transition-all text-white">Verify Code</button>
+        </div>
+      </form>
+      <div id="reset-otp-result" class="mt-3 text-sm text-red-400 font-medium"></div>
+    </div>
+  </div>
+
+</div>
+     <!-- MAIN APP (hidden until login) -->
+    <div id="main-app" class="hidden h-full w-full">
+    <!-- TOP NAV -->
+    <header id="topnav" class="sticky top-0 z-30 w-full" style="background:#547f97; border-bottom:1px solid rgba(255,255,255,0.08);">
+     <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
+      <div class="flex items-center gap-3">
+       <button onclick="toggleSidebar()" class="text-white p-2 rounded-lg hover:bg-white/10 transition"><i data-lucide="menu" class="w-5 h-5"></i></button>
+       <h1 id="nav-site-name" class="text-lg font-bold text-white cursor-pointer" onclick="goTo('home')" style="font-family:'Playfair Display',serif;">JovAli Market</h1>
+      </div>
+      <nav class="hidden md:flex items-center gap-1">
+       <button onclick="goTo('home')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="home">Home</button>
+       <button onclick="goTo('shop')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="shop">Shop</button>
+        <button onclick="goTo('my-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="my-store">My Store</button>
+       <button onclick="goTo('about')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="about">About</button>
+       <button onclick="goTo('contact')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="contact">Contact</button>
+      </nav>
+       <div class="flex items-center gap-2">
+         <!-- Notification Bell -->
+         <div class="relative">
+           <button id="notification-bell" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Notifications">
+             <i data-lucide="bell" class="w-5 h-5"></i>
+             <span id="notification-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white" style="background:#e94560;">0</span>
+           </button>
+
+           <!-- Notification Dropdown -->
+           <div id="notification-dropdown" class="hidden absolute right-0 top-12 z-20 w-80 rounded-2xl border border-slate-200 bg-white shadow-xl max-h-96 flex flex-col">
+             <div class="border-b p-3 flex items-center justify-between">
+               <h3 class="font-bold text-slate-900 text-sm">Notifications</h3>
+               <button onclick="notificationsService.markAllAsRead()" class="text-xs text-blue-600 hover:text-blue-700 font-semibold">Mark all as read</button>
+             </div>
+             <div id="notification-list" class="flex-1 overflow-y-auto">
+               <!-- Notifications will render here -->
+               <div class="p-4 text-center text-slate-400 text-sm">Loading...</div>
+             </div>
+             <div class="border-t p-3">
+               <button onclick="goTo('notifications-full')" class="w-full text-sm text-blue-600 hover:text-blue-700 font-semibold">See all notifications</button>
+             </div>
+           </div>
+         </div>
+
+         <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders">
+           <i data-lucide="package" class="w-5 h-5"></i>
+         </button>
+         <button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition">
+           <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+           <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" style="background:#e94560;">0</span>
+         </button>
+         <button id="user-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden" title="Edit profile" onclick="goTo('profile')" style="background:#e94560;">
+           <img id="user-avatar-img" src="" alt="avatar" class="hidden w-full h-full object-cover" />
+           <span id="user-avatar-initial">J</span>
+         </button>
+       </div>
+       </div>
+     </header>
+    <!-- PROFILE PAGE -->
+    <section id="page-profile" class="page">
+      <div class="max-w-2xl mx-auto px-4 py-12">
+        <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
+          <h2 class="text-2xl font-bold mb-4" style="color:#1a1a2e;">Edit Profile</h2>
+          <form id="profile-form" onsubmit="saveProfile(event)">
+            <div class="text-center mb-4">
+              <button type="button" onclick="document.getElementById('profile-avatar-input-page').click()" class="mx-auto inline-flex items-center justify-center rounded-full border border-slate-200 p-1 transition hover:scale-105">
+                <img id="profile-avatar-preview-page" src="" alt="avatar preview" class="rounded-full w-24 h-24 object-cover hidden" />
+                <div id="profile-avatar-placeholder-page" class="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-600"></div>
+              </button>
+              <input id="profile-avatar-input-page" type="file" accept="image/*" class="hidden" onchange="handleProfileAvatarInput(event)" />
+              <div class="flex gap-2 justify-center mt-3">
+                <button type="button" onclick="document.getElementById('profile-avatar-input-page').click()" class="px-4 py-2 rounded-xl bg-gray-100">Choose Avatar</button>
+                <button type="button" onclick="clearProfileAvatarPreviewPage()" class="px-4 py-2 rounded-xl bg-gray-100">Clear</button>
+              </div>
+            </div>
+            <div class="mb-4">
+              <label for="profile-name" class="block text-sm font-medium mb-1">Display Name</label>
+              <input id="profile-name" type="text" class="w-full px-4 py-3 rounded-xl" />
+            </div>
+            <div class="mb-4">
+              <label for="profile-email" class="block text-sm font-medium mb-1">Email</label>
+              <input id="profile-email" type="email" class="w-full px-4 py-3 rounded-xl" />
+            </div>
+            <div class="mb-4">
+              <label for="profile-bio" class="block text-sm font-medium mb-1">Bio</label>
+              <textarea id="profile-bio" rows="3" class="w-full px-4 py-3 rounded-xl"></textarea>
+            </div>
+            <div class="mb-4">
+              <label for="profile-logistics-id" class="block text-sm font-medium mb-1">Logistics ID</label>
+              <input id="profile-logistics-id" type="text" class="w-full px-4 py-3 rounded-xl bg-gray-100" readonly />
+            </div>
+            <div class="flex gap-3">
+              <button type="submit" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Save Profile</button>
+              <button type="button" onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold" style="background:#f3f4f6;">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+    <!-- SIDEBAR OVERLAY -->
+    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+    <!-- SIDEBAR -->
+    <nav id="sidebar" class="sidebar flex flex-col" style="background:#47475a;">
+     <div class="p-5 flex items-center justify-between" style="border-bottom:1px solid rgba(43, 26, 26, 0.377);">
+      <span class="text-white font-bold text-lg" style="font-family:'Playfair Display',serif;">Menu</span> 
+      <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i></button>
+     </div>
+     <div class="flex-1 py-4 px-3 flex flex-col gap-1 overflow-auto">
+      <button onclick="goTo('home');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="home"><i data-lucide="home" class="w-4 h-4"></i>Home</button> <button onclick="goTo('shop');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="shop"><i data-lucide="shopping-bag" class="w-4 h-4"></i>Shop</button>
+               <button onclick="goTo('my-store');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="my-store"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>My Store</button> <button onclick="goTo('cart');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="cart"><i data-lucide="shopping-cart" class="w-4 h-4"></i>Cart</button> <button onclick="goTo('orders');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="orders"><i data-lucide="package" class="w-4 h-4"></i>Orders</button> <button onclick="goTo('logistics');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="logistics"><i data-lucide="truck" class="w-4 h-4"></i>Logistics</button> <button onclick="goTo('payment');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="payment"><i data-lucide="credit-card" class="w-4 h-4"></i>Payment</button> <button onclick="goTo('about');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="about"><i data-lucide="info" class="w-4 h-4"></i>About</button> <button onclick="goTo('contact');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="contact"><i data-lucide="mail" class="w-4 h-4"></i>Contact</button>
+     </div>
+     <div class="p-4" style="border-top:1px solid rgba(255,255,255,0.08);">
+      <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-sm font-medium"><i data-lucide="log-out" class="w-4 h-4"></i>Sign Out</button>
+     </div>
+    </nav>
+    <!-- PAGES -->
+    <main id="main-content" class="w-full">
+     <!-- HOME PAGE -->
+     <section id="page-home" class="page active bg-slate-50 min-h-screen font-sans antialiased selection:bg-indigo-600 selection:text-white">
+
+  <div class="relative overflow-hidden bg-slate-950 text-white">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.30),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.18),_transparent_22%)]"></div>
+    <div class="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(26, 6, 6, 0.23)_1px,transparent_1px)] bg-[size:36px_36px] opacity-40"></div>
+
+    <div class="relative z-10 max-w-7xl mx-auto px-6 py-20 lg:py-28">
+      <div class="grid lg:grid-cols-[1.15fr_0.85fr] gap-12 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-semibold tracking-[0.18em] uppercase text-slate-200 backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            Trusted marketplace
+          </div>
+
+          <h1 class="mt-8 text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] text-white">
+            Shop smarter.<br>
+            Sell with confidence.
+          </h1>
+
+          <p class="mt-6 max-w-xl text-lg text-slate-300 leading-relaxed">
+            Discover premium products from trusted sellers, or launch your own storefront with tools built to help you grow faster and sell smarter.
+          </p>
+
+          <div class="mt-8 flex flex-col sm:flex-row gap-4">
+            <button onclick="goTo('shop')" class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-600/30 transition hover:bg-indigo-500 active:scale-[0.98]">
+              Browse products
+            </button>
+            <button onclick="goTo('open-store')" class="inline-flex items-center justify-center rounded-xl border border-white/20 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10 active:scale-[0.98]">
+              Open a store
+            </button>
+          </div>
+
+          <div class="mt-10 flex flex-wrap gap-6 text-sm text-slate-300">
+            <div>
+              <div class="text-2xl font-black text-white">50K+</div>
+              <div class="text-slate-400">happy buyers</div>
+            </div>
+            <div>
+              <div class="text-2xl font-black text-white">5K+</div>
+              <div class="text-slate-400">active sellers</div>
+            </div>
+            <div>
+              <div class="text-2xl font-black text-white">24/7</div>
+              <div class="text-slate-400">support</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="rounded-[2rem] border border-white/10 bg-white/5 p-4 shadow-2xl shadow-indigo-950/40 backdrop-blur-sm">
+            <div class="overflow-hidden rounded-[1.5rem] bg-slate-900">
+              <img src="images/jaslogo.png" alt="JovAli brand showcase" class="h-[520px] w-full object-cover opacity-95" />
+            </div>
+          </div>
+
+          <div class="absolute -bottom-5 left-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-xl text-slate-900">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">This week</p>
+            <p class="mt-1 text-xl font-black">New arrivals</p>
+            <p class="mt-1 text-sm text-slate-600">Curated for modern living</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 py-16 lg:py-20">
+    <div class="grid md:grid-cols-3 gap-6">
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900">Secure shopping</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">Protected payments, trusted sellers, and a checkout experience designed for peace of mind.</p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+          <i data-lucide="truck" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900">Fast delivery</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">Efficient logistics and transparent order updates keep every purchase moving smoothly.</p>
+      </div>
+
+      <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition">
+        <div class="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-600">
+          <i data-lucide="store" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-xl font-bold text-slate-900">Sell with ease</h3>
+        <p class="mt-2 text-sm leading-relaxed text-slate-600">Open your storefront in minutes, manage products, and grow your customer base without friction.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 pb-20">
+    <div class="mb-10 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">Popular categories</p>
+        <h2 class="mt-2 text-3xl font-black text-slate-900">Shop what fits your life</h2>
+      </div>
+      <button onclick="goTo('shop')" class="text-sm font-semibold text-slate-700 hover:text-slate-900">View all categories →</button>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+      <div onclick="filterShopCategory('Electronics')" class="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+        <div class="overflow-hidden">
+          <img src="images/gadgets.jpg" alt="Electronics" class="h-52 w-full object-cover transition duration-300 group-hover:scale-105" />
+        </div>
+        <div class="p-4">
+          <p class="text-lg font-bold text-slate-900">Electronics</p>
+          <p class="mt-1 text-sm text-slate-500">Smart tools & devices</p>
+        </div>
+      </div>
+
+      <div onclick="filterShopCategory('Fashion')" class="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+        <div class="overflow-hidden">
+          <img src="images/fashionimg.jpg" alt="Fashion brand" class="h-52 w-full object-cover transition duration-300 group-hover:scale-105" />
+        </div>
+        <div class="p-4">
+          <p class="text-lg font-bold text-slate-900">Fashion</p>
+          <p class="mt-1 text-sm text-slate-500">Brand-led style</p>
+        </div>
+      </div>
+
+      <div onclick="filterShopCategory('Home')" class="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+        <div class="overflow-hidden">
+          <img src="images/homeimg.jpg" alt="Home" class="h-52 w-full object-cover transition duration-300 group-hover:scale-105" />
+        </div>
+        <div class="p-4">
+          <p class="text-lg font-bold text-slate-900">Home</p>
+          <p class="mt-1 text-sm text-slate-500">Comfort and essentials</p>
+        </div>
+      </div>
+
+      <div onclick="filterShopCategory('Sports')" class="group cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+        <div class="overflow-hidden">
+          <img src="images/sport.jpg" alt="Sports" class="h-52 w-full object-cover transition duration-300 group-hover:scale-105" />
+        </div>
+        <div class="p-4">
+          <p class="text-lg font-bold text-slate-900">Sports</p>
+          <p class="mt-1 text-sm text-slate-500">Performance & fitness</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white py-20">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="mb-10 text-center">
+        <p class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-600">Featured products</p>
+        <h2 class="mt-3 text-3xl font-black text-slate-900">Fresh picks for your next order</h2>
+      </div>
+
+      <div id="home-products" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+          <img src="images/Ecommerceimg.jpg" alt="Product" class="h-64 w-full object-cover" />
+          <div class="p-5">
+            <p class="text-sm text-slate-500">Electronics</p>
+            <h3 class="mt-2 text-xl font-bold text-slate-900">Pro Audio Kit</h3>
+            <div class="mt-4 flex items-center justify-between">
+              <span class="text-xl font-black text-slate-900">$149</span>
+              <button onclick="goTo('shop')" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Shop now</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+          <img src="images/jaslogo.png" alt="Product" class="h-64 w-full object-cover" />
+          <div class="p-5">
+            <p class="text-sm text-slate-500">Fashion</p>
+            <h3 class="mt-2 text-xl font-bold text-slate-900">Signature Brand</h3>
+            <div class="mt-4 flex items-center justify-between">
+              <span class="text-xl font-black text-slate-900">$96</span>
+              <button onclick="goTo('shop')" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Shop now</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+          <img src="images/homeimg.jpg" alt="Product" class="h-64 w-full object-cover" />
+          <div class="p-5">
+            <p class="text-sm text-slate-500">Home</p>
+            <h3 class="mt-2 text-xl font-bold text-slate-900">Minimal Lamp</h3>
+            <div class="mt-4 flex items-center justify-between">
+              <span class="text-xl font-black text-slate-900">$64</span>
+              <button onclick="goTo('shop')" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Shop now</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+          <img src="images/sport.jpg" alt="Product" class="h-64 w-full object-cover" />
+          <div class="p-5">
+            <p class="text-sm text-slate-500">Sports</p>
+            <h3 class="mt-2 text-xl font-bold text-slate-900">Trail Essential Kit</h3>
+            <div class="mt-4 flex items-center justify-between">
+              <span class="text-xl font-black text-slate-900">$120</span>
+              <button onclick="goTo('shop')" class="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white">Shop now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 pb-20">
+    <div class="rounded-[2rem] bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 p-8 sm:p-12 text-center text-white shadow-2xl">
+      <p class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-200">Why sellers choose us</p>
+      <h2 class="mt-4 text-3xl font-black sm:text-4xl">Launch faster. Grow smarter.</h2>
+      <p class="mx-auto mt-4 max-w-2xl text-slate-200">From product management and secure checkout to trusted customer interaction, JovAli Market gives sellers the tools they need to build a stronger business.</p>
+      <div class="mt-8 flex flex-col justify-center gap-4 sm:flex-row">
+        <button onclick="goTo('open-store')" class="rounded-xl bg-white px-6 py-3.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-100">Start selling</button>
+        <button onclick="goTo('shop')" class="rounded-xl border border-white/20 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10">Explore store</button>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- SHOP PAGE -->
+<section id="page-shop" class="page relative min-h-screen bg-slate-50 overflow-hidden">
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.12),_transparent_26%),radial-gradient(circle_at_bottom_right,_rgba(14,165,233,0.10),_transparent_24%)] pointer-events-none"></div>
+  <div class="relative z-10 max-w-7xl mx-auto px-4 py-12 animate-fadeIn">
+
+    <div class="rounded-[2rem] border border-slate-200 bg-white shadow-sm p-6 sm:p-8">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-indigo-600">Marketplace</p>
+          <h2 class="mt-3 text-3xl font-black text-slate-900 sm:text-4xl">Shop with clarity</h2>
+        </div>
+
+        <div class="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
+          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Fast shipping</span>
+          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Verified sellers</span>
+          <span class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5">Secure checkout</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div class="flex flex-col gap-4 xl:flex-row xl:items-end">
+        <div class="flex-1 min-w-0">
+          <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Search</label>
+          <input id="product-search" type="text" placeholder="Search by product name or keyword" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100">
+        </div>
+
+        <div class="min-w-[170px]">
+          <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Category</label>
+          <select id="product-category-filter" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100">
+            <option value="">All categories</option>
+            <option value="Electronics">Electronics</option>
+            <option value="Fashion">Fashion</option>
+            <option value="Home">Home</option>
+            <option value="Sports">Sports</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="min-w-[120px]">
+          <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Min</label>
+          <input id="product-min-price" type="number" value="0" min="0" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100">
+        </div>
+
+        <div class="min-w-[120px]">
+          <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Max</label>
+          <input id="product-max-price" type="number" value="1000000" min="0" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100">
+        </div>
+
+        <div class="min-w-[180px]">
+          <label class="mb-2 block text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">Sort by</label>
+          <select id="product-sort-select" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-100">
+            <option value="newest">Newest</option>
+            <option value="price_asc">Price: low to high</option>
+            <option value="price_desc">Price: high to low</option>
+            <option value="rating">Top rated</option>
+            <option value="name">Name A–Z</option>
+          </select>
+        </div>
+
+        <button onclick="window.productCatalog.resetFilters()" class="inline-flex items-center justify-center rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 active:scale-[0.98]">
+          Reset
+        </button>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <div class="mb-4 flex flex-wrap gap-2">
+        <button onclick="filterShopCategory('All')" class="cat-btn rounded-full bg-slate-900 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-white shadow-sm">All</button>
+        <button onclick="filterShopCategory('Electronics')" class="cat-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:text-slate-900">Electronics</button>
+        <button onclick="filterShopCategory('Fashion')" class="cat-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:text-slate-900">Fashion</button>
+        <button onclick="filterShopCategory('Home')" class="cat-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:text-slate-900">Home</button>
+        <button onclick="filterShopCategory('Sports')" class="cat-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:text-slate-900">Sports</button>
+        <button onclick="filterShopCategory('Other')" class="cat-btn rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-slate-700 transition hover:border-slate-300 hover:text-slate-900">Other</button>
+      </div>
+
+      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p id="product-page-info" class="text-sm text-slate-600">Loading products...</p>
+        <div class="flex items-center gap-2">
+          <button id="product-prev-page" class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50" disabled>Previous</button>
+          <button id="product-next-page" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50" disabled>Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="shop-grid" class="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+      <!-- Electronics Product Card -->
+      <div class="group rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+        <div class="relative overflow-hidden bg-slate-100 h-48">
+          <img src="images/gadgets.jpg" alt="Pro Audio Kit" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+          <div class="absolute top-3 right-3 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Electronics</div>
+        </div>
+        <div class="p-5">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Pro Audio Kit</h3>
+          <p class="text-sm text-slate-600 mb-3 line-clamp-2">High-quality audio equipment designed for professionals and enthusiasts. Features crystal-clear sound, noise cancellation, and premium build quality.</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xl font-black text-slate-900">$149</span>
+            <button onclick="goTo('shop')" class="rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-2 text-xs font-semibold transition">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fashion Product Card -->
+      <div class="group rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+        <div class="relative overflow-hidden bg-slate-100 h-48">
+          <img src="images/jaslogo.png" alt="Signature Brand" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+          <div class="absolute top-3 right-3 bg-rose-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Fashion</div>
+        </div>
+        <div class="p-5">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Signature Brand</h3>
+          <p class="text-sm text-slate-600 mb-3 line-clamp-2">Premium fashion collection featuring trendy apparel and accessories. Crafted from high-quality materials with contemporary designs perfect for modern wardrobes.</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xl font-black text-slate-900">$96</span>
+            <button onclick="goTo('shop')" class="rounded-lg bg-rose-600 hover:bg-rose-500 text-white px-3 py-2 text-xs font-semibold transition">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Home Product Card -->
+      <div class="group rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+        <div class="relative overflow-hidden bg-slate-100 h-48">
+          <img src="images/homeimg.jpg" alt="Minimal Lamp" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+          <div class="absolute top-3 right-3 bg-amber-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Home</div>
+        </div>
+        <div class="p-5">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Minimal Lamp</h3>
+          <p class="text-sm text-slate-600 mb-3 line-clamp-2">Elegant home décor lighting solution combining minimalist aesthetics with functional design. Perfect for creating ambient lighting in any room with style and sophistication.</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xl font-black text-slate-900">$64</span>
+            <button onclick="goTo('shop')" class="rounded-lg bg-amber-600 hover:bg-amber-500 text-white px-3 py-2 text-xs font-semibold transition">View</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sports Product Card -->
+      <div class="group rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
+        <div class="relative overflow-hidden bg-slate-100 h-48">
+          <img src="images/sport.jpg" alt="Trail Essential Kit" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
+          <div class="absolute top-3 right-3 bg-emerald-600 text-white text-xs font-semibold px-3 py-1 rounded-full">Sports</div>
+        </div>
+        <div class="p-5">
+          <h3 class="text-lg font-bold text-slate-900 mb-2">Trail Essential Kit</h3>
+          <p class="text-sm text-slate-600 mb-3 line-clamp-2">Complete sports and fitness equipment package for outdoor adventures. Durable, lightweight, and designed for performance with professional-grade materials.</p>
+          <div class="flex items-center justify-between">
+            <span class="text-xl font-black text-slate-900">$120</span>
+            <button onclick="goTo('shop')" class="rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-2 text-xs font-semibold transition">View</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- OPEN STORE PAGE -->
+    <section id="page-open-store" class="page bg-slate-50 min-h-screen">
+  <div class="max-w-5xl mx-auto px-4 py-12">
+    <!-- Header Section -->
+    <div class="text-center mb-12">
+      <div class="inline-flex justify-center items-center mb-4 p-3 bg-white rounded-2xl shadow-sm">
+        <img src="images/timesetup.png" alt="Setup Time" width="80" height="80" class="object-contain" />
+      </div>
+      <h2 class="text-4xl font-extrabold mb-3 tracking-tight text-slate-900 font-serif">
+        Open Your Store
+      </h2>
+      <p class="text-base text-slate-500 max-w-md mx-auto">
+        Start selling in minutes. List your products and reach customers worldwide seamlessly.
+      </p>
+    </div>
+     <!-- Store Benefits Section -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <!-- Card 1 -->
+      <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
+          <img src="images/setupimg.png" alt="Quick Setup" width="64" height="64" class="mx-auto" />
+        </div>
+        <h4 class="font-bold text-lg text-slate-900 mb-1">Quick Setup</h4>
+        <p class="text-slate-500 text-sm">List a product in under a minute</p>
+      </div>
+      <!-- Card 2 -->
+      <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
+          <img src="images/globe.png" alt="Global Reach" width="64" height="64" class="mx-auto" />
+        </div>
+        <h4 class="font-bold text-lg text-slate-900 mb-1">Global Reach</h4>
+        <p class="text-slate-500 text-sm">Your products visible to everyone</p>
+      </div>
+      <!-- Card 3 -->
+      <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
+          <img src="images/feeimg.png" alt="Zero Fees" width="64" height="64" class="mx-auto" />
+        </div>
+        <h4 class="font-bold text-lg text-slate-900 mb-1">Zero Fees</h4>
+        <p class="text-slate-500 text-sm">No listing or commission fees</p>
+      </div>
+    </div>
+<!-- Store Creation Form & Status Dashboard -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1.4fr_0.6fr] gap-8 mb-12">
+      <!-- Main Setup Block -->
+      <section class="rounded-3xl p-8 bg-slate-900 text-white relative overflow-hidden shadow-xl border border-slate-800">
+        <span class="absolute right-6 top-6 text-7xl opacity-5 select-none" aria-hidden="true">🏬</span>
+        <h3 class="text-2xl font-bold mb-2 tracking-tight">Create your store instantly</h3>
+        <p class="text-slate-400 text-sm mb-8 max-w-xl">
+          Upload your store details from this page, then list products and route them to the right category automatically.
+        </p>
+         <form id="open-store-create-form" class="space-y-8">
+          
+          <!-- Step 1: Payment Method Selection -->
+          <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-indigo-50/50 to-transparent p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-indigo-600 text-white font-bold text-sm">1</div>
+              <h3 class="text-lg font-bold text-slate-900">Select Payment Method</h3>
+            </div>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-3">Payout Verification Channel</label>
+                <select id="open-store-payment-method" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all">
+                  <option value="bank_transfer">Bank Transfer (Recommended)</option>
+                  <option value="google_pay">Google Pay</option>
+                  <option value="international_card">International Card</option>
+                  <option value="cash_on_delivery">Cash on Delivery</option>
+                </select>
+                <p class="text-xs text-slate-600 mt-2">Choose how you'll receive payouts from your sales</p>
+              </div>
+              <label class="flex items-start gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 cursor-pointer hover:bg-indigo-100 transition">
+                <input id="open-store-payment-verified" type="checkbox" class="mt-1.5 h-4 w-4 rounded border-indigo-300 text-indigo-600 focus:ring-indigo-500" checked />
+                <span class="text-sm text-slate-700"><strong>Mark verified:</strong> These payout details are verified and ready for seller settlement.</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Step 2: Business Information -->
+          <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-emerald-50/50 to-transparent p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-600 text-white font-bold text-sm">2</div>
+              <h3 class="text-lg font-bold text-slate-900">Business Information</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Business Name</label>
+                <input id="open-store-paystack-business-name" type="text" placeholder="Your registered business name" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" />
+                <p class="text-xs text-slate-600 mt-1">Must match your official business registration</p>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Contact Email</label>
+                <input id="open-store-paystack-contact-email" type="email" placeholder="business@example.com" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all" />
+                <p class="text-xs text-slate-600 mt-1">Primary contact for payment notifications</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Bank Settlement Details -->
+          <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-amber-50/50 to-transparent p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-amber-600 text-white font-bold text-sm">3</div>
+              <h3 class="text-lg font-bold text-slate-900">Bank Settlement Account</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Bank Name</label>
+                <select id="open-store-bank-name" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all">
+                  <option value="">Select your bank</option>
+                  <option>Access Bank</option>
+                  <option>GTBank</option>
+                  <option>Zenith Bank</option>
+                  <option>First Bank</option>
+                  <option>UBA</option>
+                  <option>Fidelity Bank</option>
+                  <option>Stanbic IBTC</option>
+                  <option>Other</option>
+                </select>
+                <p class="text-xs text-slate-600 mt-1">The bank where your account is registered</p>
+              </div>
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Account Number</label>
+                <input id="open-store-paystack-account-number" type="text" placeholder="0123456789" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all" />
+                <p class="text-xs text-slate-600 mt-1">10-digit account number</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Account Holder Name</label>
+                <input id="open-store-paystack-account-name" type="text" placeholder="Name on bank account" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all" />
+                <p class="text-xs text-slate-600 mt-1">Exact name as it appears on your bank account</p>
+              </div>
+              <div style="display:none;">
+                <input id="open-store-paystack-settlement-bank" type="hidden" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 4: Commission & Verification -->
+          <div class="rounded-2xl border border-slate-200 bg-gradient-to-br from-rose-50/50 to-transparent p-6">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-rose-600 text-white font-bold text-sm">4</div>
+              <h3 class="text-lg font-bold text-slate-900">Commission & Verification</h3>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-2">Platform Commission %</label>
+                <div class="relative">
+                  <input id="open-store-paystack-percentage-charge" type="number" min="0" max="100" step="0.01" placeholder="2.5" class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all" />
+                  <span class="absolute right-4 top-3.5 text-slate-500 font-semibold">%</span>
+                </div>
+                <p class="text-xs text-slate-600 mt-1">Paystack or payment processing fee</p>
+              </div>
+              <div></div>
+            </div>
+            <div class="mt-4">
+              <label class="block text-sm font-semibold text-slate-700 mb-2">Verification Note (Optional)</label>
+              <textarea id="open-store-payment-verification-note" rows="3" placeholder="Add any special instructions, settlement reference, or verification notes..." class="w-full rounded-xl px-4 py-3 border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all resize-none"></textarea>
+              <p class="text-xs text-slate-600 mt-1">This helps us process your payouts faster and more accurately</p>
+            </div>
+          </div>
+
+          <!-- Submit Section -->
+          <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="mb-4 p-4 rounded-xl bg-indigo-50 border border-indigo-100">
+              <p class="text-sm text-slate-700">
+                <strong>Ready to launch?</strong> Once you create your store, you can immediately start uploading products and accepting orders. Payment details can be updated anytime from your seller dashboard.
+              </p>
+            </div>
+            <button id="open-store-submit-btn" type="submit" class="w-full inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] text-white px-8 py-4 font-semibold shadow-lg shadow-indigo-600/20 transition-all duration-200">
+              ✓ Create Store & Continue
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Sidebar Status Block -->
+      <aside class="rounded-3xl p-6 bg-white shadow-md border border-slate-100 flex flex-col justify-between">
+        <div>
+          <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full inline-block"></span> Store Status
+          </h3>
+          <div id="open-store-status" class="space-y-4 text-sm text-slate-600">
+            <p class="leading-relaxed">No store created yet. Create your store configuration to start selling directly.</p>
+            <div class="rounded-2xl bg-slate-50 p-4 border border-slate-200/60">
+              <p class="text-xs text-slate-500 leading-relaxed">
+                Store setup is required before listing items. Once your store is live, your products will automatically group into organized dynamic category structures.
+              </p>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+     <!-- Product Creation Module -->
+    <div class="rounded-3xl p-8 bg-white border border-slate-100 shadow-md mb-12">
+      <h3 class="text-xl font-bold mb-6 text-slate-900">List a New Product</h3>
+      <form id="add-product-form" onsubmit="handleAddProduct(event)">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+          <div>
+            <label for="prod-name" class="block text-sm font-medium text-slate-700 mb-2">Product Name</label>
+            <input id="prod-name" type="text" required placeholder="e.g. Wireless Headphones" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            <p id="err-prod-name" class="hidden text-xs text-rose-500 mt-1.5"></p>
+          </div>
+          <div>
+            <label for="prod-price" class="block text-sm font-medium text-slate-700 mb-2">Price (USD)</label> 
+            <input id="prod-price" type="number" step="0.01" min="0.01" required placeholder="29.99" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+            <p id="err-prod-price" class="hidden text-xs text-rose-500 mt-1.5"></p>
+          </div>
+        </div>
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
+          <div>
+            <label for="prod-category" class="block text-sm font-medium text-slate-700 mb-2">Category</label> 
+            <select id="prod-category" required class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"> 
+              <option value="">Select category</option>
+              <option value="Electronics">Electronics</option> 
+              <option value="Fashion">Fashion</option> 
+              <option value="Home">Home</option> 
+              <option value="Sports">Sports</option> 
+              <option value="Other">Other</option> 
+            </select>
+            <p id="err-prod-category" class="hidden text-xs text-rose-500 mt-1.5"></p>
+            <p id="prod-category-suggestion" class="hidden mt-2.5 text-xs text-indigo-600 bg-indigo-50 p-2.5 rounded-lg inline-block">
+              Suggested category: <button type="button" onclick="acceptSuggestedCategory()" class="font-semibold underline hover:text-indigo-800">Use this category</button>
+            </p>
+          </div>
+        </div>
+         <!-- Optimized File Upload Drop Zone -->
+        <div class="mb-5">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Product Image</label>
+          <div id="image-upload-area" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-slate-50 rounded-2xl p-6 text-center cursor-pointer transition-all duration-150" aria-label="Product image upload area">
+            <input id="prod-image" type="file" accept="image/*" class="hidden" multiple onchange="handleImageUpload(event)">
+            <input id="product-image-replace-input" type="file" accept="image/*" class="hidden" onchange="handleProductImageReplace(event)">
+            
+            <div class="flex flex-col items-center justify-center gap-3">
+              <div class="p-3 bg-white rounded-full shadow-sm text-slate-400">
+                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+              </div>
+              <div class="upload-instructions">
+                <button type="button" onclick="document.getElementById('prod-image').click()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-transparent border-0 p-0 cursor-pointer">
+                  Click to upload images
+                </button>
+                <span class="text-sm text-slate-500"> or drag and drop</span>
+                <p class="text-xs text-slate-400 mt-1">JPG, PNG, or WebP up to 5MB (Recommended: 250x250px)</p>
+              </div>
+            </div>
+             <!-- Previews Container -->
+            <div id="image-preview-section" class="hidden mt-6 pt-6 border-t border-slate-200 w-full text-left">
+              <div id="image-gallery" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4 bg-white p-3 rounded-xl border border-slate-100">
+                <div id="image-info" class="text-xs font-medium text-slate-600"></div>
+                <div class="flex items-center gap-4">
+                  <label class="inline-flex items-center text-xs font-medium text-slate-700 cursor-pointer">
+                    <input id="optimize-image" type="checkbox" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mr-1.5" /> Optimize
+                  </label>
+                  <label class="inline-flex items-center text-xs font-medium text-slate-700 cursor-pointer">
+                    <input id="prod-public" type="checkbox" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mr-1.5" /> Public Visibility
+                  </label>
+                </div>
+              </div>
+              <div id="upload-list" class="mt-3"></div>
+              <div class="flex justify-end mt-4">
+                <button type="button" onclick="clearAllImages()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold bg-rose-50 hover:bg-rose-100/60 px-3 py-1.5 rounded-lg transition-colors">Clear All Images</button>
+              </div>
+            </div>
+          </div>
+        </div>
+         <div class="mb-6">
+          <label for="prod-desc" class="block text-sm font-medium text-slate-700 mb-2">Description</label> 
+          <textarea id="prod-desc" rows="4" required placeholder="Provide a detailed overview of your item..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"></textarea>
+          <p id="err-prod-desc" class="hidden text-xs text-rose-500 mt-1.5"></p>
+        </div>
+        <!-- Action Management Buttons -->
+        <div class="flex flex-col sm:flex-row gap-3 w-full mt-4">
+          <button id="save-draft-btn" type="submit" data-publish="false" disabled class="flex-1 py-3.5 rounded-xl font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150">
+            Save Draft
+          </button>
+          <button id="add-product-btn" type="submit" data-publish="true" disabled class="flex-1 py-3.5 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10 transition-colors duration-150">
+            <span id="add-prod-text">Publish Product</span>
+            <span id="add-prod-loading" class="hidden">Listing...</span>
+          </button>
+        </div>
+        <p id="product-publish-status" class="text-xs text-slate-500 mt-3">
+          Save as draft to keep work private, or publish instantly once your payout details are ready.
+        </p>
+        <p id="store-limit-msg" class="hidden text-center text-rose-500 text-xs mt-4 font-semibold bg-rose-50 p-2.5 rounded-xl">
+          Maximum product limit reached (1000). Please remove existing listings first.
+        </p>
+      </form>
+    </div>
+    <!-- Management Section Table/List Container -->
+    <div class="mt-12">
+      <h3 class="text-xl font-bold mb-4 text-slate-900">My Listed Products</h3>
+      <div id="my-products" class="bg-white border border-slate-100 rounded-2xl shadow-sm min-h-[140px] flex items-center justify-center p-6">
+        <p class="text-slate-400 text-sm text-center">You haven't listed any products yet.</p>
+      </div>
+    </div></div>
+</section>
+     <!-- MY STORE DASHBOARD -->
+<section id="page-my-store" class="page bg-slate-50 min-h-screen py-12 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex items-center gap-3 mb-8">
+      <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
+        <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">My Store Dashboard</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Manage your products, orders, and earnings</p>
+      </div>
+      <div id="dash-loader" class="hidden ml-auto">
+        <div class="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+      </div>
+    </div>
+
+    <ul class="dash-tabs-nav flex gap-1 mb-8 p-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+      <li data-tab="products" class="active px-4 py-2 rounded-lg text-sm font-semibold text-indigo-600 bg-indigo-50 cursor-pointer whitespace-nowrap">Products</li>
+      <li data-tab="orders" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 cursor-pointer whitespace-nowrap">Orders</li>
+      <li data-tab="earnings" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 cursor-pointer whitespace-nowrap">Earnings</li>
+      <li data-tab="settings" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 cursor-pointer whitespace-nowrap">Settings</li>
+    </ul>
+
+    <div id="tab-products" class="dash-tab-content">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-bold text-slate-900">Your Products</h3>
+          <button onclick="goTo('open-store')" class="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg">+ Add Product</button>
+        </div>
+        <div id="seller-products-list" class="space-y-3"></div>
+      </div>
+    </div>
+
+    <div id="tab-orders" class="dash-tab-content hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-x-auto">
+        <h3 class="font-bold text-slate-900 mb-4">Incoming Orders</h3>
+        <table class="w-full text-sm">
+          <thead><tr class="text-left text-slate-400 text-xs uppercase border-b border-slate-100">
+            <th class="pb-3 pr-3">Order</th><th class="pb-3 pr-3">Buyer</th><th class="pb-3 pr-3">Items</th><th class="pb-3 pr-3">Total</th><th class="pb-3 pr-3">Status</th><th class="pb-3">Actions</th>
+          </tr></thead>
+          <tbody id="seller-orders-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="tab-earnings" class="dash-tab-content hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <p class="text-xs font-bold uppercase text-slate-400 mb-1">Total Earnings</p>
+          <p class="text-2xl font-black text-slate-900" id="earn-total">$0.00</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <p class="text-xs font-bold uppercase text-slate-400 mb-1">Monthly</p>
+          <p class="text-2xl font-black text-slate-900" id="earn-monthly">$0.00</p>
+        </div>
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <p class="text-xs font-bold uppercase text-slate-400 mb-1">Pending Payout</p>
+          <p class="text-2xl font-black text-slate-900" id="earn-pending">$0.00</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h3 class="font-bold text-slate-900 mb-4">Payout History</h3>
+        <div id="seller-payouts-history" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <div id="tab-settings" class="dash-tab-content hidden">
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <h3 class="font-bold text-slate-900 mb-4">Store Settings</h3>
+        <p class="text-sm text-slate-500">Visit your store profile page to edit store details.</p>
+        <button onclick="goTo('open-store')" class="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-500 underline">Edit Store</button>
+      </div>
+    </div>
+  </div>
+</section>
+     <!-- ORDERS PAGE -->
+  <section id="page-orders" class="page bg-slate-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 py-12 animate-fadeIn">
+      <div class="rounded-[2rem] bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 p-8 text-white shadow-2xl shadow-indigo-950/20">
+        <div class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-200">
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+              Order dashboard
+            </div>
+            <h2 class="mt-5 text-3xl font-black tracking-tight sm:text-4xl font-serif">Order tracking</h2>
+            <p class="mt-3 max-w-xl text-sm text-slate-300">
+              Monitor your purchases in real time and stay updated on delivery progress from checkout to arrival.
+            </p>
+          </div>
+
+          <button onclick="goTo('shop')" class="inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100 active:scale-[0.98]">
+            Continue shopping
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-8 grid gap-5 sm:grid-cols-3">
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Total orders</p>
+              <p class="mt-3 text-4xl font-black text-slate-900" id="total-orders">0</p>
+            </div>
+            <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-rose-100 text-rose-600">
+              <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">In transit</p>
+              <p class="mt-3 text-4xl font-black text-slate-900" id="in-transit-count">0</p>
+            </div>
+            <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-600">
+              <i data-lucide="truck" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Delivered</p>
+              <p class="mt-3 text-4xl font-black text-slate-900" id="delivered-count">0</p>
+            </div>
+            <div class="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-8 grid gap-6 xl:grid-cols-[1.6fr_0.8fr]">
+        <div class="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
+          <div class="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-6 py-5">
+            <h3 class="text-xl font-bold text-slate-900">Your orders</h3>
+            <span class="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Live activity</span>
+          </div>
+
+          <div id="orders-list" class="p-6">
+            <div class="mx-auto max-w-md py-16 text-center">
+              <div class="mx-auto mb-5 inline-flex h-16 w-16 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-400">
+                <i data-lucide="shopping-bag" class="w-7 h-7"></i>
+              </div>
+              <p class="text-xl font-bold text-slate-900">No active orders found</p>
+              <p class="mt-3 text-sm leading-relaxed text-slate-500">
+                You have not placed any orders yet. Explore the marketplace and discover premium products from trusted sellers.
+              </p>
+              <button onclick="goTo('shop')" class="mt-6 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition hover:bg-indigo-500 active:scale-[0.98]">
+                Start shopping
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <div class="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">Quick actions</p>
+            <div class="mt-5 space-y-3">
+              <button onclick="goTo('shop')" class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50">
+                <span class="font-semibold text-slate-800">Browse products</span>
+                <i data-lucide="arrow-right" class="w-4 h-4 text-slate-500"></i>
+              </button>
+
+              <button onclick="goTo('messages')" class="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50">
+                <span class="font-semibold text-slate-800">Chat with sellers</span>
+                <i data-lucide="message-circle" class="w-4 h-4 text-slate-500"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-[2rem] border border-slate-200 bg-gradient-to-br from-slate-900 to-indigo-900 p-6 text-white shadow-lg shadow-indigo-900/20">
+            <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-200">Support</p>
+            <h3 class="mt-3 text-2xl font-black">Need help?</h3>
+            <p class="mt-2 text-sm leading-relaxed text-slate-200">
+              Our customer support team can help with shipping, returns, and tracking updates.
+            </p>
+            <button onclick="goTo('contact')" class="mt-5 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-100 transition">
+              Contact support
+              <i data-lucide="mail" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+     <!-- LOGISTICS PAGE -->
+    <section id="page-logistics" class="page logistics-page min-h-screen py-8 px-4 sm:px-6">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <div class="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur-xl">
+      <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div class="max-w-2xl">
+          <div class="mb-4 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-indigo-700">
+            <i data-lucide="truck" class="w-3.5 h-3.5"></i>
+            Premium logistics command center
+          </div>
+          <h2 class="text-3xl font-black tracking-tight text-slate-900">A professional delivery experience for buyers and partners</h2>
+          <p class="mt-3 max-w-xl text-sm leading-7 text-slate-600">Monitor every shipment, assign trusted couriers, and keep customers informed with a calm, branded, real-time operations dashboard.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="goTo('messages')" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-indigo-500 hover:text-indigo-600" aria-label="Open messages">
+            <i data-lucide="message-circle" class="w-4 h-4"></i>
+            <span>Messages</span>
+          </button>
+          <div id="logisticsIndicator" class="inline-flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 shadow-sm">
+            <span class="relative flex h-2.5 w-2.5">
+              <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80"></span>
+              <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+            </span>
+            <div id="logisticsStatus" class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">Syncing nodes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+      <div class="space-y-6">
+        <div class="rounded-[28px] border border-slate-200 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 text-white shadow-[0_25px_70px_rgba(15,23,42,0.18)]">
+          <div class="grid gap-4 md:grid-cols-3">
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Active couriers</p>
+              <p id="availablePartnersCount" class="mt-2 text-3xl font-black text-emerald-400">00</p>
+              <p class="mt-1 text-xs text-slate-400">Ready for pickup requests</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Ready to dispatch</p>
+              <p id="readyPickupCount" class="mt-2 text-3xl font-black text-amber-400">00</p>
+              <p class="mt-1 text-xs text-slate-400">Orders awaiting handoff</p>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Average ETA</p>
+              <p class="mt-2 text-3xl font-black text-sky-400">14 min</p>
+              <p class="mt-1 text-xs text-slate-400">Fast routing across zones</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Operations portal</p>
+              <h3 class="mt-1 text-lg font-bold text-slate-900">Track orders or activate delivery partners</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="logisticsUserInfo" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">Guest hub</span>
+              <span id="logisticsChannelBadge" class="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700">Receiver view</span>
+            </div>
+          </div>
+
+          <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
+                Order receiver
+              </div>
+              <p class="mt-2 text-sm leading-6 text-slate-500">Enter your order reference to view live delivery updates and current carrier status.</p>
+              <input id="logisticsTrackOrderId" type="text" placeholder="e.g., JAS-7284-NG" class="mt-4 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+              <button class="mt-3 w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-black" onclick="trackOrderInLogistics()">Track order profile</button>
+            </div>
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                <i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i>
+                Delivery partner
+              </div>
+              <p class="mt-2 text-sm leading-6 text-slate-500">Sign in to accept routes, update checkpoints, and communicate with customers in real time.</p>
+              <div class="mt-4 space-y-2">
+                <button class="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700" onclick="openDeliveryPartnerLogin()">Courier sign in</button>
+                <button class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100" onclick="openDeliveryPartnerRegister()">Register as partner</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.05)]">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Dispatch filters</p>
+              <h3 class="mt-1 text-lg font-bold text-slate-900">Find the best carrier for each route</h3>
+            </div>
+          </div>
+          <div class="mt-5 grid gap-3 md:grid-cols-3">
+            <div>
+              <label class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">Channel</label>
+              <select id="logisticsChannelFilter" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                <option value="all">All channels</option>
+                <option value="receiver">Order receiver</option>
+                <option value="partner">Partner</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">Region</label>
+              <select id="partnerRegionFilter" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                <option value="initial">All regions</option>
+                <option value="North">North hub</option>
+                <option value="South">South hub</option>
+                <option value="East">East hub</option>
+                <option value="West">West hub</option>
+                <option value="Central">Central hub</option>
+              </select>
+            </div>
+            <div>
+              <label class="mb-1 block text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-500">Sort by</label>
+              <select id="partnerSortFilter" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10">
+                <option value="distance">Closest distance</option>
+                <option value="eta">Fastest ETA</option>
+                <option value="rating">Highest rating</option>
+              </select>
+            </div>
+          </div>
+          <div id="logisticsPartnersList" class="mt-5 grid gap-3"></div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="rounded-[28px] border border-slate-200 bg-slate-900 p-6 text-white shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+          <div class="flex items-center justify-between border-b border-white/10 pb-4">
+            <div>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-400">Live route monitor</p>
+              <h3 class="mt-1 text-lg font-bold">GPS route tracking</h3>
+            </div>
+            <span class="rounded-full border border-white/10 bg-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-300">Live</span>
+          </div>
+          <div id="gpsGuidePanel" class="mt-5 rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-sm">
+            <div class="flex items-center justify-between text-slate-400">
+              <span>Next checkpoint</span>
+              <span id="gpsNextStop" class="font-semibold text-white">Awaiting input...</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-slate-400">
+              <span>Remaining distance</span>
+              <span id="gpsDistance" class="font-semibold text-indigo-400">— km</span>
+            </div>
+            <div class="mt-3 flex items-center justify-between text-slate-400">
+              <span>ETA</span>
+              <span id="gpsEta" class="font-semibold text-amber-400">— min</span>
+            </div>
+          </div>
+          <div class="mt-5 h-44 overflow-hidden rounded-2xl border border-white/10 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_55%),linear-gradient(135deg,_rgba(15,23,42,0.95),_rgba(30,41,59,0.95))]">
+            <div id="mapPlaceholder" class="h-full w-full">
+              <div id="map" class="h-full w-full"></div>
+            </div>
+          </div>
+          <div class="mt-4 rounded-2xl border border-white/10 bg-slate-950/70 p-3">
+            <div class="flex items-center justify-between text-xs uppercase tracking-[0.25em] text-slate-400">
+              <span>Carrier stream</span>
+              <span id="logisticsLiveStreamStatus" class="text-emerald-400">Awaiting carrier alert...</span>
+            </div>
+            <div id="logisticsAlertsList" class="mt-3 space-y-2"></div>
+          </div>
+          <button class="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-500" onclick="startDeliveryGuide()">
+            <i data-lucide="play" class="w-4 h-4"></i>
+            Launch route monitor
+          </button>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3 xl:grid-cols-1">
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <i data-lucide="globe" class="w-4 h-4 text-indigo-600"></i>
+              Nationwide coverage
+            </div>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Serve customers with consistent delivery standards in every major region.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
+              Faster communication
+            </div>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Keep shoppers informed with transparent status updates and direct support.</p>
+          </div>
+          <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+              <i data-lucide="shield" class="w-4 h-4 text-amber-600"></i>
+              Reliable handoff
+            </div>
+            <p class="mt-2 text-sm leading-6 text-slate-500">Protect every handover with a structured workflow from warehouse to doorstep.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section id="page-messages" class="page min-h-screen bg-slate-100/80 py-6 px-3 sm:px-6">
+  <div class="messages-shell mx-auto flex h-[800px] max-w-7xl overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-2xl">
+    
+    <!-- Sidebar: Conversation List -->
+    <aside class="messages-sidebar hidden w-[380px] flex-col border-r border-slate-200 bg-white text-slate-800 md:flex">
+      
+      <!-- Sidebar Header -->
+      <div class="border-b border-slate-100 px-5 py-4 bg-slate-50/50">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <!-- User Profile Avatar Placeholder -->
+            <div class="relative h-11 w-11 overflow-hidden rounded-full bg-emerald-600 flex items-center justify-center text-white font-semibold shadow-inner">
+              <span class="text-sm">DH</span>
+              <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"></span>
+            </div>
+            <div>
+              <h2 class="text-base font-bold tracking-tight text-slate-900">Delivery Hub</h2>
+              <p class="text-xs text-emerald-600 font-medium">Online & Active</p>
+            </div>
+          </div>
+          <div class="relative flex items-center gap-1 text-slate-500">
+            <div class="relative">
+              <button id="contact-action-trigger" type="button" onclick="toggleContactActionMenu(event)" class="p-2 rounded-full hover:bg-slate-200/60 transition" title="New Chat">
+                <i data-lucide="message-square-plus" class="w-5 h-5"></i>
+              </button>
+              <div id="contact-action-menu" class="absolute right-0 top-12 z-20 hidden w-56 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl">
+                <button type="button" onclick="openContactModal()" class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                  <i data-lucide="user-plus" class="w-4 h-4 text-emerald-600"></i>
+                  <span>Add contact</span>
+                </button>
+                <button type="button" onclick="startQuickCall()" class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                  <i data-lucide="phone" class="w-4 h-4 text-indigo-600"></i>
+                  <span>Direct call</span>
+                </button>
+                <button type="button" onclick="startQuickChat()" class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50">
+                  <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
+                  <span>New chat</span>
+                </button>
+              </div>
+            </div>
+            <button class="p-2 rounded-full hover:bg-slate-200/60 transition" title="Menu">
+              <i data-lucide="more-vertical" class="w-5 h-5"></i>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Search Input Box -->
+        <div class="mt-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3.5 py-2 text-sm text-slate-600 focus-within:ring-1 focus-within:ring-emerald-500 transition">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+          <input type="text" placeholder="Search or start new chat" class="w-full bg-transparent outline-none text-slate-700 placeholder:text-slate-400 text-xs sm:text-sm">
+        </div>
+      </div>
+
+      <!-- Conversations Dynamic Container -->
+      <div id="conversations-list" class="flex-1 space-y-0.5 overflow-y-auto p-2 scrollbar-thin">
+        <!-- Dynamic chat items injected via JS will go here -->
+      </div>
+    </aside>
+
+    <!-- Main Chat Window Area -->
+    <div class="flex flex-1 flex-col bg-[#efeae2] relative">
+      <!-- Subtle WhatsApp-style background watermark/pattern layer -->
+      <div class="absolute inset-0 opacity-[0.06] pointer-events-none bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:16px_16px]"></div>
+
+      <!-- Active Chat Header -->
+      <div id="chat-header" class="relative z-10 flex items-center justify-between border-b border-slate-200/75 bg-white/90 px-6 py-3.5 backdrop-blur-md shadow-sm">
+        <!-- Dynamically populated or default state -->
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm">?</div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">JovAli Delivery Hub</h3>
+            <p class="text-xs text-slate-500">Use the plus menu to add a contact, call directly, or start a secure chat</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Thread Body -->
+      <div id="messages-container" class="messages-thread-body relative z-10 flex-1 overflow-y-auto px-6 py-6 space-y-3">
+        <!-- Dynamic messages injected via JS will render here -->
+      </div>
+
+      <!-- Chat Input Footer Area -->
+      <div id="chat-input-area" class="relative z-10 hidden border-t border-slate-200/75 bg-[#f0f2f5] px-4 py-3 backdrop-blur-md">
+        <form class="flex items-center gap-3" onsubmit="event.preventDefault();">
+          
+          <!-- Attachment & Emoji triggers -->
+          <div class="flex items-center gap-1 text-slate-500">
+            <button type="button" class="p-2 rounded-full hover:bg-slate-200/80 transition" title="Attach file">
+              <i data-lucide="paperclip" class="w-5 h-5"></i>
+            </button>
+          </div>
+
+          <!-- Input Bar -->
+          <div class="flex flex-1 items-center gap-2 rounded-xl bg-white px-4 py-2.5 shadow-sm border border-slate-200/60 focus-within:border-emerald-500 transition">
+            <input id="message-input" type="text" placeholder="Type a delivery update..." class="w-full border-0 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400">
+          </div>
+
+          <!-- Send Button (WhatsApp Green Accent) -->
+          <button id="send-btn" type="submit" onclick="sendMessage()" disabled class="flex items-center justify-center h-10 w-10 rounded-full bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-40 disabled:pointer-events-none shadow-sm">
+            <i data-lucide="send" class="w-4 h-4"></i>
+          </button>
+
+        </form>
+      </div>
+
+    </div>
+  </div>
+</section>
+<div id="contact-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/70 p-4">
+  <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+    <div class="flex items-start justify-between gap-3">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">Add delivery contact</h3>
+        <p class="mt-1 text-sm text-slate-500">Save a contact and launch a direct call or chat from the logistics hub.</p>
+      </div>
+      <button type="button" onclick="closeContactModal()" class="rounded-full p-2 text-slate-500 hover:bg-slate-100" aria-label="Close contact form">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    <form onsubmit="submitContactForm(event)" class="mt-5 space-y-3">
+      <input id="contact-name" type="text" required placeholder="Contact name" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500" />
+      <input id="contact-phone" type="tel" placeholder="Phone number" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500" />
+      <select id="contact-region" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 outline-none focus:border-emerald-500">
+        <option value="lagos">Lagos Hub</option>
+        <option value="abuja">Abuja Hub</option>
+        <option value="enugu">Enugu Hub</option>
+        <option value="port-harcourt">Port Harcourt Hub</option>
+      </select>
+      <div class="flex justify-end gap-2 pt-2">
+        <button type="button" onclick="closeContactModal()" class="rounded-2xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
+        <button type="submit" class="rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Save contact</button>
+      </div>
+    </form>
+  </div>
+</div>
+<div id="deliveryPartnerModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+  <div class="w-full max-w-2xl rounded-3xl overflow-hidden bg-white shadow-2xl">
+    <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-6 py-5">
+      <div>
+        <h3 class="text-lg font-bold text-slate-900">Courier Partner Portal</h3>
+        <p class="text-xs text-slate-500 mt-1">Sign in or register to claim deliveries, chat the buyer, and call directly from the dashboard.</p>
+      </div>
+      <button onclick="closeDeliveryPartnerModal()" class="text-slate-500 hover:text-slate-900" aria-label="Close courier portal"><i data-lucide="x" class="w-5 h-5"></i></button>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6 py-6">
+      <div id="delivery-partner-login-form">
+        <h4 class="text-sm font-bold text-slate-900 mb-4">Courier Sign In</h4>
+        <form onsubmit="logisticsHandleLogin(event)" class="space-y-4">
+          <input id="logistics-login-email" type="email" required placeholder="Email" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900" />
+          <input id="logistics-login-pass" type="password" required placeholder="Password" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900" />
+          <button type="submit" class="w-full rounded-2xl bg-slate-900 text-white py-3 text-xs font-bold uppercase tracking-[0.08em]">Sign In</button>
+        </form>
+      </div>
+      <div id="delivery-partner-register-form" class="hidden">
+        <h4 class="text-sm font-bold text-slate-900 mb-4">Register as Delivery Partner</h4>
+        <form onsubmit="logisticsHandleRegister(event)" class="space-y-4">
+          <input id="logistics-register-name" type="text" required placeholder="Full Name" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900" />
+          <input id="logistics-register-email" type="email" required placeholder="Email" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900" />
+          <input id="logistics-register-pass" type="password" required placeholder="Password" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900" />
+          <input id="logistics-register-phone" type="tel" placeholder="Phone (optional)" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900" />
+          <select id="logistics-register-region" class="w-full rounded-2xl border border-slate-200 px-4 py-3 text-slate-900">
+            <option value="delivery-hub">Delivery Hub</option>
+            <option value="lagos">West Africa Hub (Lagos)</option>
+            <option value="abuja">North Central Hub (Abuja)</option>
+            <option value="south">South Hub</option>
+            <option value="east">East Hub</option>
+            <option value="west">West Hub</option>
+          </select>
+          <button type="submit" class="w-full rounded-2xl bg-emerald-600 text-white py-3 text-xs font-bold uppercase tracking-[0.08em]">Register</button>
+        </form>
+      </div>
+    </div>
+    <div class="flex flex-wrap gap-3 items-center justify-between border-t border-slate-200 px-6 py-4 bg-slate-50">
+      <p class="text-xs text-slate-500">Courier partner access gives your account a unique logistics ID and delivery dashboard.</p>
+      <div class="flex gap-2">
+        <button type="button" onclick="logisticsToggleAuthForm('login')" class="text-xs font-semibold text-slate-700">Sign In</button>
+        <button type="button" onclick="logisticsToggleAuthForm('register')" class="text-xs font-semibold text-indigo-600">Register</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- CART PAGE SECTION -->
+<section id="page-cart" class="page bg-slate-50/50 min-h-screen py-12 px-4">
+  <div class="max-w-5xl mx-auto">
+    <!-- Title Section -->
+    <div class="flex items-center gap-3 mb-8">
+      <div class="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Your Shopping Cart</h2>
+        <p class="text-xs text-slate-500">Review selected inventory items before checking out.</p>
+      </div>
+    </div>
+    <!-- Split-Grid Workspace Layout for Checkout Efficiency -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <!-- List Items Card Stack Column (2/3 width) -->
+      <div class="lg:col-span-2 space-y-4">
+        <div id="cart-items" class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
+          <!-- Fallback Interactive Empty Cart View State -->
+          <div class="text-center py-12">
+            <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <i data-lucide="shopping-cart" class="w-6 h-6"></i>
+            </div>
+            <p class="text-sm font-semibold text-slate-800">Your cart is currently empty</p>
+            <p class="text-xs text-slate-400 mt-1 mb-4">Looks like you haven't discovered your items yet.</p>
+            <button onclick="goTo('shop')" class="inline-flex items-center justify-center text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-xl shadow-sm transition">
+              Start Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+      <!-- Checkout Summary Column Panel (1/3 width, Stickied layout) -->
+      <div id="cart-summary" class="hidden lg:sticky lg:top-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4 pb-2 border-b border-slate-100">Order Summary</h3>
+       <!-- Summary Pricing Calculations Row Fields -->
+        <div class="space-y-3 mb-6">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Subtotal</span>
+            <span class="font-medium text-slate-800">$0.00</span>
+          </div>
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Shipping Fees</span>
+            <span class="font-medium text-emerald-600">Calculated later</span>
+          </div>
+          <div class="border-t border-slate-100 pt-3 flex justify-between items-center">
+            <span class="text-sm font-bold text-slate-800">Total Balance</span> 
+            <span id="cart-total" class="text-xl font-black text-rose-500">$0.00</span>
+          </div>
+        </div>
+ <!-- Final Action Click Trigger Call -->
+        <button onclick="goTo('payment')" 
+          class="w-full py-3 rounded-xl font-bold text-sm text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-100 transition active:scale-[0.99]">
+          Proceed to Payment
+        </button>
+      </div>
+     </div>
+  </div>
+</section>
+     <!-- PAYMENT / CHECKOUT PAGE -->
+      <section id="page-payment" class="page bg-slate-50 min-h-screen py-12 px-4">
+        <div class="max-w-2xl mx-auto">
+          <button onclick="goTo('cart')" class="group inline-flex items-center gap-2 mb-8 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl shadow-sm hover:text-slate-900 hover:bg-slate-50 active:scale-[0.98] transition">
+            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
+            Back to Cart
+          </button>
+          <h2 class="text-3xl font-bold text-slate-900 mb-8">Secure Checkout</h2>
+
+          <!-- Shipping Address -->
+          <div class="bg-white rounded-3xl p-6 shadow-sm mb-8">
+            <h3 class="font-semibold text-lg mb-4">Shipping Address</h3>
+            <div class="grid grid-cols-1 gap-4">
+              <input id="shipping-street" type="text" placeholder="Street Address" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+              <div class="grid grid-cols-2 gap-4">
+                <input id="shipping-city" type="text" placeholder="City" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+                <input id="shipping-state" type="text" placeholder="State" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+              </div>
+              <input id="shipping-phone" type="text" placeholder="Phone Number" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+            </div>
+          </div>
+
+          <!-- Order Summary -->
+          <div class="bg-white rounded-3xl p-6 shadow-sm mb-8">
+            <h3 class="font-semibold text-lg mb-4">Order Summary</h3>
+            <div id="payment-items" class="space-y-4"></div>
+            <div class="border-t mt-6 pt-6">
+              <div class="flex justify-between text-sm mb-2"><span>Subtotal</span><span id="summary-subtotal">$0.00</span></div>
+              <div class="flex justify-between text-xl font-bold mt-4 pt-4 border-t"><span>Total</span><span id="summary-total">$0.00</span></div>
+            </div>
+          </div>
+
+          <!-- Payment Methods -->
+          <div class="bg-white rounded-3xl p-6 shadow-sm">
+            <h3 class="font-semibold text-lg mb-5">Choose Payment Method</h3>
+            <div class="grid grid-cols-2 gap-4 mb-8">
+              <button onclick="selectPaymentMethod(this, 'card')" class="payment-method-btn flex flex-col items-center gap-3 p-6 border-2 border-emerald-600 rounded-2xl bg-emerald-50">
+                <i data-lucide="credit-card" class="w-8 h-8 text-emerald-600"></i>
+                <span class="font-medium text-sm">Card Payment</span>
+              </button>
+              <button onclick="selectPaymentMethod(this, 'bank')" class="payment-method-btn flex flex-col items-center gap-3 p-6 border-2 border-slate-200 rounded-2xl bg-white hover:border-emerald-300">
+                <i data-lucide="building-2" class="w-8 h-8 text-emerald-600"></i>
+                <span class="font-medium text-sm">Bank Transfer</span>
+              </button>
+            </div>
+
+            <!-- Card Payment Form -->
+            <div id="card-payment-form">
+              <button onclick="payWithPaystack()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-2xl text-lg transition">
+                Pay with Paystack
+              </button>
+              
+              <!-- Alternative Payment Methods (shown after Paystack button click) -->
+              <div id="alternative-payment-methods" class="hidden mt-6 pt-6 border-t border-slate-200">
+                <p class="text-sm font-semibold text-slate-600 mb-4 text-center">Or try alternative payment methods</p>
+                <div class="grid grid-cols-2 gap-3">
+                  <button onclick="selectPaymentMethod(this, 'google_pay')" class="payment-method-btn flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-emerald-300 hover:bg-emerald-50 transition">
+                    <i data-lucide="smartphone" class="w-6 h-6 text-emerald-600"></i>
+                    <span class="font-medium text-xs">Google Pay</span>
+                  </button>
+                  <button onclick="selectPaymentMethod(this, 'cod')" class="payment-method-btn flex flex-col items-center gap-2 p-4 border-2 border-slate-200 rounded-xl bg-white hover:border-emerald-300 hover:bg-emerald-50 transition">
+                    <i data-lucide="truck" class="w-6 h-6 text-emerald-600"></i>
+                    <span class="font-medium text-xs">Pay on Delivery</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bank Transfer Info -->
+            <div id="bank-transfer-info" class="hidden text-center py-8 bg-blue-50 rounded-2xl border border-blue-200">
+              <p class="text-sm text-slate-600 mb-3">Total Amount</p>
+              <p class="text-3xl font-bold text-blue-900 mb-4">₦<span id="bank-amount">0</span></p>
+              <div class="bg-white rounded-xl p-4 text-left mb-4">
+                <p class="text-xs text-slate-500 font-semibold mb-2">BANK DETAILS</p>
+                <p class="text-sm font-medium">Bank: GTBank</p>
+                <p class="text-sm font-medium">Account: Jovali Market</p>
+                <p class="text-sm font-medium">Number: 1234567890</p>
+              </div>
+              <p class="text-xs text-slate-500 mb-4">Please transfer the exact amount and your order will be confirmed once verified</p>
+              <button onclick="goTo('orders')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition">
+                Go to Orders
+              </button>
+            </div>
+
+            <!-- Google Pay Form -->
+            <div id="google-pay-form" class="hidden">
+              <button onclick="initializeGooglePay()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-2xl text-lg transition flex items-center justify-center gap-2">
+                <i data-lucide="smartphone" class="w-5 h-5"></i>
+                Pay with Google Pay
+              </button>
+              <p class="text-xs text-slate-500 text-center mt-4">Fast, secure payment using your Google Pay account</p>
+              <div class="mt-4 pt-4 border-t border-slate-200">
+                <button onclick="backToPaystack()" type="button" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium text-center w-full">
+                  ← Back to Paystack
+                </button>
+              </div>
+            </div>
+
+            <!-- Cash on Delivery Confirmation -->
+            <div id="cod-confirmation" class="hidden">
+              <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-6">
+                <div class="flex gap-3 mb-4">
+                  <i data-lucide="info" class="w-6 h-6 text-amber-600 flex-shrink-0"></i>
+                  <div>
+                    <p class="font-semibold text-amber-900 mb-2">Pay on Delivery</p>
+                    <p class="text-sm text-amber-800">You will pay ₦<span id="cod-amount">0</span> to the delivery partner when they arrive with your order.</p>
+                  </div>
+                </div>
+              </div>
+              <button onclick="confirmCashOnDelivery()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-2xl text-lg transition flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                Confirm Order
+              </button>
+              <div class="mt-4 pt-4 border-t border-slate-200">
+                <button onclick="backToPaystack()" type="button" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium text-center w-full">
+                  ← Back to Paystack
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+     <!-- ABOUT PAGE - PROFESSIONAL REDESIGN -->
+<section id="page-about" class="page bg-white min-h-screen">
+  
+  <!-- HERO SECTION WITH GRADIENT BACKGROUND -->
+  <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-white overflow-hidden pt-32 pb-24">
+    <!-- Animated Background Elements -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <div class="absolute -top-40 -right-40 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s;"></div>
+    </div>
+
+    <div class="max-w-6xl mx-auto px-6 relative z-10">
+      <!-- Logo -->
+      <div class="flex justify-center mb-8">
+        <div class="inline-flex items-center justify-center p-4 rounded-2xl bg-white/10 backdrop-blur border border-white/20 hover:border-white/40 transition-all duration-300">
+          <img src="images/jaslogo.png" alt="JovAli Market Logo" class="w-16 h-16 object-contain">
+        </div>
+      </div>
+
+      <!-- Main Heading -->
+      <div class="text-center max-w-3xl mx-auto">
+        <h1 class="text-5xl md:text-6xl font-black mb-6 tracking-tight leading-tight font-serif">
+          Redefining Digital Commerce
+        </h1>
+        <p class="text-xl text-slate-200 leading-relaxed mb-8">
+          A marketplace built on trust, transparency, and genuine human connection. Empowering buyers and sellers to create meaningful commerce together.
+        </p>
+        
+        <!-- Hero CTA Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <button onclick="goTo('shop')" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-all duration-300 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-600/50 active:scale-95">
+            <i data-lucide="shopping-bag" class="w-5 h-5 inline mr-2"></i>Start Shopping
+          </button>
+          <button onclick="goTo('open-store')" class="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold rounded-lg border border-white/30 transition-all duration-300 active:scale-95">
+            <i data-lucide="store" class="w-5 h-5 inline mr-2"></i>Become a Seller
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MISSION & VALUES SECTION -->
+  <div class="max-w-6xl mx-auto px-6 py-24">
+    <div class="grid md:grid-cols-2 gap-12 items-center mb-24">
+      <!-- Left: Text Content -->
+      <div>
+        <span class="text-indigo-600 font-bold uppercase text-sm tracking-widest block mb-4">Our Mission</span>
+        <h2 class="text-4xl font-black text-slate-900 mb-6 leading-tight font-serif">
+          Empowering the Future of Commerce
+        </h2>
+        <p class="text-slate-600 text-lg leading-relaxed mb-4">
+          JovAli Market was born from a simple but powerful belief: digital commerce should prioritize human connection over automation.
+        </p>
+        <p class="text-slate-600 text-lg leading-relaxed mb-6">
+          We're building a marketplace where independent creators thrive, where buyers discover authentic products, and where every transaction builds community wealth. No hidden fees. No corporate intermediaries. Just real people doing real commerce.
+        </p>
+        <ul class="space-y-3">
+          <li class="flex items-start gap-3 text-slate-700">
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"></i>
+            <span>Transparent pricing with zero hidden fees</span>
+          </li>
+          <li class="flex items-start gap-3 text-slate-700">
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"></i>
+            <span>Verified reviews and seller ratings</span>
+          </li>
+          <li class="flex items-start gap-3 text-slate-700">
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5"></i>
+            <span>Direct buyer-seller communication</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right: Image with Stats Overlay -->
+      <div class="relative">
+        <div class="rounded-2xl overflow-hidden shadow-xl">
+          <img src="images/dualimgtwo.jpg" alt="Our Mission" class="w-full h-full object-cover">
+          <!-- Stats Overlay -->
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent p-8 flex flex-col justify-end">
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-white/10 backdrop-blur border border-white/20 rounded-lg p-4 text-center">
+                <div class="text-3xl font-black text-white">5K+</div>
+                <div class="text-xs text-slate-300 mt-1">Active Sellers</div>
+              </div>
+              <div class="bg-white/10 backdrop-blur border border-white/20 rounded-lg p-4 text-center">
+                <div class="text-3xl font-black text-white">50K+</div>
+                <div class="text-xs text-slate-300 mt-1">Happy Customers</div>
+              </div>
+              <div class="bg-white/10 backdrop-blur border border-white/20 rounded-lg p-4 text-center">
+                <div class="text-3xl font-black text-white">100%</div>
+                <div class="text-xs text-slate-300 mt-1">Secure Checkout</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CORE VALUES GRID -->
+    <div>
+      <div class="text-center mb-16">
+        <span class="text-indigo-600 font-bold uppercase text-sm tracking-widest">Our Values</span>
+        <h2 class="text-4xl font-black text-slate-900 mt-4 font-serif">What Drives Us</h2>
+      </div>
+
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Value 1: Trust -->
+        <div class="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-300 group">
+          <div class="w-14 h-14 bg-indigo-100 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="shield-check" class="w-7 h-7 text-indigo-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Trust First</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            Every transaction is backed by verified reviews, secure payment, and transparent dispute resolution.
+          </p>
+        </div>
+
+        <!-- Value 2: Sustainability -->
+        <div class="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-300 group">
+          <div class="w-14 h-14 bg-emerald-100 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="leaf" class="w-7 h-7 text-emerald-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Sustainability</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            Supporting local crafts and independent creators reduces supply chain waste and builds community wealth.
+          </p>
+        </div>
+
+        <!-- Value 3: Accessibility -->
+        <div class="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-300 group">
+          <div class="w-14 h-14 bg-blue-100 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="unlock" class="w-7 h-7 text-blue-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Accessibility</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            Anyone can sell, anyone can buy. No complicated processes, just simple, fair commerce for all.
+          </p>
+        </div>
+
+        <!-- Value 4: Community -->
+        <div class="bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-2xl p-8 hover:shadow-lg hover:border-slate-300 transition-all duration-300 group">
+          <div class="w-14 h-14 bg-rose-100 rounded-xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300">
+            <i data-lucide="users" class="w-7 h-7 text-rose-600"></i>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">Community</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            We're more than a marketplace. We're a platform where meaningful connections drive growth together.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES SECTION -->
+  <div class="bg-slate-50 py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <span class="text-indigo-600 font-bold uppercase text-sm tracking-widest">Features</span>
+        <h2 class="text-4xl font-black text-slate-900 mt-4 font-serif">Powerful Tools for Modern Commerce</h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Feature 1: Dual Mode -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300">
+          <div class="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-5">
+            <i data-lucide="toggle-left" class="w-6 h-6 text-indigo-600"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">Dual-Mode Experience</h3>
+          <p class="text-slate-600 mb-4">
+            Switch between buyer and seller instantly. Manage both personas under one verified account with complete control.
+          </p>
+          <ul class="space-y-2 text-sm text-slate-600">
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-indigo-600"></i>One account, two worlds
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-indigo-600"></i>Unified dashboard
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-indigo-600"></i>Shared profile reputation
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 2: Instant Messaging -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300">
+          <div class="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-5">
+            <i data-lucide="message-square" class="w-6 h-6 text-emerald-600"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">Secure Messaging</h3>
+          <p class="text-slate-600 mb-4">
+            Communicate directly with buyers or sellers without sharing personal information. All messages are encrypted.
+          </p>
+          <ul class="space-y-2 text-sm text-slate-600">
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-emerald-600"></i>Real-time notifications
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-emerald-600"></i>Order-linked chats
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-emerald-600"></i>No spam guarantee
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 3: Ratings & Reviews -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300">
+          <div class="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-5">
+            <i data-lucide="star" class="w-6 h-6 text-amber-600"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">Verified Reviews</h3>
+          <p class="text-slate-600 mb-4">
+            Build trust through authentic, verified buyer reviews. Our system prevents fake ratings and protects both parties.
+          </p>
+          <ul class="space-y-2 text-sm text-slate-600">
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-amber-600"></i>5-star rating system
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-amber-600"></i>Verified buyer badges
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-amber-600"></i>Transparent history
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 4: Smart Filters -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300">
+          <div class="w-12 h-12 bg-rose-100 rounded-lg flex items-center justify-center mb-5">
+            <i data-lucide="filter" class="w-6 h-6 text-rose-600"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">Smart Filtering</h3>
+          <p class="text-slate-600 mb-4">
+            Find exactly what you need with advanced search, category filtering, price ranges, and smart sorting options.
+          </p>
+          <ul class="space-y-2 text-sm text-slate-600">
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-rose-600"></i>Multi-criteria search
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-rose-600"></i>Price range filters
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-rose-600"></i>Sort by rating/price
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 5: Seller Dashboard -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300">
+          <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center mb-5">
+            <i data-lucide="bar-chart-2" class="w-6 h-6 text-violet-600"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">Seller Analytics</h3>
+          <p class="text-slate-600 mb-4">
+            Track sales, manage inventory, monitor earnings, and optimize your store with detailed analytics and insights.
+          </p>
+          <ul class="space-y-2 text-sm text-slate-600">
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-violet-600"></i>Sales dashboard
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-violet-600"></i>Earnings tracking
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-violet-600"></i>Performance metrics
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 6: Secure Checkout -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-xl hover:border-slate-300 transition-all duration-300">
+          <div class="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center mb-5">
+            <i data-lucide="lock" class="w-6 h-6 text-cyan-600"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-slate-900 mb-3">Secure Payments</h3>
+          <p class="text-slate-600 mb-4">
+            Encrypted payments, fraud protection, and multiple payment options. Your transactions are always secure.
+          </p>
+          <ul class="space-y-2 text-sm text-slate-600">
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-600"></i>PCI compliant
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-600"></i>Buyer protection
+            </li>
+            <li class="flex items-center gap-2">
+              <i data-lucide="arrow-right" class="w-4 h-4 text-cyan-600"></i>Multiple payment methods
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS SECTION -->
+  <div class="max-w-6xl mx-auto px-6 py-24">
+    <div class="text-center mb-16">
+      <span class="text-indigo-600 font-bold uppercase text-sm tracking-widest">Process</span>
+      <h2 class="text-4xl font-black text-slate-900 mt-4 font-serif">How JovAli Market Works</h2>
+    </div>
+
+    <!-- For Buyers -->
+    <div class="mb-20">
+      <h3 class="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+        <i data-lucide="shopping-bag" class="w-6 h-6 text-indigo-600"></i>For Buyers
+      </h3>
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="relative">
+          <div class="bg-indigo-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-indigo-600 mb-4">1</div>
+          <h4 class="font-bold text-slate-900 mb-2">Explore & Search</h4>
+          <p class="text-slate-600 text-sm">Browse our curated collection using smart filters and search tools.</p>
+          <div class="absolute right-0 top-6 w-8 h-0.5 bg-slate-300 hidden md:block" style="width: calc(100% - 50px);"></div>
+        </div>
+        <div class="relative">
+          <div class="bg-emerald-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-emerald-600 mb-4">2</div>
+          <h4 class="font-bold text-slate-900 mb-2">Connect & Ask</h4>
+          <p class="text-slate-600 text-sm">Message sellers directly with any questions before purchasing.</p>
+          <div class="absolute right-0 top-6 w-8 h-0.5 bg-slate-300 hidden md:block" style="width: calc(100% - 50px);"></div>
+        </div>
+        <div class="relative">
+          <div class="bg-amber-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-amber-600 mb-4">3</div>
+          <h4 class="font-bold text-slate-900 mb-2">Pay Securely</h4>
+          <p class="text-slate-600 text-sm">Complete checkout with encrypted, secure payment options.</p>
+          <div class="absolute right-0 top-6 w-8 h-0.5 bg-slate-300 hidden md:block" style="width: calc(100% - 50px);"></div>
+        </div>
+        <div>
+          <div class="bg-rose-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-rose-600 mb-4">4</div>
+          <h4 class="font-bold text-slate-900 mb-2">Review & Share</h4>
+          <p class="text-slate-600 text-sm">Leave verified reviews to help other buyers and support sellers.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- For Sellers -->
+    <div>
+      <h3 class="text-2xl font-bold text-slate-900 mb-8 flex items-center gap-3">
+        <i data-lucide="store" class="w-6 h-6 text-emerald-600"></i>For Sellers
+      </h3>
+      <div class="grid md:grid-cols-4 gap-4">
+        <div class="relative">
+          <div class="bg-indigo-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-indigo-600 mb-4">1</div>
+          <h4 class="font-bold text-slate-900 mb-2">Create Store</h4>
+          <p class="text-slate-600 text-sm">Set up your store profile in minutes with our simple setup wizard.</p>
+          <div class="absolute right-0 top-6 w-8 h-0.5 bg-slate-300 hidden md:block" style="width: calc(100% - 50px);"></div>
+        </div>
+        <div class="relative">
+          <div class="bg-emerald-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-emerald-600 mb-4">2</div>
+          <h4 class="font-bold text-slate-900 mb-2">Add Products</h4>
+          <p class="text-slate-600 text-sm">Upload products with photos, descriptions, and pricing details.</p>
+          <div class="absolute right-0 top-6 w-8 h-0.5 bg-slate-300 hidden md:block" style="width: calc(100% - 50px);"></div>
+        </div>
+        <div class="relative">
+          <div class="bg-amber-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-amber-600 mb-4">3</div>
+          <h4 class="font-bold text-slate-900 mb-2">Manage Orders</h4>
+          <p class="text-slate-600 text-sm">Track orders, communicate with buyers, and process payments easily.</p>
+          <div class="absolute right-0 top-6 w-8 h-0.5 bg-slate-300 hidden md:block" style="width: calc(100% - 50px);"></div>
+        </div>
+        <div>
+          <div class="bg-rose-100 rounded-full w-12 h-12 flex items-center justify-center font-bold text-rose-600 mb-4">4</div>
+          <h4 class="font-bold text-slate-900 mb-2">Earn & Grow</h4>
+          <p class="text-slate-600 text-sm">Receive earnings directly and grow your business with our tools.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TESTIMONIALS SECTION -->
+  <div class="bg-slate-50 py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <span class="text-indigo-600 font-bold uppercase text-sm tracking-widest">Success Stories</span>
+        <h2 class="text-4xl font-black text-slate-900 mt-4 font-serif">What Our Community Says</h2>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-8">
+        <!-- Testimonial 1 -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-1 mb-4">
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+          </div>
+          <p class="text-slate-700 mb-6 italic">
+            "JovAli Market transformed how I sell online. No hidden fees, direct customer communication, and real support. Best decision for my small business!"
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-indigo-400 to-indigo-600 rounded-full"></div>
+            <div>
+              <p class="font-bold text-slate-900">Amara C.</p>
+              <p class="text-xs text-slate-500">Fashion Seller</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonial 2 -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-1 mb-4">
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+          </div>
+          <p class="text-slate-700 mb-6 italic">
+            "As a buyer, I love finding unique handmade items from real artisans. The verified reviews give me confidence, and the messaging helps me ask questions."
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full"></div>
+            <div>
+              <p class="font-bold text-slate-900">Chioma O.</p>
+              <p class="text-xs text-slate-500">Verified Buyer</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Testimonial 3 -->
+        <div class="bg-white rounded-2xl p-8 border border-slate-200 shadow-sm">
+          <div class="flex items-center gap-1 mb-4">
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+            <i data-lucide="star" class="w-4 h-4 text-amber-400 fill-amber-400"></i>
+          </div>
+          <p class="text-slate-700 mb-6 italic">
+            "The dual-mode feature is incredible. I can sell my crafts and also buy supplies from other vendors all on the same platform. Makes business so much easier!"
+          </p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-rose-400 to-rose-600 rounded-full"></div>
+            <div>
+              <p class="font-bold text-slate-900">Tunde M.</p>
+              <p class="text-xs text-slate-500">Craftsperson</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FINAL CTA SECTION -->
+  <div class="max-w-6xl mx-auto px-6 py-24">
+    <div class="rounded-3xl bg-gradient-to-r from-indigo-600 to-indigo-800 text-white p-12 text-center shadow-2xl">
+      <h2 class="text-4xl font-black mb-4 font-serif">Ready to Join JovAli Market?</h2>
+      <p class="text-lg text-indigo-100 mb-8 max-w-2xl mx-auto">
+        Whether you're looking to discover amazing products or launch your business, we're here to support your journey.
+      </p>
+      
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button onclick="goTo('shop')" class="px-8 py-4 bg-white text-indigo-600 font-bold rounded-lg hover:bg-indigo-50 transition-all duration-300 active:scale-95">
+          <i data-lucide="shopping-bag" class="w-5 h-5 inline mr-2"></i>Browse Products
+        </button>
+        <button onclick="goTo('open-store')" class="px-8 py-4 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-lg border border-indigo-400 transition-all duration-300 active:scale-95">
+          <i data-lucide="store" class="w-5 h-5 inline mr-2"></i>Become a Seller
+        </button>
+      </div>
+    </div>
+  </div>
+
+</section>
+ <!-- CONTACT PAGE -->
+   <section id="page-contact" class="page min-h-screen bg-slate-50/60 py-12 px-4">
+  <div class="max-w-5xl mx-auto">
+    <!-- Header Block -->
+    <div class="text-center max-w-xl mx-auto mb-12">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 mb-3">
+        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+        Customer Care Portal
+      </div>
+      <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">Get in Touch</h2>
+      <p class="text-sm text-slate-500 mt-2">Have technical or transactional questions regarding your order? Our support team is here to assist you daily.</p>
+    </div>
+    <!-- Main Content Workspace Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+      <!-- 1. Left Side Column Panels: Direct Channels & Operational Data (2 Columns Wide) -->
+      <div class="lg:col-span-2 space-y-4">
+        <!-- Support Channel Card: Email -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-start gap-4 transition hover:border-slate-300">
+          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+            <i data-lucide="mail" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Electronic Mail Support</h4>
+            <p class="text-sm font-semibold text-slate-800 truncate mt-1">jovalistore@gmail.com</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Expect response delivery within 24 operational hours.</p>
+          </div>
+        </div>
+  <!-- Support Channel Card: Phone -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-start gap-4 transition hover:border-slate-300">
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+            <i data-lucide="phone" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Direct Telephone Desk</h4>
+            <p class="text-sm font-semibold text-slate-800 mt-1">+234 (902) 505-8674</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Call directly for immediate priority account queries.</p>
+          </div>
+        </div>
+         <!-- Support Channel Card: Business Operational Hours -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-start gap-4 transition hover:border-slate-300">
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+            <i data-lucide="clock" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Operational Windows</h4>
+            <p class="text-sm font-semibold text-slate-800 mt-1">Mon–Fri • 9:00 AM – 6:00 PM</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">Standard West African Time (WAT) processing zone.</p>
+          </div>
+        </div>
+      </div>
+      <!-- 2. Right Side Column Panel: Secure Messaging Engine Terminal (3 Columns Wide) -->
+      <div class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <!-- Form Header Accent -->
+        <div class="px-6 py-4 bg-gradient-to-r from-indigo-50 to-indigo-50/50 border-b border-indigo-200/50 flex items-center gap-2">
+          <i data-lucide="send" class="w-4 h-4 text-indigo-600"></i>
+          <span class="text-xs font-bold uppercase tracking-wide text-indigo-700">Send Us Your Message</span>
+        </div>
+
+        <!-- Success Message Container (Initially Hidden) -->
+        <div id="contact-success" class="hidden m-6 p-6 bg-gradient-to-br from-emerald-50 to-emerald-50/60 border-2 border-emerald-200 rounded-2xl shadow-lg shadow-emerald-100/50">
+          <div class="flex items-start gap-4">
+            <div class="h-12 w-12 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 text-white flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-500/30">
+              <i data-lucide="check-circle" class="w-6 h-6 stroke-[2.5]"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-lg font-bold text-emerald-900 mb-1">Message Received! 🎉</p>
+              <p class="text-sm text-emerald-700 leading-relaxed mb-3">
+                Thank you for reaching out to us! Your message has been successfully sent to our support team.
+              </p>
+              <div class="space-y-2 mb-4 bg-white/60 rounded-lg p-3">
+                <p class="text-xs text-emerald-800"><span class="font-semibold">What happens next:</span> We'll review your inquiry and respond within 24 business hours.</p>
+                <p class="text-xs text-emerald-700">You'll receive a detailed response at your registered email address.</p>
+              </div>
+              <p class="text-xs font-semibold text-emerald-600">We appreciate your patience and look forward to assisting you! ✨</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Form -->
+        <form id="contact-form" onsubmit="handleContact(event)" class="p-6 md:p-8 space-y-5">
+          <!-- Form Status Indicator -->
+          <div id="form-status-indicator" class="flex items-center gap-2 text-xs text-slate-500 mb-4 pb-4 border-b border-slate-200/50">
+            <span class="w-2 h-2 rounded-full bg-slate-400 animate-pulse"></span>
+            <span>Form monitoring active - Fill all fields to submit</span>
+          </div>
+          <!-- Name Row -->
+          <div>
+            <label for="contact-name" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Full Name *</label> 
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                <i data-lucide="user" class="w-4 h-4"></i>
+              </span>
+              <input id="contact-name" type="text" required placeholder="John Doe"
+                class="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 placeholder-slate-400 transition duration-200 shadow-sm">
+            </div>
+          </div>
+
+          <!-- Email Row -->
+          <div>
+            <label for="contact-email" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Email Address *</label> 
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                <i data-lucide="mail" class="w-4 h-4"></i>
+              </span>
+              <input id="contact-email" type="email" required placeholder="you@domain.com"
+                class="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 placeholder-slate-400 transition duration-200 shadow-sm">
+            </div>
+          </div>
+
+          <!-- Subject Row -->
+          <div>
+            <label for="contact-subject" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-2">Subject (Optional)</label> 
+            <div class="relative">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-slate-400">
+                <i data-lucide="heading" class="w-4 h-4"></i>
+              </span>
+              <input id="contact-subject" type="text" placeholder="e.g., Order issue, Technical support, General inquiry"
+                class="w-full pl-11 pr-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 placeholder-slate-400 transition duration-200 shadow-sm">
+            </div>
+          </div>
+
+          <!-- Message Body Row -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label for="contact-msg" class="block text-xs font-bold text-slate-700 uppercase tracking-wide">Detailed Message *</label>
+              <span id="char-count" class="text-[11px] text-slate-400 font-medium">0/1000</span>
+            </div>
+            <textarea id="contact-msg" rows="5" required placeholder="Please describe your inquiry in detail. Include any relevant order numbers, error messages, or context to help us assist you better..."
+              class="w-full px-4 py-3 text-sm rounded-xl border border-slate-200 bg-slate-50/60 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 placeholder-slate-400 transition duration-200 resize-none shadow-sm" maxlength="1000"></textarea>
+          </div>
+
+          <!-- Form Submit Button Trigger -->
+          <div class="flex gap-3 pt-3">
+            <button id="contact-submit" type="submit" 
+              class="flex-1 py-3 px-4 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 focus:outline-none focus:ring-4 focus:ring-indigo-500/30 shadow-md shadow-indigo-200 transition duration-200 flex items-center justify-center gap-2 group">
+              <span id="contact-submit-text">Send Message</span>
+              <i data-lucide="send" class="w-4 h-4 transition-transform group-hover:translate-x-0.5"></i>
+              <span id="contact-submit-loading" class="hidden animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+            </button>
+            <button type="reset" 
+              class="py-3 px-6 rounded-xl font-semibold text-sm text-slate-700 bg-slate-100 hover:bg-slate-200 focus:outline-none focus:ring-4 focus:ring-slate-500/20 transition duration-200">
+              Clear
+            </button>
+          </div>
+
+          <!-- Help Text -->
+          <p class="text-xs text-slate-500 leading-relaxed">
+            <i data-lucide="info" class="w-3 h-3 inline mr-1 text-slate-400"></i>
+            All messages are sent to <span class="font-semibold text-slate-700">jovalistore@gmail.com</span> and will be reviewed within 24 hours.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+ <!-- API Client - Foundation for all Phase 3 & 4 features -->
+ <script src="js/api-client.js"></script>
+ <!-- Notifications Service -->
+ <script src="js/notifications.js"></script>
+ <!-- Messaging Service (REST API) -->
+ <script src="js/messages-rest.js"></script>
+ <!-- Reviews Service -->
+ <script src="js/reviews.js"></script>
+ <!-- Product Catalog (Search & Filtering) -->
+ <script src="js/products-catalog.js"></script>
+ <!-- Seller Dashboard (Enhanced) -->
+ <script src="js/seller-dashboard.js"></script>
+ <!-- Admin Panel Foundation -->
+ <script src="js/admin-panel.js"></script>
+ <!-- Contact Service -->
+ <script src="js/contact-service.js"></script>
+ <script src="js/els2app.js"></script>
+  <script src="js/cloudupload.js"></script>
+ <script src="js/ui.js"></script>
+ <script src="js/logistics.js"></script>
+ <script src="js/products.js"></script>
+<script src="js/orders.js"></script>
+<script src="js/my-store.js"></script>
+ <script src="js/messages.js"></script>
+<script src="js/cart.js"></script> 
+<script src="js/payment.js"></script>
+ <script src="js/chat.js"></script>
+ <script src="js/profile.js"></script>
+ <script src="js/dataSdk.js"></script>
+<script src="js/register.js"></script>
+
+</body>
+  </html>

@@ -1,7 +1,7 @@
 # ELS ONLINE STORE — FULL PROJECT SDLC + FRONTEND GUIDE
 
 **Date:** May 24, 2026  
-**Project:** ELS Online Store  
+**Project:** Jovli Store  
 **Team:** Sunday (Founder), Zohan (Frontend/Backend), You (Backend Lead)  
 **Stack:** Node.js, Express.js, MongoDB, Vanilla HTML/CSS/JS, JWT, Multer, Paystack/Flutterwave
 
@@ -9,7 +9,7 @@
 
 # PROJECT OVERVIEW
 
-ELS Online Store is a multi-vendor e-commerce marketplace where:
+JovAli Store is a multi-vendor e-commerce marketplace where:
 - Sellers create stores
 - Sellers upload products
 - Buyers add products to cart
@@ -57,8 +57,8 @@ Architecture:
 ### Frontend Auth Storage
 
 ```javascript
-localStorage.setItem('els_token', token);
-localStorage.setItem('els_user', JSON.stringify(user));
+localStorage.setItem('jas_token', token);
+localStorage.setItem('jas_user', JSON.stringify(user));
 ```
 
 ---

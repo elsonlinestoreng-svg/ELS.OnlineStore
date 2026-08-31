@@ -1,0 +1,1 @@
+// Carousel is handled in ui.js setupHomeCarousel()
