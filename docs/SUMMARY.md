@@ -98,6 +98,70 @@
 
 ---
 
+## Phase 3 — Seller Experience (Backend) — Done
+
+**Date:** Aug 12, 2026 — Backend lead (Zohan)
+
+### Notifications
+- **New:** `server/models/Notification.js`, `server/services/notify.js`, `server/routes/notifications.js`
+- Auto-created on: new order (seller), order placed (buyer), payment confirmed (seller), order status change (buyer), logistics events (buyer/seller), new message (recipient)
+- Routes: `GET /api/notifications`, `GET /api/notifications/unread-count`, `PUT /api/notifications/:id/read`, `PUT /api/notifications/read-all`
+
+### Buyer-Seller Messaging
+- **New:** `server/models/Conversation.js`, `server/models/Message.js`, `server/routes/messages.js`
+- REST API (MongoDB-backed, no Firebase dependency):
+  - `GET/POST /api/messages/conversations`
+  - `GET /api/messages/conversations/:id` (+ messages)
+  - `POST /api/messages/conversations/:id/messages`
+  - `PUT /api/messages/conversations/:id/read`
+
+### Logistics Tracking
+- **New:** `server/models/Logistics.js`, `server/routes/logistics.js`
+- Flow: seller books pickup → courier accepts → courier updates tracking → delivered
+- Routes:
+  - `POST /api/logistics/orders/:orderId/book`
+  - `POST /api/logistics/orders/:orderId/accept`
+  - `POST /api/logistics/orders/:orderId/update`
+  - `GET /api/logistics/orders/:orderId`, `GET /api/logistics/available`, `GET /api/logistics/mine`, `GET /api/logistics/seller`
+- Syncs `Order.order_status` (shipped/delivered) + `tracking_number`
+
+### Bugs Fixed Along the Way
+1. `server.js` loaded `.env` from `backend/.env` (missing) → now repo root; **server previously could not start**
+2. `server.js` called `startReconciliationCron` but `reconciliation.js` exports `start` — crashed on boot
+3. Order status update stored TitleCase (`Shipped`) but Order enum is lowercase → save failed; now normalized to lowercase (any input casing accepted)
+
+---
+
+## Phase 4 — Polish & Launch (Backend) — Done
+
+**Date:** Aug 12, 2026 — Backend lead (Zohan)
+
+### Search & Filters
+- `GET /api/products` now supports: `q` (search name/description/category), `category`, `min_price`, `max_price`, `sort` (`newest|price_asc|price_desc|rating|name`), `page`, `limit`
+- Backward compatible — still returns a plain array; total via `X-Total-Count` header
+
+### Product Reviews
+- **New:** `server/models/Review.js`, `server/routes/reviews.js`
+- Verified-buyer only: must have a `paid` order containing the product
+- One review per buyer per product (unique index)
+- `Product` gains `average_rating` + `rating_count` (recomputed on create/update/delete)
+- Routes: `POST /api/reviews`, `GET /api/reviews/product/:productId`, `GET /api/reviews/mine`, `PUT /api/reviews/:id`, `DELETE /api/reviews/:id`
+
+### Admin Panel
+- `User` gains `role` (`user`|`admin`, default `user`); backfilled on boot; `ADMIN_EMAIL` env auto-promotes at boot
+- **New:** `server/middleware/admin.js`, `server/routes/admin.js`, `scripts/make-admin.js` (`npm run make-admin -- <email>`)
+- Routes (all under `/api/admin`, admin-only):
+  - `GET /stats` — users/stores/products/orders/transactions/pending stores/gross revenue/commission
+  - `GET /stores?status=`, `PUT /stores/:id/status` (store moderation)
+  - `GET /users?q=&role=`, `PUT /users/:id/role`
+  - `GET /orders?status=&payment_status=`
+  - `GET /earnings/platform` — platform commission breakdown
+
+### Bug Fixed
+- Mongoose 9 does not cast strings to ObjectId inside `$match` aggregations → reviews' average rating was never persisted; now explicitly cast in `refreshProductRating`
+
+---
+
 ## How to Run
 
 ```bash

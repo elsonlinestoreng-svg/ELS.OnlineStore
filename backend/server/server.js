@@ -1,4 +1,4 @@
-require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
+require('dotenv').config({ path: require('path').resolve(__dirname, '..', '..', '.env') });
 
 const express = require('express');
 const multer = require('multer');
@@ -16,8 +16,14 @@ const earningsRoutes = require('./routes/earnings');
 const paymentRoutes = require('./routes/payment');
 const deliveryRoutes = require('./routes/deliveryPartners');
 const contactRoutes = require('./routes/contact');
+const notificationRoutes = require('./routes/notifications');
+const messageRoutes = require('./routes/messages');
+const logisticsRoutes = require('./routes/logistics');
+const reviewRoutes = require('./routes/reviews');
+const adminRoutes = require('./routes/admin');
 const connectDB = require('./config/db');
-const { startReconciliationCron } = require('./services/reconciliation');
+const User = require('./models/User');
+const { start: startReconciliationCron } = require('./services/reconciliation');
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -66,6 +72,11 @@ app.use('/api/earnings', earningsRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/logistics', logisticsRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/admin', adminRoutes);
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -83,9 +94,7 @@ app.post('/upload', upload.single('file'), (req, res) => {
   res.json({ url });
 });
 
-<<<<<<< HEAD:backend/server/server.js
 app.get('/health', (req, res) => res.json({ ok: true, service: 'els-online-store', timestamp: new Date().toISOString() }));
-=======
 // Password reset email endpoint
 // Expects JSON: { email: string, resetBase: string, siteName?: string }
 app.post('/send-reset', async (req, res) => {
@@ -169,7 +178,6 @@ app.get('/validate-reset', (req, res) => {
   return res.json({ ok: true, email: info.email });
 });
 
->>>>>>> zohan-work:server/server.js
 app.get('/', (req, res) => res.send('ELS upload server is running'));
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));
 app.use((err, req, res, next) => {
@@ -178,11 +186,18 @@ app.use((err, req, res, next) => {
 });
 
 const port = process.env.PORT || 8001;
-<<<<<<< HEAD
 
-<<<<<<< HEAD:backend/server/server.js
 connectDB()
-  .then(() => {
+  .then(async () => {
+    await User.updateMany({ role: { $exists: false } }, { $set: { role: 'buyer' } });
+    if (process.env.ADMIN_EMAIL) {
+      const admin = await User.findOneAndUpdate(
+        { email: process.env.ADMIN_EMAIL.toLowerCase() },
+        { $set: { role: 'admin' } },
+        { new: true }
+      );
+      if (admin) console.log('Admin ready: ' + admin.email);
+    }
     app.listen(port, () => {
       console.log(`ELS server running on http://localhost:${port}`);
       startReconciliationCron();
@@ -194,68 +209,3 @@ connectDB()
       console.log(`ELS server running on http://localhost:${port} without database connectivity`);
     });
   });
-=======
-connectDB().then(() => {
-  app.listen(port, () => console.log(`ELS server running on http://localhost:${port}`));
-=======
-app.listen(port, () => console.log(`Upload server listening on http://localhost:${port}`));
-
-// ----- Simple user store and auth endpoints (file-based, demo only) -----
-const USERS_FILE = path.join(__dirname, 'users.json');
-const bcrypt = require('bcryptjs');
-
-function loadUsers() {
-  try { if (fs.existsSync(USERS_FILE)) return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8') || '[]'); } catch(e) {}
-  return [];
-}
-function saveUsers(users) {
-  try { fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2)); } catch(e) { console.error('saveUsers error', e); }
-}
-
-app.post('/register', (req, res) => {
-  const { name, email, password } = req.body || {};
-  if (!email || !password || !name) return res.status(400).json({ error: 'Missing name, email or password' });
-  const users = loadUsers();
-  if (users.find(u => String(u.email).toLowerCase() === String(email).toLowerCase())) return res.status(409).json({ error: 'User exists' });
-  const hash = bcrypt.hashSync(password, 10);
-  const id = 'u-' + Date.now() + '-' + Math.random().toString(36).slice(2,8);
-  const user = { id, name, email, passwordHash: hash, created_at: new Date().toISOString() };
-  users.push(user);
-  saveUsers(users);
-  return res.json({ ok: true, user: { id: user.id, name: user.name, email: user.email } });
-});
-
-app.post('/login', (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'Missing email or password' });
-  const users = loadUsers();
-  const u = users.find(x => String(x.email).toLowerCase() === String(email).toLowerCase());
-  if (!u) return res.status(404).json({ error: 'User not found' });
-  const ok = bcrypt.compareSync(password, u.passwordHash || '');
-  if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
-  return res.json({ ok: true, user: { id: u.id, name: u.name, email: u.email } });
-});
-
-// complete reset: accepts { token, newPassword }
-app.post('/reset-complete', (req, res) => {
-  const { token, newPassword } = req.body || {};
-  if (!token || !newPassword) return res.status(400).json({ error: 'Missing token or newPassword' });
-  const resetsFile = path.join(__dirname, 'resets.json');
-  let resets = {};
-  try { if (fs.existsSync(resetsFile)) resets = JSON.parse(fs.readFileSync(resetsFile, 'utf8') || '{}'); } catch(e){ resets = {}; }
-  const info = resets[token];
-  if (!info) return res.status(404).json({ error: 'Token not found' });
-  if (Date.now() > info.expires) return res.status(410).json({ error: 'Token expired' });
-  const email = info.email;
-  const users = loadUsers();
-  const uidx = users.findIndex(x => String(x.email).toLowerCase() === String(email).toLowerCase());
-  if (uidx === -1) return res.status(404).json({ error: 'User not found' });
-  users[uidx].passwordHash = bcrypt.hashSync(newPassword, 10);
-  saveUsers(users);
-  // remove token
-  delete resets[token];
-  try { fs.writeFileSync(resetsFile, JSON.stringify(resets, null, 2)); } catch(e){}
-  return res.json({ ok: true });
->>>>>>> c7df98d9edeff8574c2dd1eab27c04fa9fbeab33
-});
->>>>>>> zohan-work:server/server.js

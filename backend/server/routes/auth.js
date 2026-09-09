@@ -49,7 +49,7 @@ router.post('/register', async (req, res) => {
     });
     await user.save();
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.status(201).json({
       success: true, message: 'User registered successfully', token,
@@ -89,7 +89,7 @@ router.post('/login', async (req, res) => {
     user.provider = normalizedProvider;
     await user.save();
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.json({
       success: true, message: 'Login successful', token,
@@ -153,7 +153,7 @@ router.post('/verify-otp', async (req, res) => {
     otpStore.delete(email.toLowerCase());
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.json({ success: true, message: 'OTP verified successfully', token, user: { _id: user._id, name: user.name, email: user.email } });
   } catch (err) {
@@ -197,6 +197,24 @@ router.post('/send-reset', async (req, res) => {
     res.json({ success: true, ok: true, message: 'If an account exists, a reset link has been sent', token: resetToken, resetUrl });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to send reset email' });
+  }
+});
+
+// Validate Reset Token
+router.get('/validate-reset', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ success: false, message: 'Token is required' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.purpose !== 'password-reset') return res.status(400).json({ success: false, message: 'Invalid reset token' });
+
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, ok: true, message: 'Token valid' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'Token invalid or expired' });
   }
 });
 
