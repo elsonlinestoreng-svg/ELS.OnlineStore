@@ -76,6 +76,8 @@ function loadUserIfExists(email) {
 }
 
 let profileAutoSaveTimer = null;
+let profileSaveInFlight = false;
+let profileSaveQueued = false;
 
 function bindProfileAutoSave() {
   const form = document.getElementById('profile-form');
@@ -97,7 +99,7 @@ function bindProfileAutoSave() {
 function scheduleProfileAutoSave() {
   clearTimeout(profileAutoSaveTimer);
   profileAutoSaveTimer = setTimeout(() => {
-    saveProfile(null, { silent: true });
+    saveProfile(null, { silent: true, auto: true });
   }, 500);
 }
 
@@ -144,9 +146,23 @@ async function saveProfile(e, options = {}) {
   const email = (document.getElementById('profile-email')?.value || '').trim();
   const bio = (document.getElementById('profile-bio')?.value || '').trim();
 
-  if (!name && !options?.allowEmptyName) return showToast('Please enter a display name');
+  if (!name && !options?.allowEmptyName) {
+    if (!silent) showToast('Please enter a display name');
+    return;
+  }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!silent) showToast('Please enter a valid email address');
+    return;
+  }
+
+  if (profileSaveInFlight) {
+    profileSaveQueued = true;
+    return;
+  }
+
+  profileSaveInFlight = true;
   currentUser.name = name || currentUser.name || 'User';
-  currentUser.email = email;
+  currentUser.email = email || currentUser.email || '';
   currentUser.bio = bio;
 
   // Check for avatar uploaded on profile page
@@ -186,7 +202,7 @@ async function saveProfile(e, options = {}) {
     try {
       const payload = {
         name: currentUser.name,
-        email,
+        email: currentUser.email,
         bio: currentUser.bio,
         avatar: currentUser.avatarDataUrl || currentUser.avatar || '',
         logistics_id: currentUser.logistics_id || '',
@@ -209,7 +225,7 @@ async function saveProfile(e, options = {}) {
           currentUser.avatarDataUrl = data.user.avatar;
         }
       } else {
-        console.warn('Profile save failed on server', data);
+          console.warn('Profile save failed on server', data);
       }
     } catch (err) {
       console.warn('Profile sync failed', err);
@@ -225,6 +241,11 @@ async function saveProfile(e, options = {}) {
   try { renderProfile(); } catch (e) {}
 
   if (!silent) showToast('Profile saved');
+  profileSaveInFlight = false;
+  if (profileSaveQueued) {
+    profileSaveQueued = false;
+    scheduleProfileAutoSave();
+  }
 }
 
 /**

@@ -254,7 +254,21 @@ router.put('/profile', async (req, res) => {
     const { name, phone, avatar, bio, email, logistics_id } = req.body;
 
     const updateFields = {};
-    const allowedFields = { name, phone, avatar, bio, email, logistics_id };
+    const allowedFields = {
+      name: typeof name === 'string' ? name.trim() : name,
+      phone: typeof phone === 'string' ? phone.trim() : phone,
+      avatar,
+      bio: typeof bio === 'string' ? bio.trim() : bio,
+      email: typeof email === 'string' ? email.trim().toLowerCase() : email,
+      logistics_id: typeof logistics_id === 'string' ? logistics_id.trim() : logistics_id
+    };
+
+    if (allowedFields.name === '') {
+      return res.status(400).json({ success: false, message: 'Display name is required' });
+    }
+    if (allowedFields.email !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(allowedFields.email)) {
+      return res.status(400).json({ success: false, message: 'A valid email address is required' });
+    }
 
     for (const [key, value] of Object.entries(allowedFields)) {
       if (value !== undefined) {
@@ -266,13 +280,26 @@ router.put('/profile', async (req, res) => {
       return res.status(400).json({ success: false, message: 'No profile fields provided' });
     }
 
-    const user = await User.findByIdAndUpdate(decoded.userId, { $set: updateFields }, { new: true }).select('-password');
+    const user = await User.findByIdAndUpdate(
+      decoded.userId,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    ).select('-password');
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     res.json({ success: true, message: 'Profile updated', user });
   } catch (err) {
     console.error('Profile update failed:', err);
-    res.status(401).json({ success: false, message: 'Invalid token' });
+    if (err.code === 11000) {
+      return res.status(409).json({ success: false, message: 'Email is already registered' });
+    }
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ success: false, message: err.message });
+    }
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Invalid token' });
+    }
+    res.status(500).json({ success: false, message: 'Failed to update profile' });
   }
 });
 
