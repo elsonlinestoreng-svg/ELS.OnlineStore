@@ -1,1406 +1,854 @@
-﻿<!doctype html>
+<!DOCTYPE html>
 <html lang="en" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ELS.OnlineStore</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ELS Online Store</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
-  <!--
-    Optional: For Firebase Storage uploads, set `window.FIREBASE_CONFIG` before the app script runs.
-    Example (development only - keep secrets out of public repos):
-
-    <script>
-      window.FIREBASE_CONFIG = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "your-project.firebaseapp.com",
-        projectId: "your-project-id",
-        storageBucket: "your-project-id.appspot.com",
-        messagingSenderId: "0123456789",
-        appId: "1:0123456789:web:abcdef123456"
-      };
-    </script>
-
-    You can paste this object into the browser console while testing, or add it to the page
-    before the main script. The demo will call `uploadToFirebaseStorage()` when this is present.
-  -->
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;family=Playfair+Display:wght@700&amp;display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="css/els2.css">
- 
- </head>
-
- <body class="h-full">
-  <div id="app" class="h-full w-full overflow-auto" style="background: radial-gradient(circle at top left, #11142f 0%, #161e42 35%, #0b1225 100%);">
-   <!-- AUTH SCREEN -->
-   <div id="auth-screen" class="h-full w-full flex items-center justify-center" style="background-image: radial-gradient(circle at top left, rgba(56,189,248,0.14), transparent 30%), linear-gradient(135deg, rgba(15,23,42,0.96) 0%, rgba(79,70,229,0.78) 48%, rgba(10,12,33,0.96) 100%), url('https://source.unsplash.com/1600x900/?ecommerce,shopping,google'); background-size: cover; background-position: center;">
-    <div class="w-full max-w-md mx-4 fade-in">
-     <div class="text-center mb-6" id="auth-branding">
-      <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-3" >
-        <img src="images/weblogo.png" alt="ELS Logo" class="w-12 h-12 rounded" style="filter: drop-shadow(0 0 5px rgba(233, 69, 96, 0.274));">
-      </div>
-      <h1 id="auth-site-name" class="text-2xl md:text-3xl font-bold text-white" style="font-family:'Playfair Display',serif;">Welcome to ELS</h1>
-      <p id="auth-tagline" class="text-gray-300 mt-1 text-sm">Shop with confidence, sell with ease.</p>
-     </div>
-     <div class="rounded-2xl p-8" style="background:rgba(255,255,255,0.07); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1);">
-      <div class="flex mb-6 rounded-xl overflow-hidden" style="background:rgba(255,255,255,0.05);" role="tablist" aria-label="Authentication tabs">
-       <button id="login-tab" onclick="switchAuthTab('login')" class="flex-1 py-3 text-sm font-semibold" aria-pressed="true" role="tab">Login</button>
-       <button id="register-tab" onclick="switchAuthTab('register')" class="flex-1 py-3 text-sm font-semibold text-gray-400" aria-pressed="false" role="tab">Register</button>
-      </div>
-      <!-- Login Form -->
-      <form id="login-form" onsubmit="handleLogin(event)">
-       <div class="mb-4">
-        <label for="login-email" class="block text-gray-300 text-sm mb-1">Email</label> 
-        <input id="login-email" type="email" required placeholder="you@email.com"
-         class="w-full px-4 py-3 rounded-xl text-gray"
-          style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-       </div>
-       <div class="mb-4">
-        <label for="login-pass" class="block text-gray-300 text-sm mb-1">Password</label>
-        <div class="relative">
-          <input id="login-pass" type="password" required placeholder="••••••••" 
-           class="w-full px-4 py-3 rounded-xl text-gray" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding-right:68px;">
-          <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-white/10 text-white" aria-pressed="false" onclick="togglePasswordVisibility('login-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
-        </div>
-       </div>
-       <div class="mb-4">
-        <label for="login-role" class="block text-gray-300 text-sm mb-1">Login channel</label>
-        <select id="login-role" class="w-full px-4 py-3 rounded-xl text-black" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-          <option value="buyer">Order Receiver / Buyer</option>
-          <option value="seller">Seller / Merchant</option>
-          <option value="delivery">Delivery Partner</option>
-        </select>
-       </div>
-       <div class="mb-6">
-        <label for="login-region" class="block text-gray-300 text-sm mb-1">Region</label>
-        <select id="login-region" class="w-full px-4 py-3 rounded-xl text-black-300" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-          <option value="global">Global</option>
-          <option value="lagos">Lagos</option>
-          <option value="abuja">Abuja</option>
-          <option value="port-harcourt">Port Harcourt</option>
-          <option value="drive-hub">Delivery Hub</option>
-        </select>
-       </div>
-       <button type="submit"
-        class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
-         style="background:#1e0e79a1; box-shadow: #351883a2;">Sign In</button>
-       <p class="text-center text-black text-xs mt-6"> Login with email / password </p>
-      <div class="flex items-center justify-between mt-2">
-        <label class="text-xs text-gray-300"><input id="remember-login" type="checkbox" style="margin-right:6px;" /> Remember me</label>
-        <a href="#" onclick="openResetRequestModal();return false;" class="text-sm text-indigo-200 underline">Forgot password?</a>
-      </div>
-      </form>
-      <!-- Register Form -->
-      <div id="register-logo" class="hidden text-center mb-4">
-        <img src="images/weblogo.png" alt="ELS logo" class="w-24 h-24 mx-auto rounded-lg shadow-md">
-      </div>
-      <form id="register-form" class="hidden" onsubmit="handleRegister(event)" aria-hidden="true">
-       <div class="mb-4">
-        <label for="reg-name" class="block text-gray-300 text-sm mb-1">Full Name</label> 
-         <input id="reg-name" 
-         type="text" required placeholder="E-commerce Life Style" 
-         class="w-full px-4 py-3 rounded-xl text-white" 
-         style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-       </div>
-       <div class="mb-4">
-        <label for="reg-email" class="block text-gray-300 text-sm mb-1">Email</label> 
-        <input id="reg-email" type="email" required placeholder="you@email.com" 
-        class="w-full px-4 py-3 rounded-xl text-white" 
-        style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15);">
-       </div>
-       <div class="mb-6">
-        <label for="reg-pass" class="block text-gray-300 text-sm mb-1">Password</label>
-         <div class="relative">
-          <input id="reg-pass" type="password" required placeholder="••••••••"
-           class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding-right:68px;">
-          <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-white/10 text-white" aria-pressed="false" onclick="togglePasswordVisibility('reg-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
-         </div>
-       </div>
-        <div class="mb-6">
-          <label for="reg-confirm-pass" class="block text-gray-300 text-sm mb-1">Confirm Password</label>
-          <div class="relative">
-            <input id="reg-confirm-pass" type="password" required placeholder="••••••••"
-              class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); padding-right:68px;">
-          </div>
-        </div>
-        <div class="mb-6">
-         <label for="reg-dob" class="block text-gray-300 text-sm mb-1">Date Of Birth </label>
-        <input id="reg-dob" type="date" required placeholder="Date of Birth"
-          class="w-full px-4 py-3 rounded-xl text-white" style="background:rgba(255,255,255,0.08);
-           border:1px solid rgba(255,255,255,0.15);">
-        </div>
-       <button type="submit"
-        class="w-full py-3 rounded-xl font-semibold text-white auth-cta"
-         style="background:#1f4b8dc5; filter: brightness(0.8);text-shadow: #547f97;font-size: large;">Create Account</button>
-       <div class="mt-3 text-sm">
-         <label class="text-gray-300"><input id="remember-register" type="checkbox" style="margin-right:6px;" checked /> Remember me</label>
-       </div>
-       <p class="text-center text-gray-500 text-xs mt-4">Demo: registration is simulated</p>
-</form>
- <!-- Password Reset Request Modal -->
-        <div id="reset-password-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
-          <div class="absolute inset-0 bg-black/50"></div>
-          <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-semibold mb-3">Reset Password</h3>
-            <form id="reset-request-form" onsubmit="sendPasswordResetRequest(event)">
-              <label class="block text-sm text-gray-700 mb-1">Enter your registered email</label>
-              <input id="reset-email" type="email" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="you@email.com" />
-              <div class="flex gap-2 justify-end">
-                <button type="button" onclick="closeResetRequestModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
-                <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Send Reset</button>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="css/els2.css" />
+  <style>
+    html, body { min-height: 100%; }
+    body { font-family: 'Outfit', sans-serif; background: #f4f7fb; color: #1f2937; }
+    ::selection { background: #e94560; color: white; }
+    .section-title { font-family: 'Playfair Display', serif; }
+    .modal-backdrop { background: rgba(15, 23, 42, 0.65); }
+    .menu-item-icon i[data-lucide] { display: inline-flex; }
+  </style>
+</head>
+<body class="h-full min-h-screen">
+  <div id="app" class="min-h-screen">
+    <div id="auth-screen" class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+      <div class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
+        <div class="grid gap-8 rounded-[2rem] bg-slate-900/95 p-8 shadow-2xl shadow-slate-950/20 lg:grid-cols-[0.9fr_0.7fr] lg:p-10">
+          <div class="space-y-6">
+            <span class="inline-flex rounded-full bg-rose-500/10 px-4 py-1 text-sm uppercase tracking-[0.35em] text-rose-300">JovAli Online Market </span>
+            <h1 class="section-title text-4xl font-bold leading-tight sm:text-5xl">Merchant storefront with modern checkout and inventory tools.</h1>
+            <p class="max-w-xl text-slate-300">Access the JovAli  merchant dashboard, manage listings, track orders, and process payments from a refined, professional interface.</p>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/10">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-400">Designed for</p>
+                <p class="mt-3 text-lg font-semibold">Sellers, buyers, and logistics teams.</p>
               </div>
-            </form>
-            <div id="reset-request-result" class="mt-3 text-sm text-gray-700"></div>
+              <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/10">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-400">Built for</p>
+                <p class="mt-3 text-lg font-semibold">Fast inventory workflows.</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- Password Reset Set Modal -->
-        <div id="reset-set-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
-          <div class="absolute inset-0 bg-black/50"></div>
-          <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
-            <h3 class="text-lg font-semibold mb-3">Choose a new password</h3>
-            <form id="reset-set-form" onsubmit="completePasswordReset(event)">
-              <label class="block text-sm text-gray-700 mb-1">New password</label>
+          <div class="rounded-[2rem] bg-white p-8 text-slate-900 shadow-xl shadow-slate-950/10 ring-1 ring-slate-200">
+            <div class="mb-6 flex items-center justify-between gap-3">
+              <div>
+                <p class="text-xs uppercase tracking-[0.35em] text-rose-500">Account access</p>
+                <h2 class="section-title text-2xl font-bold">Login or register</h2>
+              </div>
+              <div class="flex gap-2">
+                <button id="login-tab" onclick="switchAuthTab('login')" class="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white">Login</button>
+                <button id="register-tab" onclick="switchAuthTab('register')" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Register</button>
+              </div>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+              <label class="block text-sm font-semibold text-slate-700">Email</label>
+              <input id="login-email" type="email" required placeholder="you@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+              <label class="block text-sm font-semibold text-slate-700">Password</label>
               <div class="relative">
-                <input id="reset-new-pass" type="password" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="New password" style="padding-right:90px;" />
-                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-gray-100" aria-pressed="false" onclick="togglePasswordVisibility('reset-new-pass', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                <input id="login-pass" type="password" required placeholder="••••••••" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                <button type="button" onclick="togglePasswordVisibility('login-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">Show</button>
               </div>
-              <label class="block text-sm text-gray-700 mb-1">Confirm password</label>
-              <div class="relative">
-                <input id="reset-new-pass-confirm" type="password" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="Confirm password" style="padding-right:90px;" />
-                <button type="button" class="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1 text-sm rounded bg-gray-100" aria-pressed="false" onclick="togglePasswordVisibility('reset-new-pass-confirm', this)"><i data-lucide="eye" class="w-4 h-4"></i></button>
+              <div class="flex items-center justify-between text-sm text-slate-600">
+                <label class="inline-flex items-center gap-2"><input id="remember-login" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> Remember me</label>
+                <button type="button" onclick="openResetRequestModal()" class="font-semibold text-rose-600 hover:text-rose-500">Forgot password?</button>
               </div>
-              <div class="flex gap-2 justify-end">
-                <button type="button" onclick="closeResetSetModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
-                <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Set Password</button>
-              </div>
+              <button type="submit" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Sign in</button>
             </form>
-            <div id="reset-set-result" class="mt-3 text-sm text-gray-700"></div>
+
+            <form id="register-form" onsubmit="handleRegister(event)" class="mt-8 hidden space-y-4">
+              <label class="block text-sm font-semibold text-slate-700">Name</label>
+              <input id="reg-name" type="text" required placeholder="Jane Doe" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+              <label class="block text-sm font-semibold text-slate-700">Email</label>
+              <input id="reg-email" type="email" required placeholder="you@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+              <label class="block text-sm font-semibold text-slate-700">Password</label>
+              <div class="relative">
+                <input id="reg-pass" type="password" required placeholder="Create a password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                <button type="button" onclick="togglePasswordVisibility('reg-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">Show</button>
+              </div>
+              <label class="inline-flex items-center gap-2 text-sm text-slate-600"><input id="remember-register" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> Keep me signed in</label>
+              <button type="submit" class="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Create account</button>
+            </form>
           </div>
         </div>
-          <!-- OTP Verify Modal -->
-          <div id="reset-otp-modal" class="hidden fixed inset-0 flex items-center justify-center z-50">
-            <div class="absolute inset-0 bg-black/50"></div>
-            <div class="relative bg-white rounded-xl p-6 w-full max-w-md">
-              <h3 class="text-lg font-semibold mb-3">Enter verification code</h3>
-              <form id="reset-otp-form" onsubmit="verifyOtp(event)">
-                <label class="block text-sm text-gray-700 mb-1">One-time code (sent to your email)</label>
-                <input id="reset-otp-code" type="text" required class="w-full px-3 py-2 rounded mb-3 border" placeholder="123456" pattern="[0-9]{6}" />
-                <div class="flex gap-2 justify-end">
-                    <button type="button" onclick="closeResetOtpModal()" class="px-3 py-2 rounded bg-gray-200">Cancel</button>
-                    <button type="button" id="resend-reset-code-btn" onclick="resendResetCode()" class="px-3 py-2 rounded bg-yellow-400 text-black">Resend code</button>
-                    <button type="submit" class="px-3 py-2 rounded bg-indigo-600 text-white">Verify</button>
+      </div>
+    </div>
+
+   <div id="main-app" class="hidden min-h-screen bg-slate-950 font-sans text-slate-100 antialiased selection:bg-rose-500 selection:text-white">
+  <!-- Mobile Sidebar Backdrop Overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <!-- Sidebar Component -->
+  <aside id="sidebar" class="sidebar">
+    <div class="flex h-full flex-col justify-between border-r border-slate-800/80 bg-slate-950/95 text-slate-100 shadow-2xl shadow-slate-950/50 backdrop-blur-xl">
+      
+      <!-- Upper Section: Brand & Navigation -->
+      <div class="flex-1 overflow-y-auto px-5 py-6 scrollbar-thin scrollbar-thumb-slate-800">
+        
+        <!-- Brand Header -->
+        <div class="mb-8 flex items-center gap-3.5 px-2">
+          <div class="overflow-hidden rounded-2xl bg-white shadow-lg shadow-rose-500/10 ring-1 ring-white/10">
+            <img src="images/jaslogo.png" alt="JAS logo" class="h-11 w-11 object-cover" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-rose-400">JovAli Portal</p>
+            <p class="truncate text-sm font-semibold tracking-tight text-white">Market Place </p>
+          </div>
+        </div>
+
+        <!-- Quick Access Info Widget -->
+        <div class="mb-6 rounded-2xl bg-slate-900/90 p-4 ring-1 ring-white/10 shadow-inner">
+          <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-rose-400/90">
+            <span class="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+            Quick Access
+          </div>
+          <p class="mt-2 text-xs leading-relaxed text-slate-400">
+            Navigate your store operations, orders, and logistics support channels below.
+          </p>
+        </div>
+
+        <!-- Grouped Navigation Items -->
+        <nav class="space-y-6">
+          
+          <!-- Section 1: Main Store Management -->
+          <div>
+            <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Core Navigation</p>
+            <div class="space-y-1">
+              <button data-nav="home" onclick="goTo('home')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="home" class="h-4 w-4"></i></span>
+                <span class="truncate">Overview</span>
+              </button>
+
+              <button data-nav="shop" onclick="goTo('shop')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="shopping-bag" class="h-4 w-4"></i></span>
+                <span class="truncate">Marketplace</span>
+              </button>
+
+              <button data-nav="orders" onclick="goTo('orders')" class="side-link menu-item group flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="package" class="h-4 w-4"></i></span>
+                  <span class="truncate">Orders</span>
+                </div>
+              </button>
+
+              <button data-nav="cart" onclick="goTo('cart')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="shopping-cart" class="h-4 w-4"></i></span>
+                <span class="truncate">Cart</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 2: Finances & Payments -->
+          <div>
+            <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Financials</p>
+            <div class="space-y-1">
+              <button data-nav="payment" onclick="goTo('payment')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="credit-card" class="h-4 w-4"></i></span>
+                <span class="truncate">Payment Overview</span>
+              </button>
+
+              <button data-nav="payment-details" onclick="goTo('payment-details')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="dollar-sign" class="h-4 w-4"></i></span>
+                <span class="truncate">Payment Details</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 3: Logistics & Merchant Tools -->
+          <div>
+            <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Fulfillment</p>
+            <div class="space-y-1">
+              <button data-nav="shipping" onclick="goTo('shipping')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="map-pin" class="h-4 w-4"></i></span>
+                <span class="truncate">Shipping & Tracking</span>
+              </button>
+
+              <button data-nav="merchant" onclick="goTo('merchant')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="shield-check" class="h-4 w-4"></i></span>
+                <span class="truncate">Merchant Portal</span>
+              </button>
+
+              <button data-nav="logistics" onclick="goTo('logistics')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="truck" class="h-4 w-4"></i></span>
+                <span class="truncate">Logistics Channel</span>
+              </button>
+
+              <button data-nav="regional" onclick="goTo('regional')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="globe" class="h-4 w-4"></i></span>
+                <span class="truncate">Regional Markets</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Section 4: Communication & Account -->
+          <div>
+            <p class="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-slate-500">Account</p>
+            <div class="space-y-1">
+              <button data-nav="messages" onclick="goTo('messages')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="message-square" class="h-4 w-4"></i></span>
+                <span class="truncate">Messages</span>
+              </button>
+
+              <button data-nav="profile" onclick="goTo('profile')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="user" class="h-4 w-4"></i></span>
+                <span class="truncate">Profile</span>
+              </button>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      <!-- Lower Section Footer -->
+      <div class="border-t border-slate-800/80 bg-slate-900/40 px-5 py-5 backdrop-blur-md">
+        <div class="flex items-center gap-2">
+          <i data-lucide="info" class="h-4 w-4 shrink-0 text-rose-400"></i>
+          <p class="text-xs font-semibold text-rose-300">Navigation Notes</p>
+        </div>
+        <p class="mt-1.5 text-xs text-slate-400 leading-relaxed">
+          Grouped by workflows for faster accessibility and order handling.
+        </p>
+        <button onclick="handleLogout()" class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
+          <i data-lucide="log-out" class="h-4 w-4"></i>
+          Sign out
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main View Area -->
+  <div class="min-h-screen">
+    
+    <!-- Top Bar Component -->
+    <header id="topnav" class="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/80 text-white backdrop-blur-xl shadow-lg shadow-slate-950/20">
+      <div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3.5 lg:px-8">
+        
+        <!-- Left Title/Mobile Toggle Zone -->
+        <div class="flex items-center gap-3.5">
+          <button id="sidebar-toggle" type="button" onclick="toggleSidebar()" class="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:bg-slate-800 hover:text-white" aria-label="Toggle Menu">
+            <i data-lucide="menu" class="h-5 w-5"></i>
+          </button>
+
+          <div class="hidden sm:flex h-10 w-10 overflow-hidden rounded-2xl bg-white shadow-md shadow-rose-500/20 ring-1 ring-white/20">
+            <img src="images/jaslogo.png" alt="JAS logo" class="h-10 w-10 object-cover" />
+          </div>
+          
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-rose-400">Online Store</p>
+            <h1 class="text-base font-bold text-white lg:text-lg">JovAli Merchant Dashboard</h1>
+          </div>
+        </div>
+
+        <!-- Center Global Actions (Search & Quick Navigation) -->
+        <div class="flex flex-1 items-center justify-center gap-6 px-4">
+          <!-- Search Input -->
+          <div class="relative w-full max-w-md hidden sm:block">
+            <input type="search" placeholder="Search products, orders, vendors..." class="w-full rounded-xl border border-slate-800 bg-slate-900/90 py-2 pl-4 pr-10 text-sm text-slate-200 placeholder-slate-500 outline-none transition duration-200 focus:border-rose-500 focus:bg-slate-900 focus:ring-2 focus:ring-rose-500/20" />
+            <span class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400">
+              <i data-lucide="search" class="h-4 w-4"></i>
+            </span>
+          </div>
+
+          <!-- Quick Navigation Pill Links -->
+          <nav class="hidden xl:flex items-center gap-1.5 rounded-2xl border border-slate-800/80 bg-slate-900/50 p-1">
+            <button data-nav="home" onclick="goTo('home')" class="nav-link rounded-xl px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">Overview</button>
+            <button data-nav="shop" onclick="goTo('shop')" class="nav-link rounded-xl px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">Shop</button>
+            <button data-nav="orders" onclick="goTo('orders')" class="nav-link rounded-xl px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">Orders</button>
+            <button data-nav="shipping" onclick="goTo('shipping')" class="nav-link rounded-xl px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">Shipping</button>
+            <button data-nav="cart" onclick="goTo('cart')" class="nav-link rounded-xl px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:bg-slate-800 hover:text-white">Cart</button>
+          </nav>
+        </div>
+
+        <!-- Right Profile & Utilities Zone -->
+        <div class="flex items-center gap-3">
+          <button onclick="goTo('merchant')" class="hidden sm:inline-flex items-center justify-center rounded-xl bg-rose-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-rose-500/20 transition hover:bg-rose-400 active:scale-[0.98]">
+            Merchant Hub
+          </button>
+          
+          <button class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:bg-slate-800 hover:text-white" title="Notifications">
+            <i data-lucide="bell" class="h-4 w-4"></i>
+            <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500"></span>
+          </button>
+
+          <!-- User Account Badge -->
+          <div class="inline-flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/90 p-1.5 pr-3">
+            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-rose-500 to-fuchsia-500 text-xs font-bold text-white shadow-sm">
+              U
+            </div>
+            <div class="hidden md:block text-left">
+              <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Welcome Back</p>
+              <p class="text-xs font-semibold text-white">Merchant</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+    
+    <!-- Additional content area continues smoothly below header -->
+        <main class="mx-auto max-w-7xl space-y-10 px-4 py-8 lg:px-8 min-h-[calc(100vh-124px)]">
+          <section id="page-home" class="page active rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-700 p-8 text-white shadow-xl">
+            <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              <div>
+                <span class="inline-flex rounded-full bg-rose-500/10 px-4 py-1 text-sm uppercase tracking-[0.35em] text-rose-300">Discover</span>
+                <h2 class="section-title mt-6 text-4xl font-bold leading-tight sm:text-5xl">Sell smarter, ship faster, and delight every customer.</h2>
+                <p class="mt-6 max-w-2xl text-slate-200/90">JovAli gives your storefront a modern marketplace interface, complete with inventory management, a polished cart experience, and secure payment flows.</p>
+                <div class="mt-8 flex flex-wrap gap-3">
+                  <button onclick="goTo('shop')" class="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/10 transition hover:shadow-xl">Browse shop</button>
+                  <button onclick="goTo('merchant')" class="rounded-2xl border border-white/20 bg-white/10 px-6 py-3 text-sm text-white transition hover:bg-white/15">Merchantized Portal</button>
+                </div>
+              </div>
+              <div class="rounded-3xl bg-slate-950/80 p-8 shadow-2xl shadow-slate-950/20 ring-1 ring-white/10">
+                <div class="mb-6 flex items-center justify-between gap-4 rounded-3xl bg-slate-900/80 p-5">
+                  <div>
+                    <p class="text-xs uppercase tracking-[0.25em] text-rose-300">Performance</p>
+                    <h3 class="mt-3 text-2xl font-semibold">Trusted by growing sellers</h3>
+                  </div>
+                  <div class="rounded-3xl bg-white/10 px-4 py-3 text-sm text-white">+120%</div>
+                </div>
+                <div class="space-y-4 text-slate-200">
+                  <p>Manage products, capture orders, and keep customers happy with a more professional storefront.</p>
+                  <p>Built for easy onboarding, fast selling, and simple checkout.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-logistics" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Logistics channel</p>
+                <h2 class="section-title text-3xl font-bold">Logistics partner portal</h2>
+                <p class="mt-3 text-slate-600">Register logistics providers, verify details, and track delivery progress in one place.</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-5 text-sm text-slate-700 ring-1 ring-slate-200">
+                <p class="font-semibold">Verification system</p>
+                <p class="mt-2 text-slate-600">Provider profiles are validated with full contact, region and vehicle details.</p>
+              </div>
+            </div>
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Logistic provider signup</h3>
+                <form id="logistics-signup-form" class="mt-6 space-y-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Provider Name</label>
+                    <input type="text" placeholder="e.g. RapidMove" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Email</label>
+                    <input type="email" placeholder="logistics@example.com" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label class="block text-sm font-semibold text-slate-700">Phone</label>
+                      <input type="tel" placeholder="+234 800 000 000" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold text-slate-700">Region</label>
+                      <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                        <option>West Africa</option>
+                        <option>East Africa</option>
+                        <option>North Africa</option>
+                        <option>Southern Africa</option>
+                        <option>Central Africa</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Vehicle Type</label>
+                    <input type="text" placeholder="e.g. Van, Bike, Truck" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <button type="button" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Submit registration</button>
+                </form>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Tracking dashboard</h3>
+                <div class="mt-6 space-y-4">
+                  <div class="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+                    <label class="block text-sm font-semibold text-slate-700">Track order or shipment</label>
+                    <div class="mt-3 flex gap-2">
+                      <input id="tracking-code" type="text" placeholder="Enter tracking ID" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                      <button type="button" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Search</button>
+                    </div>
+                  </div>
+                  <div class="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+                    <p class="text-sm font-semibold text-slate-900">Recent updates</p>
+                    <ul class="mt-4 space-y-3 text-sm text-slate-600">
+                      <li class="rounded-2xl bg-slate-50 px-4 py-3">Order #LG-0023: In Transit — Estimated 18 mins</li>
+                      <li class="rounded-2xl bg-slate-50 px-4 py-3">Order #LG-0018: Pickup scheduled — Driver en route</li>
+                      <li class="rounded-2xl bg-slate-50 px-4 py-3">Order #LG-0031: Delivered — Completed</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-merchant" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Merchantized Portal</p>
+                <h2 class="section-title text-3xl font-bold">Merchant tools and verified selling</h2>
+                <p class="mt-3 text-slate-600">Manage your shop, verify store details, and access advanced marketplace controls.</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-5 text-sm text-slate-700 ring-1 ring-slate-200">
+                <p class="font-semibold">Seller verification</p>
+                <p class="mt-2 text-slate-600">Complete profile checks for fast onboarding and trusted store visibility.</p>
+              </div>
+            </div>
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Merchant registration</h3>
+                <form class="mt-6 space-y-4">
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Business Name</label>
+                    <input type="text" placeholder="e.g. ELS Storefront" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Email</label>
+                    <input type="email" placeholder="merchant@example.com" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label class="block text-sm font-semibold text-slate-700">Phone</label>
+                      <input type="tel" placeholder="+234 800 000 000" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-semibold text-slate-700">Region</label>
+                      <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                        <option>West Africa</option>
+                        <option>East Africa</option>
+                        <option>North Africa</option>
+                        <option>Southern Africa</option>
+                        <option>Central Africa</option>
+                      </select>
+                    </div>
+                  </div>
+                  <button type="button" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Submit merchant details</button>
+                </form>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Store verification status</h3>
+                <div class="mt-6 space-y-4 text-slate-600">
+                  <p class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">Profile completed: <span class="font-semibold text-slate-900">82%</span></p>
+                  <p class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">Verified documents: <span class="font-semibold text-slate-900">Business license, Bank details</span></p>
+                  <p class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">Marketplace score: <span class="font-semibold text-slate-900">4.8 / 5</span></p>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-8 rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+              <div class="flex items-center justify-between gap-4 mb-6">
+                <div>
+                  <h3 class="text-xl font-semibold text-slate-900">List a new product</h3>
+                  <p class="text-sm text-slate-600">Add inventory, choose a category, and publish to your shop.</p>
+                </div>
+                <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">Merchant upload</span>
+              </div>
+              <form id="add-product-form" class="space-y-5" onsubmit="handleAddProduct(event)">
+                <div class="grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Product name</label>
+                    <input id="prod-name" type="text" placeholder="Premium Leather Bag" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    <p id="err-prod-name" class="mt-2 text-xs text-red-500 hidden"></p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Price</label>
+                    <input id="prod-price" type="number" min="1" placeholder="2500" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    <p id="err-prod-price" class="mt-2 text-xs text-red-500 hidden"></p>
+                  </div>
+                </div>
+
+                <div class="grid gap-4 lg:grid-cols-2">
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Category</label>
+                    <select id="prod-category" class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                      <option value="">Select category</option>
+                      <option value="Electronics">Electronics</option>
+                      <option value="Fashion">Fashion</option>
+                      <option value="Home">Home</option>
+                      <option value="Sports">Sports</option>
+                      <option value="Other">Other</option>
+                    </select>
+                    <p id="err-prod-category" class="mt-2 text-xs text-red-500 hidden"></p>
+                    <p id="prod-category-suggestion" class="mt-2 text-xs text-slate-500 hidden"></p>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-semibold text-slate-700">Product images</label>
+                    <div id="image-upload-area" class="mt-2 min-h-[140px] rounded-3xl border border-dashed border-slate-300 bg-white/90 p-4 text-center text-slate-500 transition hover:border-rose-500 hover:text-slate-700 cursor-pointer">
+                      <input id="prod-image" type="file" accept="image/*" multiple class="hidden" />
+                      <p class="text-sm font-semibold">Upload photos</p>
+                      <p class="mt-2 text-xs">Click or drop up to 6 images.</p>
+                      <p id="image-info" class="mt-3 text-xs text-slate-400">No images selected</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-sm font-semibold text-slate-700">Description</label>
+                  <textarea id="prod-desc" rows="3" placeholder="Describe item features, color, and condition" class="w-full rounded-3xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none"></textarea>
+                  <p id="err-prod-desc" class="mt-2 text-xs text-red-500 hidden"></p>
+                </div>
+
+                <div id="image-preview-section" class="hidden rounded-3xl bg-slate-100 p-4">
+                  <p class="text-sm font-semibold text-slate-700 mb-3">Selected images</p>
+                  <div id="image-gallery" class="grid gap-3 sm:grid-cols-2"></div>
+                </div>
+
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <label class="inline-flex items-center gap-2 text-sm text-slate-600"><input id="prod-public" type="checkbox" checked class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> Publish live</label>
+                  <label class="inline-flex items-center gap-2 text-sm text-slate-600"><input id="optimize-image" type="checkbox" checked class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> Optimize upload</label>
+                </div>
+
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <button id="save-draft-btn" type="submit" data-publish="false" disabled class="w-full rounded-2xl border border-slate-200 bg-slate-100 px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-200 disabled:opacity-50">Save draft</button>
+                  <button id="publish-product-btn" type="submit" data-publish="true" disabled class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400 disabled:opacity-50">Publish product</button>
                 </div>
               </form>
-              <div id="reset-otp-result" class="mt-3 text-sm text-gray-700"></div>
             </div>
-          </div>
-     </div>
-    </div>
-   </div>
-   <!-- MAIN APP (hidden until login) -->
-    <div id="main-app" class="hidden h-full w-full">
-    <!-- TOP NAV -->
-    <header id="topnav" class="sticky top-0 z-30 w-full" style="background:#547f97; border-bottom:1px solid rgba(255,255,255,0.08);">
-     <div class="flex items-center justify-between px-4 py-3 max-w-7xl mx-auto">
-      <div class="flex items-center gap-3">
-       <button onclick="toggleSidebar()" class="text-white p-2 rounded-lg hover:bg-white/10 transition"><i data-lucide="menu" class="w-5 h-5"></i></button>
-       <h1 id="nav-site-name" class="text-lg font-bold text-white cursor-pointer" onclick="goTo('home')" style="font-family:'Playfair Display',serif;">ELS.OnlineStore</h1>
-      </div>
-      <nav class="hidden md:flex items-center gap-1">
-       <a href="index.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Home</a>
-       <a href="index.html#shop" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Shop</a>
-       <a href="seller-register.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Seller Register</a>
-       <a href="payment-details.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Payment Setup</a>
-       <a href="product-upload.html" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition">Upload Product</a>
-        <button onclick="goTo('open-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="open-store">Open Store</button>
-        <button onclick="goTo('my-store')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="my-store">My Store</button>
-        <button onclick="goTo('messages')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="messages">Messages</button>
-       <button onclick="goTo('about')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="about">About</button>
-       <button onclick="goTo('contact')" class="nav-link px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10 transition" data-nav="contact">Contact</button>
-      </nav>
-       <div class="flex items-center gap-2">
-         <button onclick="goTo('orders')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition" title="Track Orders">
-           <i data-lucide="package" class="w-5 h-5"></i>
-         </button>
-         <button onclick="goTo('cart')" class="relative text-white p-2 rounded-lg hover:bg-white/10 transition">
-           <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-           <span id="cart-badge" class="absolute -top-1 -right-1 w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center text-white hidden" style="background:#e94560;">0</span>
-         </button>
-         <button id="user-avatar" class="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden" title="Edit profile" onclick="goTo('profile')" style="background:#e94560;">
-           <img id="user-avatar-img" src="" alt="avatar" class="hidden w-full h-full object-cover" />
-           <span id="user-avatar-initial">J</span>
-         </button>
-       </div>
-       </div>
-     </header>
-    <!-- PROFILE PAGE -->
-    <section id="page-profile" class="page">
-      <div class="max-w-2xl mx-auto px-4 py-12">
-        <div class="rounded-2xl p-8" style="background:white; border:1px solid #e5e5e5;">
-          <h2 class="text-2xl font-bold mb-4" style="color:#1a1a2e;">Edit Profile</h2>
-          <form id="profile-form" onsubmit="saveProfile(event)">
-            <div class="text-center mb-4">
-              <img id="profile-avatar-preview-page" src="" alt="avatar preview" class="mx-auto rounded-full w-24 h-24 object-cover hidden" />
-              <div id="profile-avatar-placeholder-page" class="mx-auto w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-2xl font-bold text-gray-600"></div>
-              <input id="profile-avatar-input-page" type="file" accept="image/*" class="hidden" onchange="handleProfileAvatarInput(event)" />
-              <div class="flex gap-2 justify-center mt-3">
-                <button type="button" onclick="document.getElementById('profile-avatar-input-page').click()" class="px-4 py-2 rounded-xl bg-gray-100">Choose Avatar</button>
-                <button type="button" onclick="clearProfileAvatarPreviewPage()" class="px-4 py-2 rounded-xl bg-gray-100">Clear</button>
+          </section>
+
+          <section id="page-regional" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Regional markets</p>
+                <h2 class="section-title text-3xl font-bold">Regional market support</h2>
+                <p class="mt-3 text-slate-600">Access local market zones, language support, and region-specific logistics workflows.</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-5 text-sm text-slate-700 ring-1 ring-slate-200">
+                <p class="font-semibold">Local expansion</p>
+                <p class="mt-2 text-slate-600">Scale to multiple regions with market-specific insights and partner support.</p>
               </div>
             </div>
-            <div class="mb-4">
-              <label for="profile-name" class="block text-sm font-medium mb-1">Display Name</label>
-              <input id="profile-name" type="text" class="w-full px-4 py-3 rounded-xl" />
-            </div>
-            <div class="mb-4">
-              <label for="profile-email" class="block text-sm font-medium mb-1">Email</label>
-              <input id="profile-email" type="email" class="w-full px-4 py-3 rounded-xl" />
-            </div>
-            <div class="mb-4">
-              <label for="profile-bio" class="block text-sm font-medium mb-1">Bio</label>
-              <textarea id="profile-bio" rows="3" class="w-full px-4 py-3 rounded-xl"></textarea>
-            </div>
-            <div class="flex gap-3">
-              <button type="submit" class="px-6 py-3 rounded-xl font-semibold text-white" style="background:#e94560;">Save Profile</button>
-              <button type="button" onclick="goTo('home')" class="px-6 py-3 rounded-xl font-semibold" style="background:#f3f4f6;">Cancel</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </section>
-    <!-- SIDEBAR OVERLAY -->
-    <div id="sidebar-overlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
-    <!-- SIDEBAR -->
-    <nav id="sidebar" class="sidebar flex flex-col" style="background:#47475a;">
-     <div class="p-5 flex items-center justify-between" style="border-bottom:1px solid rgba(43, 26, 26, 0.377);">
-      <span class="text-white font-bold text-lg" style="font-family:'Playfair Display',serif;">Menu</span> 
-      <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white">
-        <i data-lucide="x" class="w-5 h-5"></i></button>
-     </div>
-     <div class="flex-1 py-4 px-3 flex flex-col gap-1 overflow-auto">
-      <button onclick="goTo('home');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="home"><i data-lucide="home" class="w-4 h-4"></i>Home</button> <button onclick="goTo('shop');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="shop"><i data-lucide="shopping-bag" class="w-4 h-4"></i>Shop</button>
-               <button onclick="goTo('open-store');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="open-store"><i data-lucide="store" class="w-4 h-4"></i>Open Store</button> <button onclick="goTo('my-store');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="my-store"><i data-lucide="layout-dashboard" class="w-4 h-4"></i>My Store</button> <button onclick="goTo('cart');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="cart"><i data-lucide="shopping-cart" class="w-4 h-4"></i>Cart</button> <button onclick="goTo('orders');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="orders"><i data-lucide="package" class="w-4 h-4"></i>Orders</button> <button onclick="goTo('logistics');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="logistics"><i data-lucide="truck" class="w-4 h-4"></i>Logistics</button> <button onclick="goTo('messages');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="messages"><i data-lucide="message-circle" class="w-4 h-4"></i>Messages</button> <button onclick="goTo('payment');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="payment"><i data-lucide="credit-card" class="w-4 h-4"></i>Payment</button> <button onclick="goTo('about');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="about"><i data-lucide="info" class="w-4 h-4"></i>About</button> <button onclick="goTo('contact');toggleSidebar()" class="side-link flex items-center gap-3 px-4 py-3 rounded-xl text-gray-300 hover:text-white hover:bg-white/10 transition text-sm font-medium" data-nav="contact"><i data-lucide="mail" class="w-4 h-4"></i>Contact</button>
-     </div>
-     <div class="p-4" style="border-top:1px solid rgba(255,255,255,0.08);">
-      <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition text-sm font-medium"><i data-lucide="log-out" class="w-4 h-4"></i>Sign Out</button>
-     </div>
-    </nav>
-    <!-- PAGES -->
-    <main class="w-full">
-     <!-- HOME PAGE -->
-     <section id="page-home" class="page active bg-slate-50 min-h-screen font-sans antialiased selection:bg-indigo-600 selection:text-white">
-  
-  <!-- ========================================== -->
-  <!-- CLEAN, LUXURY SEMI-TRANSPARENT HERO        -->
-  <!-- ========================================== -->
-  <div class="relative hero-section py-24 md:py-32 px-6 text-center overflow-hidden border-b border-slate-100" style="background: radial-gradient(circle at top left, rgba(56,189,248,0.16), transparent 28%), linear-gradient(135deg, rgba(15,23,42,0.96) 0%, rgba(59,130,246,0.88) 45%, rgba(12,8,40,0.94) 100%); border-color: rgba(148,163,184,0.12);">
-    
-    <!-- Sophisticated Transparent Pastel Glow (Perfect for E-Commerce) -->
-    <div class="absolute inset-0 z-0 pointer-events-none opacity-70" aria-hidden="true">
-      <div class="absolute top-[-20%] left-[15%] w-[600px] h-[450px] bg-gradient-to-br from-amber-100/40 to-rose-100/30 rounded-full blur-[130px]"></div>
-      <div class="absolute bottom-[-10%] right-[15%] w-[600px] h-[500px] bg-gradient-to-tr from-indigo-100/40 via-purple-50/30 to-blue-50/20 rounded-full blur-[140px]"></div>
-    </div>
-    
-    <div id="home-bg-carousel" class="absolute inset-0 pointer-events-none"></div>
-
-    <div class="max-w-3xl mx-auto relative z-10 space-y-6">
-      <!-- Minimalist Soft Welcome Badge -->
-      <span class="inline-flex items-center px-4 py-1 rounded-full text-xs font-semibold tracking-wide text-slate-600 bg-slate-100/80 border border-slate-200/50 backdrop-blur-sm">
-        Welcome to ELS.OnlineStore
-      </span>
-      
-      <!-- High-End Editorial Typography -->
-      <h2 id="hero-heading" class="text-4xl sm:text-5xl md:text-6xl font-normal text-white tracking-tight font-serif leading-tight">
-        Discover <span class="font-sans font-bold bg-gradient-to-r from-cyan-300 via-sky-200 to-white bg-clip-text text-transparent">What You Love</span>
-      </h2>
-      
-      <p class="text-slate-200 text-base sm:text-lg mb-10 max-w-xl mx-auto leading-relaxed font-normal">
-        Buy unique products from independent sellers or open your own store and start selling today.
-      </p>
-      
-      <!-- High-Conversion Action Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-2">
-        <button onclick="goTo('shop')" class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-sm text-white bg-slate-900 hover:bg-indigo-600 shadow-md shadow-slate-900/10 hover:shadow-indigo-600/10 transition-all duration-200 transform active:scale-95">
-          Browse Shop
-        </button>
-        <button onclick="goTo('open-store')" class="w-full sm:w-auto px-8 py-3.5 rounded-xl font-semibold text-sm text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 transition-all duration-200 transform active:scale-95">
-          Open a Store
-        </button>  
-      </div>
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- SHOP BY CATEGORY GRID                      -->
-  <!-- ========================================== -->
-  <div class="max-w-6xl mx-auto px-4 py-20">
-    <div class="text-center mb-12 space-y-2">
-      <h3 class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Shop by Category</h3>
-      <p class="text-slate-500 text-sm">Find exactly what you need across our tailored ecosystems</p>
-    </div>
-    
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-      
-      <!-- Category Item -->
-      <div onclick="filterShopCategory('Electronics')" class="group cursor-pointer rounded-2xl p-3 bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-50 mb-3 aspect-square">
-          <img src="images/gadgets.jpg" alt="Electronics" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />
-        </div>
-        <span class="font-semibold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Electronics</span>
-      </div>
-
-      <!-- Category Item -->
-      <div onclick="filterShopCategory('Fashion')" class="group cursor-pointer rounded-2xl p-3 bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-50 mb-3 aspect-square">
-          <img src="images/fashionimg.jpg" alt="Fashion" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />
-        </div>
-        <span class="font-semibold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Fashion</span>
-      </div>
-
-      <!-- Category Item -->
-      <div onclick="filterShopCategory('Home')" class="group cursor-pointer rounded-2xl p-3 bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-50 mb-3 aspect-square">
-          <img src="images/home.jpg" alt="Home" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />
-        </div>
-        <span class="font-semibold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Home</span>
-      </div>
-
-      <!-- Category Item -->
-      <div onclick="filterShopCategory('Sports')" class="group cursor-pointer rounded-2xl p-3 bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all duration-200 text-center">
-        <div class="overflow-hidden rounded-xl bg-slate-50 mb-3 aspect-square">
-          <img src="images/sport.jpg" alt="Sports" class="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />
-        </div>
-        <span class="font-semibold text-sm text-slate-800 group-hover:text-indigo-600 transition-colors">Sports</span>
-      </div>
-      
-    </div>
-  </div>
-
-  <!-- ========================================== -->
-  <!-- RECENTLY LISTED PRODUCTS SECTION           -->
-  <!-- ========================================== -->
-  <div class="max-w-6xl mx-auto px-4 pb-24">
-    <div class="text-center mb-12 space-y-1">
-      <h3 class="text-2xl font-bold tracking-tight text-slate-900">Recently Listed</h3>
-      <p class="text-slate-500 text-sm">Explore fresh arrivals uploaded straight onto our live platform</p>
-    </div>
-    
-    <div id="home-products" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-      <!-- Clean, Professional Empty State Layout -->
-      <div class="col-span-full text-center py-16 bg-white border border-slate-100 rounded-2xl shadow-sm max-w-lg mx-auto px-6">
-        <div class="inline-flex p-3.5 bg-slate-50 text-slate-400 rounded-xl mb-4 border border-slate-100">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349M3.75 21V9.349m0 0a3.001 3.001 0 0 0 3.75-.615A2.993 2.993 0 0 0 9.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 0 0 2.25 1.016c.896 0 1.7-.393 2.25-1.015a3.001 3.001 0 0 0 3.75.614m-16.5 0a3.004 3.004 0 0 1-.621-4.72l1.189-1.19A1.5 1.5 0 0 1 5.378 3h13.243a1.5 1.5 0 0 1 1.06.44l1.19 1.189a3 3 0 0 1-.621 4.72M6.75 18h3.5a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75v3.75c0 .414.336.75.75.75Z" />
-          </svg>
-        </div>
-        <p class="text-slate-800 font-semibold text-base mb-1">No products listed yet</p>
-        <p class="text-slate-500 text-xs max-w-xs mx-auto leading-relaxed">
-          Be the first to 
-          <button onclick="goTo('open-store')" class="text-indigo-600 hover:text-indigo-700 font-semibold underline focus:outline-none transition-colors">
-            open a store
-          </button> 
-          and put your catalog online!
-        </p>
-      </div>
-    </div>
-  </div>
-</section>
-<!-- SHOP PAGE -->
-    <!-- ========================================== -->
-<!-- ELS ACTIVE SHOP SECTION                    -->
-<!-- ========================================== -->
-<section id="page-shop" class="page relative min-h-screen bg-slate-50/60 overflow-hidden">
-  <!-- High-End Ambient Graphic Backgrounds -->
-  <div class="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px] opacity-70 pointer-events-none"></div>
-  <div class="absolute -top-40 -left-40 w-96 h-96 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none"></div>
-  <div class="absolute top-1/3 -right-40 w-96 h-96 bg-rose-500/5 rounded-full blur-[120px] pointer-events-none"></div>
-  <div class="relative z-10 max-w-6xl mx-auto px-4 py-12 animate-fadeIn">
-    <!-- Header Controls Grid: Title & Navigation Pill Matrix -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-12 pb-6 border-b border-slate-200/60">
-      <div>
-        <h2 class="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight font-serif">
-          ELS Active Shop
-        </h2> 
-        <p class="text-slate-500 text-xs sm:text-sm mt-1 font-medium">
-          Discover handpicked collections from verified independent storefronts
-        </p>
-      </div>
-     <!-- Modern Categories Filter Scroller -->
-      <div class="flex gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-none snap-x mask-gradient">
-        <!-- Active Pill State Example -->
-        <button onclick="filterShopCategory('All')" class="cat-btn px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shrink-0 shadow-sm bg-slate-900 text-white ring-2 ring-offset-2 ring-slate-900/10">
-          All Products
-        </button> 
-         <!-- Standard Unselected Pill States -->
-        <button onclick="filterShopCategory('Electronics')" class="cat-btn px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shrink-0 bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-slate-900 active:scale-95">
-          Electronics
-        </button> 
-        <button onclick="filterShopCategory('Fashion')" class="cat-btn px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shrink-0 bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-slate-900 active:scale-95">
-          Fashion
-        </button>
-        <button onclick="filterShopCategory('Home')" class="cat-btn px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shrink-0 bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-slate-900 active:scale-95">
-          Home
-        </button> 
-        <button onclick="filterShopCategory('Sports')" class="cat-btn px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shrink-0 bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-slate-900 active:scale-95">
-          Sports
-        </button>
-        <button onclick="filterShopCategory('Other')" class="cat-btn px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-150 shrink-0 bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:text-slate-900 active:scale-95">
-          Other
-        </button>
-      </div>
-     </div>
-     <!-- Main Dynamic Showcase Grid Layout -->
-    <div id="shop-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Premium Empty State Component Card (Rendered if grid is blank) -->
-      <div class="col-span-full rounded-3xl border border-dashed border-slate-300 bg-white/80 backdrop-blur-md p-12 text-center max-w-lg mx-auto shadow-xl shadow-slate-100/50 mt-4">
-        <div class="inline-flex p-4 rounded-2xl bg-rose-50 text-rose-500 border border-rose-100 shadow-inner mb-5 animate-pulse">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72M6.75 18h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .414.336.75.75.75z" />
-          </svg>
-        </div>
-        <h3 class="text-xl font-bold text-slate-900 tracking-tight">The Marketplace is Empty</h3>
-        <p class="text-slate-500 text-sm mt-2 mb-8 leading-relaxed">
-          Be the absolute first pioneer to dominate this category segment! Build your custom brand presence and launch inventory assets live in minutes.
-        </p>
-        <button onclick="goTo('open-store')" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white bg-rose-500 hover:bg-rose-600 transition-all shadow-md shadow-rose-500/20 text-xs tracking-wider uppercase transform active:scale-95">
-          Open Your Storefront
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-3.5 h-3.5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-        </button>
-      </div>
-     </div>
-    </div>
-    </section>
-   <!-- OPEN STORE PAGE -->
-    <section id="page-open-store" class="page bg-slate-50 min-h-screen">
-  <div class="max-w-5xl mx-auto px-4 py-12">
-    <!-- Header Section -->
-    <div class="text-center mb-12">
-      <div class="inline-flex justify-center items-center mb-4 p-3 bg-white rounded-2xl shadow-sm">
-        <img src="images/timesetup.png" alt="Setup Time" width="80" height="80" class="object-contain" />
-      </div>
-      <h2 class="text-4xl font-extrabold mb-3 tracking-tight text-slate-900 font-serif">
-        Open Your Store
-      </h2>
-      <p class="text-base text-slate-500 max-w-md mx-auto">
-        Start selling in minutes. List your products and reach customers worldwide seamlessly.
-      </p>
-    </div>
-     <!-- Store Benefits Section -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-      <!-- Card 1 -->
-      <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
-          <img src="images/setupimg.png" alt="Quick Setup" width="64" height="64" class="mx-auto" />
-        </div>
-        <h4 class="font-bold text-lg text-slate-900 mb-1">Quick Setup</h4>
-        <p class="text-slate-500 text-sm">List a product in under a minute</p>
-      </div>
-      <!-- Card 2 -->
-      <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
-          <img src="images/globe.png" alt="Global Reach" width="64" height="64" class="mx-auto" />
-        </div>
-        <h4 class="font-bold text-lg text-slate-900 mb-1">Global Reach</h4>
-        <p class="text-slate-500 text-sm">Your products visible to everyone</p>
-      </div>
-      <!-- Card 3 -->
-      <div class="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-sm hover:shadow-md transition-shadow duration-200">
-        <div class="inline-block p-2 bg-slate-50 rounded-xl mb-4">
-          <img src="images/feeimg.png" alt="Zero Fees" width="64" height="64" class="mx-auto" />
-        </div>
-        <h4 class="font-bold text-lg text-slate-900 mb-1">Zero Fees</h4>
-        <p class="text-slate-500 text-sm">No listing or commission fees</p>
-      </div>
-    </div>
-<!-- Store Creation Form & Status Dashboard -->
-    <div class="grid grid-cols-1 lg:grid-cols-[1.4fr_0.6fr] gap-8 mb-12">
-      <!-- Main Setup Block -->
-      <section class="rounded-3xl p-8 bg-slate-900 text-white relative overflow-hidden shadow-xl border border-slate-800">
-        <span class="absolute right-6 top-6 text-7xl opacity-5 select-none" aria-hidden="true">🏬</span>
-        <h3 class="text-2xl font-bold mb-2 tracking-tight">Create your store instantly</h3>
-        <p class="text-slate-400 text-sm mb-8 max-w-xl">
-          Upload your store details from this page, then list products and route them to the right category automatically.
-        </p>
-         <form id="open-store-create-form" class="space-y-5">
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Store Name</label>
-            <input id="open-store-name" type="text" placeholder="e.g. ELS Gadget Shop" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
-          </div>
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Store Description</label>
-            <textarea id="open-store-description" rows="3" placeholder="Tell buyers what makes your store special" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Store Logo</label>
-              <input id="open-store-logo" type="file" accept="image/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 file:cursor-pointer transition-all" />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Store Banner</label>
-              <input id="open-store-banner" type="file" accept="image/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 file:cursor-pointer transition-all" />
-            </div>
-          </div>
-           <hr class="border-slate-800 my-6" />
-           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Bank Account Name</label>
-              <input id="open-store-bank-account-name" type="text" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
-            </div>
-            <div>
-              <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Bank Account Number</label>
-              <input id="open-store-bank-account-number" type="text" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all" required />
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold uppercase tracking-wider mb-2 text-slate-300">Bank Name</label>
-            <select id="open-store-bank-name" class="w-full rounded-xl px-4 py-3 border border-slate-700 bg-slate-800/60 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
-              <option value="" class="bg-slate-900">Select bank</option>
-              <option class="bg-slate-900">Access Bank</option>
-              <option class="bg-slate-900">GTBank</option>
-              <option class="bg-slate-900">Zenith Bank</option>
-              <option class="bg-slate-900">First Bank</option>
-              <option class="bg-slate-900">UBA</option>
-            </select>
-          </div>
-          <div class="text-right pt-2">
-            <button id="open-store-submit-btn" type="submit" class="w-full sm:w-auto inline-flex items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3.5 font-semibold shadow-lg transition-all duration-150">
-              Create Store
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <!-- Sidebar Status Block -->
-      <aside class="rounded-3xl p-6 bg-white shadow-md border border-slate-100 flex flex-col justify-between">
-        <div>
-          <h3 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <span class="w-2.5 h-2.5 bg-amber-500 rounded-full inline-block"></span> Store Status
-          </h3>
-          <div id="open-store-status" class="space-y-4 text-sm text-slate-600">
-            <p class="leading-relaxed">No store created yet. Create your store configuration to start selling directly.</p>
-            <div class="rounded-2xl bg-slate-50 p-4 border border-slate-200/60">
-              <p class="text-xs text-slate-500 leading-relaxed">
-                Store setup is required before listing items. Once your store is live, your products will automatically group into organized dynamic category structures.
-              </p>
-            </div>
-          </div>
-        </div>
-      </aside>
-    </div>
-     <!-- Product Creation Module -->
-    <div class="rounded-3xl p-8 bg-white border border-slate-100 shadow-md mb-12">
-      <h3 class="text-xl font-bold mb-6 text-slate-900">List a New Product</h3>
-      <form id="add-product-form" onsubmit="handleAddProduct(event)">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-          <div>
-            <label for="prod-name" class="block text-sm font-medium text-slate-700 mb-2">Product Name</label>
-            <input id="prod-name" type="text" required placeholder="e.g. Wireless Headphones" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-            <p id="err-prod-name" class="hidden text-xs text-rose-500 mt-1.5"></p>
-          </div>
-          <div>
-            <label for="prod-price" class="block text-sm font-medium text-slate-700 mb-2">Price (USD)</label> 
-            <input id="prod-price" type="number" step="0.01" min="0.01" required placeholder="29.99" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
-            <p id="err-prod-price" class="hidden text-xs text-rose-500 mt-1.5"></p>
-          </div>
-        </div>
-         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-5">
-          <div>
-            <label for="prod-category" class="block text-sm font-medium text-slate-700 mb-2">Category</label> 
-            <select id="prod-category" required class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"> 
-              <option value="">Select category</option>
-              <option value="Electronics">Electronics</option> 
-              <option value="Fashion">Fashion</option> 
-              <option value="Home">Home</option> 
-              <option value="Sports">Sports</option> 
-              <option value="Other">Other</option> 
-            </select>
-            <p id="err-prod-category" class="hidden text-xs text-rose-500 mt-1.5"></p>
-            <p id="prod-category-suggestion" class="hidden mt-2.5 text-xs text-indigo-600 bg-indigo-50 p-2.5 rounded-lg inline-block">
-              Suggested category: <button type="button" onclick="acceptSuggestedCategory()" class="font-semibold underline hover:text-indigo-800">Use this category</button>
-            </p>
-          </div>
-        </div>
-         <!-- Optimized File Upload Drop Zone -->
-        <div class="mb-5">
-          <label class="block text-sm font-medium text-slate-700 mb-2">Product Image</label>
-          <div id="image-upload-area" class="border-2 border-dashed border-slate-300 hover:border-indigo-400 bg-slate-50/50 hover:bg-slate-50 rounded-2xl p-6 text-center cursor-pointer transition-all duration-150" aria-label="Product image upload area">
-            <input id="prod-image" type="file" accept="image/*" class="hidden" multiple onchange="handleImageUpload(event)">
-            <input id="product-image-replace-input" type="file" accept="image/*" class="hidden" onchange="handleProductImageReplace(event)">
-            
-            <div class="flex flex-col items-center justify-center gap-3">
-              <div class="p-3 bg-white rounded-full shadow-sm text-slate-400">
-                <i data-lucide="upload-cloud" class="w-6 h-6"></i>
-              </div>
-              <div class="upload-instructions">
-                <button type="button" onclick="document.getElementById('prod-image').click()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-700 bg-transparent border-0 p-0 cursor-pointer">
-                  Click to upload images
-                </button>
-                <span class="text-sm text-slate-500"> or drag and drop</span>
-                <p class="text-xs text-slate-400 mt-1">JPG, PNG, or WebP up to 5MB (Recommended: 250x250px)</p>
-              </div>
-            </div>
-             <!-- Previews Container -->
-            <div id="image-preview-section" class="hidden mt-6 pt-6 border-t border-slate-200 w-full text-left">
-              <div id="image-gallery" class="grid grid-cols-2 sm:grid-cols-4 gap-4"></div>
-              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mt-4 bg-white p-3 rounded-xl border border-slate-100">
-                <div id="image-info" class="text-xs font-medium text-slate-600"></div>
-                <div class="flex items-center gap-4">
-                  <label class="inline-flex items-center text-xs font-medium text-slate-700 cursor-pointer">
-                    <input id="optimize-image" type="checkbox" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mr-1.5" /> Optimize
-                  </label>
-                  <label class="inline-flex items-center text-xs font-medium text-slate-700 cursor-pointer">
-                    <input id="prod-public" type="checkbox" checked class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 mr-1.5" /> Public Visibility
-                  </label>
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Select a market region</h3>
+                <div class="mt-6 space-y-4">
+                  <select class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                    <option>West Africa</option>
+                    <option>East Africa</option>
+                    <option>North Africa</option>
+                    <option>Southern Africa</option>
+                    <option>Central Africa</option>
+                  </select>
+                  <button type="button" class="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">View region details</button>
                 </div>
               </div>
-              <div id="upload-list" class="mt-3"></div>
-              <div class="flex justify-end mt-4">
-                <button type="button" onclick="clearAllImages()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold bg-rose-50 hover:bg-rose-100/60 px-3 py-1.5 rounded-lg transition-colors">Clear All Images</button>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Market support</h3>
+                <ul class="mt-6 space-y-3 text-slate-600">
+                  <li class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">Market insights and buyer trends for each region.</li>
+                  <li class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">Localized logistics options and currency details.</li>
+                  <li class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">Support for regional compliance and verification.</li>
+                </ul>
               </div>
             </div>
-          </div>
-        </div>
-         <div class="mb-6">
-          <label for="prod-desc" class="block text-sm font-medium text-slate-700 mb-2">Description</label> 
-          <textarea id="prod-desc" rows="4" required placeholder="Provide a detailed overview of your item..." class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"></textarea>
-          <p id="err-prod-desc" class="hidden text-xs text-rose-500 mt-1.5"></p>
-        </div>
-        <!-- Action Management Buttons -->
-        <div class="flex flex-col sm:flex-row gap-3 w-full mt-4">
-          <button id="save-draft-btn" type="submit" data-publish="false" disabled class="flex-1 py-3.5 rounded-xl font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150">
-            Save Draft
-          </button>
-          <button id="add-product-btn" type="submit" data-publish="true" disabled class="flex-1 py-3.5 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-indigo-600/10 transition-colors duration-150">
-            <span id="add-prod-text">Publish Product</span>
-            <span id="add-prod-loading" class="hidden">Listing...</span>
-          </button>
-        </div>
-        <p id="store-limit-msg" class="hidden text-center text-rose-500 text-xs mt-4 font-semibold bg-rose-50 p-2.5 rounded-xl">
-          Maximum product limit reached (999). Please remove existing listings first.
-        </p>
-      </form>
-    </div>
-    <!-- Management Section Table/List Container -->
-    <div class="mt-12">
-      <h3 class="text-xl font-bold mb-4 text-slate-900">My Listed Products</h3>
-      <div id="my-products" class="bg-white border border-slate-100 rounded-2xl shadow-sm min-h-[140px] flex items-center justify-center p-6">
-        <p class="text-slate-400 text-sm text-center">You haven't listed any products yet.</p>
-      </div>
-    </div></div>
-</section>
-     <!-- MY STORE DASHBOARD -->
-<section id="page-my-store" class="page bg-slate-50 min-h-screen py-12 px-4">
-  <div class="max-w-6xl mx-auto">
-    <div class="flex items-center gap-3 mb-8">
-      <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl">
-        <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
-      </div>
-      <div>
-        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">My Store Dashboard</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Manage your products, orders, and earnings</p>
-      </div>
-      <div id="dash-loader" class="hidden ml-auto">
-        <div class="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
-      </div>
-    </div>
+          </section>
 
-    <ul class="dash-tabs-nav flex gap-1 mb-8 p-1 bg-white rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
-      <li data-tab="products" class="active px-4 py-2 rounded-lg text-sm font-semibold text-indigo-600 bg-indigo-50 cursor-pointer whitespace-nowrap">Products</li>
-      <li data-tab="orders" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 cursor-pointer whitespace-nowrap">Orders</li>
-      <li data-tab="earnings" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 cursor-pointer whitespace-nowrap">Earnings</li>
-      <li data-tab="settings" class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-500 hover:text-slate-700 cursor-pointer whitespace-nowrap">Settings</li>
-    </ul>
-
-    <div id="tab-products" class="dash-tab-content">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="font-bold text-slate-900">Your Products</h3>
-          <button onclick="goTo('open-store')" class="text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 px-3 py-1.5 rounded-lg">+ Add Product</button>
-        </div>
-        <div id="seller-products-list" class="space-y-3"></div>
-      </div>
-    </div>
-
-    <div id="tab-orders" class="dash-tab-content hidden">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 overflow-x-auto">
-        <h3 class="font-bold text-slate-900 mb-4">Incoming Orders</h3>
-        <table class="w-full text-sm">
-          <thead><tr class="text-left text-slate-400 text-xs uppercase border-b border-slate-100">
-            <th class="pb-3 pr-3">Order</th><th class="pb-3 pr-3">Buyer</th><th class="pb-3 pr-3">Items</th><th class="pb-3 pr-3">Total</th><th class="pb-3 pr-3">Status</th><th class="pb-3">Actions</th>
-          </tr></thead>
-          <tbody id="seller-orders-list"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="tab-earnings" class="dash-tab-content hidden">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p class="text-xs font-bold uppercase text-slate-400 mb-1">Total Earnings</p>
-          <p class="text-2xl font-black text-slate-900" id="earn-total">$0.00</p>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p class="text-xs font-bold uppercase text-slate-400 mb-1">Monthly</p>
-          <p class="text-2xl font-black text-slate-900" id="earn-monthly">$0.00</p>
-        </div>
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p class="text-xs font-bold uppercase text-slate-400 mb-1">Pending Payout</p>
-          <p class="text-2xl font-black text-slate-900" id="earn-pending">$0.00</p>
-        </div>
-      </div>
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h3 class="font-bold text-slate-900 mb-4">Payout History</h3>
-        <div id="seller-payouts-history" class="space-y-2"></div>
-      </div>
-    </div>
-
-    <div id="tab-settings" class="dash-tab-content hidden">
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <h3 class="font-bold text-slate-900 mb-4">Store Settings</h3>
-        <p class="text-sm text-slate-500">Visit your store profile page to edit store details.</p>
-        <button onclick="goTo('open-store')" class="mt-4 text-sm font-semibold text-indigo-600 hover:text-indigo-500 underline">Edit Store</button>
-      </div>
-    </div>
-  </div>
-</section>
-     <!-- ORDERS PAGE -->
-  <section id="page-orders" class="page bg-slate-50 min-h-screen">
-  <div class="max-w-6xl mx-auto px-4 py-12 animate-fadeIn">
-    <div class="flex items-center gap-3 mb-10">
-      <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 shadow-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l10.5 6M9 10.125l6 3.5m-6 2.125l6 3.5" />
-        </svg>
-      </div>
-      <div>
-        <h2 class="text-3xl font-black text-slate-900 tracking-tight font-serif">Order Tracking</h2>
-        <p class="text-xs text-slate-500 mt-0.5 font-medium">Monitor real-time status and deployment workflows of your shipments</p>
-      </div>
-    </div>
-     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-10">
-      <div class="rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm border-l-4 border-l-rose-500 flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Total Orders</p>
-          <p class="text-4xl font-black text-slate-900 tracking-tight" id="total-orders">0</p>
-        </div>
-        <div class="p-3 bg-rose-50 text-rose-500 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.03 0 1.9.693 2.166 1.638m-7.377 0A48.536 48.536 0 0112 3m0 0c-1.135 0-2.098.845-2.192 1.976a48.414 48.414 0 00-.166 1.913m8.706-2.133a48.555 48.555 0 00-1.804-.227A8.915 8.915 0 0015 4.5a8.914 8.914 0 00-1.547-.144m-3.116-.328a48.567 48.567 0 01-1.804.227m4.92 12.462c0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75V11.25a.75.75 0 00-.75-.75h-4.5a.75.75 0 00-.75.75v5.025z" />
-          </svg>
-        </div>
-      </div>
-      <div class="rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm border-l-4 border-l-indigo-600 flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">In Transit</p>
-          <p class="text-4xl font-black text-slate-900 tracking-tight" id="in-transit-count">0</p>
-        </div>
-        <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM19.5 18.75a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM4.744 14.25H21.16c.381 0 .675-.353.6-.729-1.21-6.046-1.748-8.021-1.748-8.021A1.5 1.5 0 0018.551 4.5H11.25m-6.506 9.75l-.466-2.333a1.5 1.5 0 011.47-1.792h14.537m-16.007 4.125l-.47-2.348m4.5 4.5h9" />
-          </svg>
-        </div>
-      </div>
-       <div class="rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm border-l-4 border-l-emerald-500 flex items-center justify-between">
-        <div>
-          <p class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Delivered</p>
-          <p class="text-4xl font-black text-slate-900 tracking-tight" id="delivered-count">0</p>
-        </div>
-        <div class="p-3 bg-emerald-50 text-emerald-500 rounded-xl">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-      </div>
-    </div>
-     <div class="rounded-3xl bg-white border border-slate-200/80 shadow-xl shadow-slate-100/40 overflow-hidden">
-      <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-        <h3 class="text-lg font-bold text-slate-900">Your Orders</h3>
-        <span class="text-xs font-semibold text-slate-500 px-2.5 py-1 rounded-md bg-slate-100 border border-slate-200/40">Live Logs</span>
-      </div>
-       <div id="orders-list" class="p-6">
-        <div class="text-center py-16 max-w-sm mx-auto">
-          <div class="inline-flex p-4 rounded-full bg-slate-50 border border-slate-100 text-slate-400 mb-4 shadow-inner">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1,0-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-            </svg>
-          </div>
-          <p class="text-slate-800 font-bold text-lg tracking-tight">No active orders found</p>
-          <p class="text-slate-400 text-sm mt-1 mb-6 leading-relaxed">You haven't requested any items yet. Discover premium independent products in the shop right now.</p>
-          <button onclick="goTo('shop')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-all shadow-md shadow-indigo-600/10 text-xs transform active:scale-[0.98]">
-            Start Shopping
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-3.5 h-3.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12h15m0 0l-6.75-6.75M15 12l-6.75 6.75" />
-            </svg>
-          </button>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-</section>
-     <!-- LOGISTICS PAGE -->
-    <section id="page-logistics" class="page bg-slate-50/60 min-h-screen py-8">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6">
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shadow-inner">
-          <i data-lucide="truck" class="w-6 h-6"></i>
-        </div>
-        <div>
-          <h2 class="text-2xl font-black text-slate-900 tracking-tight">Logistics Hub Terminal</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Manage tracking pipelines and direct driver distribution networks.</p>
-        </div>
-      </div>
-       <div id="logisticsIndicator" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
-        <span class="relative flex h-2 w-2">
-          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-        </span>
-        <div id="logisticsStatus" class="text-xs font-bold text-slate-700 tracking-wide">Syncing Nodes...</div>
-      </div>
-    </div>
-     <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800 mb-8 relative overflow-hidden">
-      <div class="absolute right-0 top-0 translate-x-10 -translate-y-10 opacity-[0.03] text-white pointer-events-none select-none">
-        <i data-lucide="globe" class="w-64 h-64"></i>
-      </div>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 relative z-10 text-center md:text-left divide-y md:divide-y-0 md:divide-x divide-white/10">
-        <div class="pt-4 md:pt-0">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-center md:justify-start gap-1.5"><i data-lucide="map-pin" class="w-3.5 h-3.5 text-indigo-400"></i> Fulfillment Base</p>
-          <h4 class="text-base font-black text-white mt-1">ELS Online Hub</h4>
-          <p class="text-[11px] text-slate-400 font-medium">Central Warehouse Pool</p>
-        </div>
-        <div class="pt-4 md:pt-0 md:pl-6">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-center md:justify-start gap-1.5"><i data-lucide="users" class="w-3.5 h-3.5 text-emerald-400"></i> Active Couriers</p>
-          <h4 id="availablePartnersCount" class="text-xl font-black text-emerald-400 mt-1">00</h4>
-          <p class="text-[11px] text-slate-400 font-medium">Online Routing Channels</p>
-        </div>
-        <div class="pt-4 md:pt-0 md:pl-6">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-center md:justify-start gap-1.5"><i data-lucide="package" class="w-3.5 h-3.5 text-amber-400"></i> Ready to Pickup</p>
-          <h4 id="readyPickupCount" class="text-xl font-black text-amber-400 mt-1">00</h4>
-          <p class="text-[11px] text-slate-400 font-medium">Awaiting Dispatch Hooks</p>
-        </div>
-        <div class="pt-4 md:pt-0 md:pl-6">
-          <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-center md:justify-start gap-1.5"><i data-lucide="zap" class="w-3.5 h-3.5 text-sky-400"></i> Dispatch Vel.</p>
-          <h4 class="text-base font-black text-sky-400 mt-1">~14.2 Mins</h4>
-          <p class="text-[11px] text-slate-400 font-medium">Avg Pickup Acknowledgment</p>
-        </div>
-      </div>
-    </div>
-     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start mb-8">
-    <div class="lg:col-span-2 space-y-6">
-        <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Routing Control Nodes</span>
-              <h3 class="text-base font-bold text-slate-900 mt-0.5">Order Receiver &amp; Delivery Partner</h3>
-            </div>
-            <span id="logisticsChannelBadge" class="inline-flex items-center text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">Receiver View</span>
-          </div>
-          <p class="text-xs text-slate-500 leading-relaxed mb-6">Select your portal orientation. Customers can monitor live order locations, while verified dispatch couriers can sign in to claim local fulfillment jobs.</p>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col justify-between">
+          <section id="page-shop" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i data-lucide="search" class="w-4 h-4 text-slate-500"></i> Order Receiver</h4>
-                <p class="text-[11px] text-slate-400 font-medium mt-1 mb-4">Input your secure order reference hash key to pull telemetry records directly.</p>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Marketplace</p>
+                <h2 class="section-title text-3xl font-bold">Live shop catalog</h2>
               </div>
+              <div class="flex flex-wrap gap-3">
+                <button onclick="filterShopCategory('All')" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50">All items</button>
+                <button onclick="filterShopCategory('Electronics')" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50">Electronics</button>
+                <button onclick="filterShopCategory('Fashion')" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50">Fashion</button>
+              </div>
+            </div>
+            <div id="shop-grid" class="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+              <div id="shop-empty-state" class="col-span-full rounded-3xl border border-dashed border-slate-300 p-8 text-center text-slate-500">
+                <p class="text-lg font-semibold text-slate-900">No active stock instances listed.</p>
+                <p class="mt-2 text-sm">Publish your first product to start building the live shop catalogue.</p>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-cart" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <input id="logisticsTrackOrderId" type="text" placeholder="e.g., ELS-7284-NG" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 mb-3 transition">
-                <button class="w-full rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold py-2.5 transition active:scale-[0.99]" onclick="trackOrderInLogistics()">Track Order Profile</button>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Shopping cart</p>
+                <h2 class="section-title text-3xl font-bold">Ready to checkout</h2>
+              </div>
+              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+                <span class="font-semibold">Cart total</span> <span id="cart-total">$0.00</span>
               </div>
             </div>
-             <div class="bg-slate-50 border border-slate-200 p-5 rounded-xl flex flex-col justify-between">
+            <div id="cart-items" class="mt-8 space-y-4"></div>
+            <div id="cart-summary" class="mt-8 hidden rounded-3xl bg-slate-50 p-6 text-slate-700 ring-1 ring-slate-200">
+              <div class="flex items-center justify-between text-sm"><span>Subtotal</span><span id="cart-subtotal">$0.00</span></div>
+              <div class="mt-4 flex justify-end">
+                <button onclick="goTo('payment')" class="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Proceed to payment</button>
+              </div>
+            </div>
+          </section>
+
+          <section id="page-orders" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h4 class="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center gap-1.5"><i data-lucide="shield-check" class="w-4 h-4 text-indigo-600"></i> Network Partner</h4>
-                <p class="text-[11px] text-slate-400 font-medium mt-1 mb-4">Access active routes, update dispatch states, and toggle GPS live streaming tools.</p>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Orders</p>
+                <h2 class="section-title text-3xl font-bold">Orders & fulfillment</h2>
+                <p class="mt-3 text-slate-600">Track every purchase, update order statuses, and manage customer fulfillment efficiently.</p>
               </div>
-              <div class="space-y-2">
-                <button class="w-full rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2.5 transition active:scale-[0.99]" onclick="openDeliveryPartnerLogin()">Courier Sign In</button>
-                <button class="w-full rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold py-2.5 transition active:scale-[0.99]" onclick="openDeliveryPartnerRegister()">Register as Partner</button>
+              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+                <span class="font-semibold">Today</span> <span class="block">3 new orders</span>
               </div>
             </div>
-          </div>
-        </div>
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-          <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5"><i data-lucide="sliders-horizontal" class="w-4 h-4 text-slate-400"></i> Dispatch Network Filters</h4>
-           <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Channel Filter</label>
-              <select id="logisticsChannelFilter" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium outline-none focus:border-slate-400 transition cursor-pointer">
-                <option value="all">All Channels</option>
-                <option value="receiver">Order Receiver</option>
-                <option value="partner">Delivery Partner</option>
-              </select>
+            <div class="mt-8 grid gap-6 lg:grid-cols-3">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Pending</p>
+                <p class="mt-4 text-3xl font-semibold text-slate-900">12</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Processing</p>
+                <p class="mt-4 text-3xl font-semibold text-slate-900">8</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Delivered</p>
+                <p class="mt-4 text-3xl font-semibold text-slate-900">42</p>
+              </div>
             </div>
-             <div>
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Region Pool</label>
-              <select id="partnerRegionFilter" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium outline-none focus:border-slate-400 transition cursor-pointer">
-                <option value="initial">All Regions</option>
-                <option value="North">North Hub</option>
-                <option value="South">South Hub</option>
-                <option value="East">East Hub</option>
-                <option value="West">West Hub</option>
-                <option value="Central">Central Hub</option>
-              </select>
+          </section>
+
+          <section id="page-payment-details" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Payments</p>
+                <h2 class="section-title text-3xl font-bold">Payment details and billing</h2>
+                <p class="mt-3 text-slate-600">View active payment methods, reconciliation status, and transaction flow from merchant to buyer.</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+                <span class="font-semibold">Next payout</span> <span class="block">In 2 days</span>
+              </div>
             </div>
-            <div>
-              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Sorting Priority</label>
-              <select id="partnerSortFilter" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-medium outline-none focus:border-slate-400 transition cursor-pointer">
-                <option value="distance">Closest Distance</option>
-                <option value="eta">Fastest ETA</option>
-                <option value="rating">Highest Rating</option>
-              </select>
+            <div class="mt-8 grid gap-6 lg:grid-cols-3">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Available balance</p>
+                <p class="mt-4 text-3xl font-semibold text-slate-900">$8,520.00</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Recent settlements</p>
+                <p class="mt-4 text-3xl font-semibold text-slate-900">14</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Failed payments</p>
+                <p class="mt-4 text-3xl font-semibold text-slate-900">2</p>
+              </div>
             </div>
-               <div>
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Payment methods</h3>
+                <div class="mt-6 space-y-4 text-slate-600">
+                  <div class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200 flex items-center justify-between gap-4">
+                    <div>
+                      <p class="font-semibold text-slate-900">Paystack</p>
+                      <p class="text-sm text-slate-500">Primary merchant gateway</p>
+                    </div>
+                    <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">Active</span>
+                  </div>
+                  <div class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200 flex items-center justify-between gap-4">
+                    <div>
+                      <p class="font-semibold text-slate-900">Bank transfer</p>
+                      <p class="text-sm text-slate-500">Settlement account</p>
+                    </div>
+                    <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Enabled</span>
+                  </div>
                 </div>
               </div>
-         <div id="logisticsPartnersList" class="grid grid-cols-1 gap-3">
-          </div>
-      </div>
-      <div class="lg:col-span-1 space-y-6">
-        <div class="bg-slate-900 text-white rounded-2xl p-5 border border-slate-800 shadow-sm space-y-5">
-          <div class="flex items-center justify-between pb-3 border-b border-slate-800">
-            <div>
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Live Satellite Vector</span>
-              <h3 class="text-sm font-bold text-white mt-0.5">GPS Route Tracking</h3>
-            </div>
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 uppercase tracking-wide">Sync State</span>
-          </div>
-          <div id="gpsGuidePanel" class="bg-slate-950 border border-slate-850 rounded-xl p-4 text-xs font-mono space-y-2.5">
-            <div class="flex justify-between items-center text-slate-400">
-              <span>Next Checkpoint:</span>
-              <span id="gpsNextStop" class="text-white font-bold">Awaiting Input...</span>
-            </div>
-            <div class="flex justify-between items-center text-slate-400">
-              <span>Remaining Scope:</span>
-              <span id="gpsDistance" class="text-indigo-400 font-bold">— km</span>
-            </div>
-            <div class="flex justify-between items-center text-slate-400">
-              <span>System Clock ETA:</span>
-              <span id="gpsEta" class="text-amber-400 font-bold">— min</span>
-            </div>
-          </div>
-          <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden h-40 flex flex-col relative group">
-            <div id="mapPlaceholder" class="flex-1 text-slate-500 flex items-center justify-center font-bold text-[10px] uppercase tracking-widest relative z-10 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:12px_12px]">
-              Map Rendering Interface
-            </div>
-           <div class="absolute bottom-2 left-2 right-2 px-3 py-1.5 bg-slate-900/90 border border-white/5 backdrop-blur rounded-lg flex justify-between text-[10px] font-mono tracking-wider text-slate-400 z-20">
-              <div>SPD: <strong id="tel-speed" class="text-white font-bold">—</strong></div>
-              <div>ETA: <strong id="tel-eta" class="text-white font-bold">—</strong></div>
-            </div>
-          </div>
-          <button class="w-full py-3 rounded-xl text-xs font-bold bg-emerald-400 hover:bg-emerald-500 text-slate-950 active:scale-[0.99] transition shadow-md shadow-emerald-400/5 flex items-center justify-center gap-1.5" onclick="startDeliveryGuide()">
-            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Launch GPS Route Monitor
-          </button>
-        </div>
-      </div>
-     </div>
-  </div>
-</section>
-<section id="page-messages" class="page bg-slate-50/60 min-h-screen py-8 px-4 sm:px-6">
-  <div class="max-w-6xl mx-auto flex flex-col h-[680px]">
-    <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-200">
-      <div class="flex items-center gap-3">
-        <div class="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-100">
-          <i data-lucide="message-square" class="w-5 h-5"></i>
-        </div>
-        <div>
-          <h2 class="text-xl font-black text-slate-900 tracking-tight">Direct Support Channels</h2>
-          <p class="text-xs text-slate-500 mt-0.5">Coordinate delivery details directly with buyers and local dispatchers.</p>
-        </div>
-      </div>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex-1 min-h-0">
-      <div class="md:col-span-1 border-r border-slate-200 bg-slate-50/40 flex flex-col h-full min-h-0">
-        <div class="p-4 border-b border-slate-200 bg-white flex items-center justify-between">
-          <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5"><i data-lucide="folder-heart" class="w-3.5 h-3.5"></i> Open Dialog Threads</h3>
-          <span class="h-2 w-2 rounded-full bg-indigo-600"></span>
-        </div>
-         <div id="conversations-list" class="flex-1 overflow-y-auto p-3 space-y-1">
-          <div class="text-center py-20 px-4">
-            <div class="w-10 h-10 bg-slate-100 text-slate-400 rounded-xl flex items-center justify-center mx-auto mb-3 border border-slate-200">
-              <i data-lucide="message-circle" class="w-4 h-4"></i>
-            </div>
-            <p class="text-xs font-bold text-slate-700">No active sessions logs</p>
-            <p class="text-[10px] text-slate-400 mt-1 max-w-[180px] mx-auto leading-relaxed">Select a verification partner row card item to spin up communication vectors.</p>
-          </div>
-        </div>
-      </div>
-      <div class="md:col-span-2 flex flex-col h-full min-h-0 bg-white">
-      <div id="chat-header" class="px-5 py-3 border-b border-slate-200 flex items-center justify-between bg-slate-50/50 z-10 min-h-[53px]">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center w-full flex items-center justify-center gap-1.5"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-indigo-500"></i> Select an operational conversation row to review history</p>
-        </div>
-        <div id="messages-container" class="flex-1 overflow-y-auto p-6 space-y-4 bg-slate-50/20"></div>
-        <div id="chat-input-area" class="hidden p-4 border-t border-slate-200 bg-white">
-          <form class="flex items-center gap-2.5" onsubmit="event.preventDefault();">
-            <div class="relative flex-1">
-              <input id="message-input" type="text" placeholder="Type your secure message..." 
-                class="w-full pl-4 pr-10 py-3 text-xs rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition">
-              <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-300">
-                <i data-lucide="shield" class="w-4 h-4"></i>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Billing performance</h3>
+                <div class="mt-6 space-y-4 text-slate-600">
+                  <p>Average settlement time: <span class="font-semibold text-slate-900">24 hrs</span></p>
+                  <p>Dispute rate: <span class="font-semibold text-slate-900">0.4%</span></p>
+                  <button type="button" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">View payment logs</button>
+                </div>
               </div>
-            </div> 
-            <button id="send-btn" type="submit" onclick="sendMessage()" disabled
-              class="inline-flex items-center justify-center p-3 rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:pointer-events-none transition shadow-md shadow-indigo-100">
-              <i data-lucide="send" class="w-3.5 h-3.5"></i>
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-<!-- CART PAGE SECTION -->
-<section id="page-cart" class="page bg-slate-50/50 min-h-screen py-12 px-4">
-  <div class="max-w-5xl mx-auto">
-    <!-- Title Section -->
-    <div class="flex items-center gap-3 mb-8">
-      <div class="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
-        <i data-lucide="shopping-bag" class="w-6 h-6"></i>
-      </div>
-      <div>
-        <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Your Shopping Cart</h2>
-        <p class="text-xs text-slate-500">Review selected inventory items before checking out.</p>
-      </div>
-    </div>
-    <!-- Split-Grid Workspace Layout for Checkout Efficiency -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      <!-- List Items Card Stack Column (2/3 width) -->
-      <div class="lg:col-span-2 space-y-4">
-        <div id="cart-items" class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-sm">
-          <!-- Fallback Interactive Empty Cart View State -->
-          <div class="text-center py-12">
-            <div class="w-12 h-12 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <i data-lucide="shopping-cart" class="w-6 h-6"></i>
             </div>
-            <p class="text-sm font-semibold text-slate-800">Your cart is currently empty</p>
-            <p class="text-xs text-slate-400 mt-1 mb-4">Looks like you haven't discovered your items yet.</p>
-            <button onclick="goTo('shop')" class="inline-flex items-center justify-center text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 px-4 py-2 rounded-xl shadow-sm transition">
-              Start Shopping
-            </button>
-          </div>
-        </div>
-      </div>
-      <!-- Checkout Summary Column Panel (1/3 width, Stickied layout) -->
-      <div id="cart-summary" class="hidden lg:sticky lg:top-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-900 mb-4 pb-2 border-b border-slate-100">Order Summary</h3>
-       <!-- Summary Pricing Calculations Row Fields -->
-        <div class="space-y-3 mb-6">
-          <div class="flex items-center justify-between text-xs text-slate-500">
-            <span>Subtotal</span>
-            <span class="font-medium text-slate-800">$0.00</span>
-          </div>
-          <div class="flex items-center justify-between text-xs text-slate-500">
-            <span>Shipping Fees</span>
-            <span class="font-medium text-emerald-600">Calculated later</span>
-          </div>
-          <div class="border-t border-slate-100 pt-3 flex justify-between items-center">
-            <span class="text-sm font-bold text-slate-800">Total Balance</span> 
-            <span id="cart-total" class="text-xl font-black text-rose-500">$0.00</span>
-          </div>
-        </div>
- <!-- Final Action Click Trigger Call -->
-        <button onclick="goTo('payment')" 
-          class="w-full py-3 rounded-xl font-bold text-sm text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-100 transition active:scale-[0.99]">
-          Proceed to Payment
-        </button>
-      </div>
-     </div>
-  </div>
-</section>
-     <!-- PAYMENT / CHECKOUT PAGE -->
-      <section id="page-payment" class="page bg-slate-50 min-h-screen py-12 px-4">
-        <div class="max-w-2xl mx-auto">
-          <button onclick="goTo('cart')" class="group inline-flex items-center gap-2 mb-8 px-4 py-2 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-xl shadow-sm hover:text-slate-900 hover:bg-slate-50 active:scale-[0.98] transition">
-            <i data-lucide="arrow-left" class="w-4 h-4 transition-transform group-hover:-translate-x-0.5"></i>
-            Back to Cart
-          </button>
-          <h2 class="text-3xl font-bold text-slate-900 mb-8">Secure Checkout</h2>
+          </section>
 
-          <!-- Shipping Address -->
-          <div class="bg-white rounded-3xl p-6 shadow-sm mb-8">
-            <h3 class="font-semibold text-lg mb-4">Shipping Address</h3>
-            <div class="grid grid-cols-1 gap-4">
-              <input id="shipping-street" type="text" placeholder="Street Address" class="w-full px-4 py-3 rounded-xl border border-slate-200">
-              <div class="grid grid-cols-2 gap-4">
-                <input id="shipping-city" type="text" placeholder="City" class="w-full px-4 py-3 rounded-xl border border-slate-200">
-                <input id="shipping-state" type="text" placeholder="State" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+          <section id="page-shipping" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Shipping</p>
+                <h2 class="section-title text-3xl font-bold">Shipping & live map tracking</h2>
+                <p class="mt-3 text-slate-600">Monitor every delivery route with live-stream style updates from merchant to buyer, plus shipping method control.</p>
               </div>
-              <input id="shipping-phone" type="text" placeholder="Phone Number" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+              <button onclick="goTo('logistics')" class="rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Open logistics hub</button>
             </div>
-          </div>
+            <div class="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Live route map</h3>
+                <div id="mapPlaceholder" class="map-placeholder mt-6 rounded-3xl border border-slate-200 bg-slate-900/90 p-6 text-slate-100">
+                  <div class="text-center">
+                    <p class="text-lg font-semibold">Live delivery route</p>
+                    <p class="mt-2 text-sm text-slate-400">Real-time simulated tracking is available here.</p>
+                  </div>
+                </div>
+                <div class="mt-6 grid gap-4 sm:grid-cols-3">
+                  <div class="rounded-3xl bg-white p-4 ring-1 ring-slate-200">
+                    <p class="text-xs uppercase tracking-[0.3em] text-rose-500">Speed</p>
+                    <p id="tel-speed" class="mt-3 text-2xl font-semibold text-slate-900">-- km/h</p>
+                  </div>
+                  <div class="rounded-3xl bg-white p-4 ring-1 ring-slate-200">
+                    <p class="text-xs uppercase tracking-[0.3em] text-rose-500">ETA</p>
+                    <p id="tel-eta" class="mt-3 text-2xl font-semibold text-slate-900">-- mins</p>
+                  </div>
+                  <div class="rounded-3xl bg-white p-4 ring-1 ring-slate-200">
+                    <p class="text-xs uppercase tracking-[0.3em] text-rose-500">Status</p>
+                    <p id="shippingStatus" class="mt-3 text-2xl font-semibold text-slate-900">Ready</p>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Shipping methods</h3>
+                <div class="mt-6 space-y-4 text-slate-600">
+                  <div class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">
+                    <p class="font-semibold text-slate-900">Standard delivery</p>
+                    <p class="text-sm text-slate-500">2-4 business days • Best for cost-conscious buyers</p>
+                  </div>
+                  <div class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">
+                    <p class="font-semibold text-slate-900">Express shipping</p>
+                    <p class="text-sm text-slate-500">Same-day or next-day delivery with priority handling.</p>
+                  </div>
+                  <div class="rounded-3xl bg-white px-4 py-4 shadow-sm ring-1 ring-slate-200">
+                    <p class="font-semibold text-slate-900">Pickup coordination</p>
+                    <p class="text-sm text-slate-500">Delivery partner and buyer pickup coordination for flexible fulfillment.</p>
+                  </div>
+                </div>
+                <button type="button" onclick="if(typeof loadLogisticsPartners==='function'){ goTo('logistics'); loadLogisticsPartners(); }" class="mt-6 w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Start live tracking</button>
+              </div>
+            </div>
+          </section>
 
-          <!-- Order Summary -->
-          <div class="bg-white rounded-3xl p-6 shadow-sm mb-8">
-            <h3 class="font-semibold text-lg mb-4">Order Summary</h3>
-            <div id="payment-items" class="space-y-4"></div>
-            <div class="border-t mt-6 pt-6">
-              <div class="flex justify-between text-sm mb-2"><span>Subtotal</span><span id="summary-subtotal">$0.00</span></div>
-              <div class="flex justify-between text-xl font-bold mt-4 pt-4 border-t"><span>Total</span><span id="summary-total">$0.00</span></div>
+          <section id="page-messages" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Messages</p>
+                <h2 class="section-title text-3xl font-bold">Customer support inbox</h2>
+                <p class="mt-3 text-slate-600">Review new requests, respond to buyers, and keep customer conversations on track.</p>
+              </div>
+              <button class="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Compose message</button>
             </div>
-          </div>
+            <div class="mt-8 space-y-4">
+              <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
+                <p class="font-semibold text-slate-900">Order #4532</p>
+                <p class="mt-2 text-sm text-slate-600">Customer asked about shipping updates for their electronics order.</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
+                <p class="font-semibold text-slate-900">Return request</p>
+                <p class="mt-2 text-sm text-slate-600">A buyer needs help with a return for a fashion item.</p>
+              </div>
+            </div>
+          </section>
 
-          <!-- Payment Methods -->
-          <div class="bg-white rounded-3xl p-6 shadow-sm">
-            <h3 class="font-semibold text-lg mb-5">Choose Payment Method</h3>
-            <div class="grid grid-cols-2 gap-4 mb-8">
-              <button onclick="selectPaymentMethod(this)" data-method="card" class="payment-method-btn flex flex-col items-center gap-3 p-6 border-2 rounded-2xl">
-                <i data-lucide="credit-card" class="w-8 h-8 text-emerald-600"></i>
-                <span class="font-medium">Card Payment</span>
-              </button>
-              <button onclick="selectPaymentMethod(this)" data-method="bank" class="payment-method-btn flex flex-col items-center gap-3 p-6 border-2 rounded-2xl">
-                <i data-lucide="building-2" class="w-8 h-8 text-emerald-600"></i>
-                <span class="font-medium">Bank Transfer</span>
-              </button>
+          <section id="page-profile" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Profile</p>
+                <h2 class="section-title text-3xl font-bold">Account settings</h2>
+                <p class="mt-3 text-slate-600">Manage your store profile, payment details, and notification preferences.</p>
+              </div>
+              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+                <span class="font-semibold">Verified seller</span>
+              </div>
             </div>
-            <div id="card-payment-form" class="hidden">
-              <button onclick="payWithPaystack()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-2xl text-lg">
-                Pay with Paystack
-              </button>
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Personal info</h3>
+                <div class="mt-6 space-y-4 text-slate-600">
+                  <p><span class="font-semibold text-slate-900">Name:</span> Merchant</p>
+                  <p><span class="font-semibold text-slate-900">Email:</span> merchant@example.com</p>
+                  <p><span class="font-semibold text-slate-900">Region:</span> West Africa</p>
+                </div>
+              </div>
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Preferences</h3>
+                <div class="mt-6 space-y-4 text-slate-600">
+                  <p>Notifications: <span class="font-semibold text-slate-900">Enabled</span></p>
+                  <p>Store visibility: <span class="font-semibold text-slate-900">Public</span></p>
+                </div>
+              </div>
             </div>
-            <div id="bank-transfer-info" class="hidden text-center py-8">
-              <p class="text-2xl font-bold mb-2">$<span id="bank-amount">0</span></p>
-              <p>Bank: GTBank | Account: ELS Online Store | 1234567890</p>
-            </div>
-          </div>
-        </div>
-      </section>
-     <!-- ABOUT PAGE -->
-    <section id="page-about" class="page bg-slate-50 min-h-screen">
-  <div class="max-w-5xl mx-auto px-4 py-20">
-    <div class="text-center mb-16 animate-fadeIn">
-      <div class="inline-flex items-center justify-center p-1.5 rounded-2xl mb-6 bg-white border border-slate-200/80 shadow-md">
-        <img src="images/weblogo.png" width="96" height="96" alt="ELS Logo" class="rounded-xl object-contain shadow-sm">
-      </div>
-      <h2 class="text-4xl sm:text-5xl font-black tracking-tight mb-4 text-slate-900 font-serif">
-        ELS.OnlineStore
-      </h2>
-      <p class="text-slate-500 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-        A next-generation marketplace where buying and selling converge into a seamless, community-driven ecosystem built on trust and accessibility.
-      </p>
-    </div>
-     <div class="rounded-3xl p-8 sm:p-10 mb-12 bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950 text-slate-100 shadow-xl relative overflow-hidden">
-      <div class="absolute -right-24 -top-24 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
-     <div class="relative z-10 max-w-3xl">
-        <span class="text-xs font-bold uppercase tracking-widest text-indigo-400 mb-2 block">The Philosophy</span>
-        <h3 class="text-2xl sm:text-3xl font-extrabold mb-5 text-white tracking-tight font-serif">Our Vision</h3>
-        <p class="text-slate-300 text-base leading-relaxed mb-4">
-          ELS.OnlineStore was born from a transformative belief: digital commerce should be inherently human. In an era dominated by automated marketplace networks, we envisioned a platform that restores personal connection—providing a home where independent brands launch sustainable storefronts and buyers discover unique, meaningful creations.
-        </p>
-        <p class="text-slate-300 text-base leading-relaxed">
-          Our interface seamlessly merges the traditional merchant-consumer divide. With our integrated architecture, anyone can navigate fluidly between supporting small businesses and launching their own storefront, fostering shared economic empowerment.
-        </p>
-      </div>
-    </div>
-     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
-       <div class="group rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-16 h-16 shrink-0 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-            <img src="images/trust.jpg" alt="Trust and Transparency" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          </div>
-          <h4 class="font-bold text-lg text-slate-900 tracking-tight">Trust &amp; Transparency</h4>
-        </div>
-        <p class="text-slate-600 text-sm leading-relaxed">
-          Every layer of transaction architecture on ELS is engineered for clarity. Merchants optimize reputations via authentic user reviews, while our linear, transparent pricing model mitigates hidden platform fees or unexpected processing costs.
-        </p>
-      </div>
-       <div class="group rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-16 h-16 shrink-0 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-            <img src="images/sustanbilty.jpg" alt="Sustainable Commerce" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          </div>
-          <h4 class="font-bold text-lg text-slate-900 tracking-tight">Sustainable Commerce</h4>
-        </div>
-        <p class="text-slate-600 text-sm leading-relaxed">
-          We actively champion independent craftsmanship and short-run production scales. By introducing consumers directly to product innovators, we effectively decrease supply chain overhead, eliminate industrial waste, and foster clean retail cycles.
-        </p>
-      </div>
-       <div class="group rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-16 h-16 shrink-0 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-            <img src="images/dualimgtwo.jpg" alt="Dual-Mode Platform" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          </div>
-          <h4 class="font-bold text-lg text-slate-900 tracking-tight">Dual-Mode Architecture</h4>
-        </div>
-        <p class="text-slate-600 text-sm leading-relaxed">
-          ELS.OnlineStore offers an innovative dual-state structural layout. Users can comfortably pivot between a buyer persona and a merchant interface instantaneously, maintaining all global metrics effortlessly under a single verified account profile.
-        </p>
-      </div>
-      <div class="group rounded-2xl p-6 bg-white border border-slate-200/60 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all duration-200">
-        <div class="flex items-center gap-4 mb-4">
-          <div class="w-16 h-16 shrink-0 overflow-hidden rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center">
-            <img src="images/fashion.jpg" alt="Community First" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
-          </div>
-          <h4 class="font-bold text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
-            Community First
-          </h4>
-        </div>
-        <p class="text-slate-600 text-sm leading-relaxed">
-          Far more than a standard checkout gateway, our platform serves as a modern digital collaborative hub. We catalyze direct, reliable merchant-to-buyer interactions via secure instant messaging components, authentic feedback models, and interest matching.
-        </p>
-      </div>
-     </div>
-    <div class="rounded-3xl p-10 text-center bg-slate-950 border border-slate-900 shadow-2xl relative overflow-hidden">
-      <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none"></div>
-     <div class="relative z-10 max-w-xl mx-auto">
-        <h3 class="text-2xl sm:text-3xl font-bold text-white mb-3 font-serif tracking-tight">Join the Movement</h3>
-        <p class="text-slate-400 text-sm sm:text-base mb-8 leading-relaxed">
-          Whether you are seeking to discover remarkable products or aiming to scale an independent business, ELS.OnlineStore is your comprehensive launching pad.
-        </p>
-         <div class="flex flex-col sm:flex-row gap-3 justify-center items-center">
-          <button onclick="goTo('shop')" class="w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-600/10 transition-all duration-200 transform active:scale-95 text-sm">
-            Start Shopping
-          </button> 
-          <button onclick="goTo('open-store')" class="w-full sm:w-auto px-6 py-3 rounded-xl font-semibold text-slate-300 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:text-white transition-all duration-200 transform active:scale-95 text-sm">
-            Open a Store
-          </button>
-        </div>
-      </div>
-    </div>
-   </div>
-</section>
- <!-- CONTACT PAGE -->
-   <section id="page-contact" class="page min-h-screen bg-slate-50/60 py-12 px-4">
-  <div class="max-w-5xl mx-auto">
-    <!-- Header Block -->
-    <div class="text-center max-w-xl mx-auto mb-12">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 mb-3">
-        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
-        Customer Care Portal
-      </div>
-      <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-4xl">Get in Touch</h2>
-      <p class="text-sm text-slate-500 mt-2">Have technical or transactional questions regarding your order? Our support team is here to assist you daily.</p>
-    </div>
-    <!-- Main Content Workspace Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-      <!-- 1. Left Side Column Panels: Direct Channels & Operational Data (2 Columns Wide) -->
-      <div class="lg:col-span-2 space-y-4">
-        <!-- Support Channel Card: Email -->
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-start gap-4 transition hover:border-slate-300">
-          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-            <i data-lucide="mail" class="w-5 h-5"></i>
-          </div>
-          <div class="min-w-0 flex-1">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Electronic Mail Support</h4>
-            <p class="text-sm font-semibold text-slate-800 truncate mt-1">elsonlinestoreng@gmail.com</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Expect response delivery within 24 operational hours.</p>
-          </div>
-        </div>
-  <!-- Support Channel Card: Phone -->
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-start gap-4 transition hover:border-slate-300">
-          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-            <i data-lucide="phone" class="w-5 h-5"></i>
-          </div>
-          <div class="min-w-0 flex-1">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Direct Telephone Desk</h4>
-            <p class="text-sm font-semibold text-slate-800 mt-1">+234 (902) 505-8674</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Call directly for immediate priority account queries.</p>
-          </div>
-        </div>
-         <!-- Support Channel Card: Business Operational Hours -->
-        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex items-start gap-4 transition hover:border-slate-300">
-          <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
-            <i data-lucide="clock" class="w-5 h-5"></i>
-          </div>
-          <div class="min-w-0 flex-1">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Operational Windows</h4>
-            <p class="text-sm font-semibold text-slate-800 mt-1">Mon–Fri • 9:00 AM – 6:00 PM</p>
-            <p class="text-[11px] text-slate-400 mt-0.5">Standard West African Time (WAT) processing zone.</p>
-          </div>
-        </div>
-      </div>
-      <!-- 2. Right Side Column Panel: Secure Messaging Engine Terminal (3 Columns Wide) -->
-      <div class="lg:col-span-3 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        <!-- Form Header Accent -->
-        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200/60 flex items-center gap-2">
-          <i data-lucide="send" class="w-4 h-4 text-indigo-600"></i>
-          <span class="text-xs font-bold uppercase tracking-wide text-slate-600">Secure Dispatch Form</span>
-        </div>
-         <form id="contact-form" onsubmit="handleContact(event)" class="p-6 md:p-8 space-y-5">
-          <!-- Name Row -->
-          <div>
-            <label for="contact-name" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Full Name</label> 
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-                <i data-lucide="user" class="w-4 h-4"></i>
-              </span>
-              <input id="contact-name" type="text" required placeholder="John Doe"
-                class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 placeholder-slate-400 transition">
-            </div>
-          </div>
-       <!-- Email Row -->
-          <div>
-            <label for="contact-email" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Email Address</label> 
-            <div class="relative">
-              <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
-                <i data-lucide="at-sign" class="w-4 h-4"></i>
-              </span>
-              <input id="contact-email" type="email" required placeholder="you@domain.com"
-                class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 placeholder-slate-400 transition">
-            </div>
-          </div>
-          <!-- Message Body Row -->
-          <div>
-            <label for="contact-msg" class="block text-xs font-bold text-slate-700 uppercase tracking-wide mb-1.5">Detailed Message</label> 
-            <textarea id="contact-msg" rows="4" required placeholder="Describe your query in detail so our agents can review background logs..."
-              class="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 placeholder-slate-400 transition resize-none"></textarea>
-          </div>
-           <!-- Form Submit Button Trigger -->
-          <div class="pt-2">
-            <button id="contact-submit" type="submit" 
-              class="w-full py-3 px-4 rounded-xl font-bold text-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 shadow-md shadow-indigo-100 transition flex items-center justify-center gap-2 group">
-              <span id="contact-submit-text">Transmit Message</span>
-              <i data-lucide="arrow-right" class="w-4 h-4 transition-transform group-hover:translate-x-0.5"></i>
-              <!-- Clean Loading Spinner State Overlay Component -->
-              <span id="contact-submit-loading" class="hidden animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full ml-2"></span>
-            </button>
-          </div>
-          <!-- Dynamic Success Flash Alert Window -->
-          <div id="contact-success" class="hidden p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-3">
-            <div class="h-6 w-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-200">
-              <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
-            </div>
-            <div>
-              <p class="text-xs font-bold text-emerald-900">Message Dispatched Successfully</p>
-              <p class="text-[11px] text-emerald-600 mt-0.5">Data secure. Our customer support managers will touch base shortly.</p>
-            </div>
-          </div>
+          </section>
 
+          <section id="page-payment" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Checkout</p>
+                <h2 class="section-title text-3xl font-bold">Secure payment summary</h2>
+              </div>
+              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+                <span class="font-semibold">Pay with Paystack</span>
+              </div>
+            </div>
+            <div id="payment-items" class="mt-8 space-y-3 text-slate-700"></div>
+            <div class="mt-8 rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+              <div class="flex items-center justify-between text-sm text-slate-600"><span>Order total</span><span id="payment-total">$0.00</span></div>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <button onclick="selectPaymentMethod(this)" data-method="card" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Card</button>
+                <button onclick="selectPaymentMethod(this)" data-method="bank" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Bank Transfer</button>
+              </div>
+              <div id="card-payment-form" class="mt-6 hidden">
+                <button onclick="payWithPaystack()" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Pay with Paystack</button>
+              </div>
+              <div id="bank-transfer-info" class="mt-6 hidden text-sm text-slate-600">
+                <p>Transfer to:</p>
+                <p class="mt-2 font-semibold text-slate-900">GTBank • JovAli Online Store • 1234567890</p>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div id="reset-password-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4 py-8">
+      <div class="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl ring-1 ring-slate-200">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Password reset</p>
+            <h2 class="section-title text-2xl font-bold">Recover your account</h2>
+          </div>
+          <button type="button" onclick="closeResetRequestModal()" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Close</button>
+        </div>
+        <form id="reset-request-form" onsubmit="sendPasswordResetRequest(event)" class="mt-6 space-y-4">
+          <label class="block text-sm font-semibold text-slate-800">Email address</label>
+          <input id="reset-email" type="email" required placeholder="you@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+          <div class="flex items-center justify-between gap-4">
+            <button type="submit" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Send reset email</button>
+            <button type="button" onclick="closeResetRequestModal()" class="rounded-2xl border border-slate-200 px-5 py-3 text-sm text-slate-700 transition hover:bg-slate-50">Cancel</button>
+          </div>
+          <div id="reset-request-result" class="text-sm text-slate-600"></div>
         </form>
       </div>
     </div>
   </div>
-</section>
- <script src="js/els2app.js"></script>
+
+  <div id="toast" class="fixed bottom-6 left-1/2 z-50 hidden -translate-x-1/2 rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-xl shadow-slate-900/20"></div>
+
+  <script src="js/els2app.js"></script>
   <script src="js/cloudupload.js"></script>
- <script src="js/ui.js"></script>
- <script src="js/products.js"></script>
-<script src="js/orders.js"></script>
-<script src="js/my-store.js"></script>
- <script src="js/messages.js"></script>
-<script src="js/cart.js"></script> 
-<script src="js/payment.js"></script>
- <script>
-   function selectPaymentMethod(btn) {
-     document.querySelectorAll('.payment-method-btn').forEach(b => {
-       b.classList.remove('border-emerald-500', 'bg-emerald-50');
-     });
-     btn.classList.add('border-emerald-500', 'bg-emerald-50');
-     const method = btn.getAttribute('data-method');
-     document.getElementById('card-payment-form').classList.toggle('hidden', method !== 'card');
-     document.getElementById('bank-transfer-info').classList.toggle('hidden', method !== 'bank');
-   }
- </script>
- <script src="js/chat.js"></script>
- <script src="js/profile.js"></script>
- <script src="js/dataSdk.js"></script>
-<script src="js/register.js"></script>
-
+  <script src="js/ui.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/orders.js"></script>
+  <script src="js/my-store.js"></script>
+  <script src="js/messages.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/chat.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/dataSdk.js"></script>
+  <script src="js/register.js"></script>
 </body>
-  </html>
+</html>

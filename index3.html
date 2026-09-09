@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ELS Integrated Marketplace & Payment Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
+</head>
+<body class="bg-slate-50 antialiased text-slate-800">
+
+  <section id="page-open-store" class="border-b border-slate-200 bg-white py-12">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="text-center mb-8">
+        <h2 class="text-3xl font-extrabold text-slate-900 tracking-tight">Merchant Portal</h2>
+        <p class="text-slate-500 text-sm mt-1">Upload inventory directly into the customer-facing distribution index.</p>
+      </div>
+
+      <div class="rounded-3xl p-6 bg-slate-50 border border-slate-200 max-w-3xl mx-auto shadow-sm">
+        <form id="add-product-form" novalidate onsubmit="event.preventDefault();">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Product Name</label>
+              <input id="prod-name" type="text" required placeholder="Premium Leather Shoes" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Price (NGN - ₦)</label> 
+              <input id="prod-price" type="number" min="1" required placeholder="45000" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Category</label> 
+              <select id="prod-category" required class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-slate-700"> 
+                <option value="">Select category</option>
+                <option value="Electronics">Electronics</option> 
+                <option value="Fashion">Fashion</option> 
+                <option value="Home">Home</option> 
+                <option value="Sports">Sports</option> 
+                <option value="Other">Other</option> 
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Product Image Link</label>
+              <input id="prod-image-url" type="url" placeholder="https://example.com/image.jpg (or leave empty for fallback)" class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
+            </div>
+          </div>
+
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Description</label> 
+            <textarea id="prod-desc" rows="2" required placeholder="Describe item quality, specifications, and layout sizing details..." class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all resize-none"></textarea>
+          </div>
+
+          <button id="add-product-btn" type="button" onclick="processProductSubmission()" disabled class="w-full py-3 text-sm font-bold uppercase tracking-wider rounded-xl text-white bg-emerald-600 disabled:opacity-50 shadow-sm transition">
+            Publish Product to Live Shop
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-shop" class="max-w-6xl mx-auto px-4 py-12">
+    <div class="flex flex-col md:flex-row md:items-end justify-between border-b border-slate-200 pb-6 mb-8 gap-4">
+      <div>
+        <h2 class="text-3xl font-bold text-slate-900 font-serif">ELS Active Shop</h2>
+        <p class="text-slate-500 text-sm mt-0.5">Explore listed inventory updates posted by micro-merchant storefront networks</p>
+      </div>
+      <div class="flex gap-2 overflow-x-auto pb-2 scrollbar-none">
+        <button onclick="filterShopCategory('All')" class="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider shrink-0 transition">All Items</button>
+      </div>
+    </div>
+
+    <div id="shop-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div id="shop-empty-state" class="col-span-full text-center py-12 border border-dashed border-slate-300 rounded-3xl bg-white p-6 max-w-sm mx-auto">
+        <p class="text-sm font-bold text-slate-800">No active stock instances listed.</p>
+        <p class="text-xs text-slate-400 mt-1">Use the upload submission dashboard layout up top to add an entry item.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-payment" class="page bg-slate-50 min-h-screen py-12 px-4 hidden">
+    <div class="max-w-2xl mx-auto">
+      <div class="flex items-center gap-3 mb-8">
+        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+          <i data-lucide="credit-card" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Secure Checkout</h2>
+          <p class="text-slate-500 text-sm">Complete your payment safely</p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-8" id="payment-order-summary">
+        <h3 class="font-semibold text-lg mb-4">Order Summary</h3>
+        <div id="payment-items" class="space-y-4">
+          </div>
+        <div class="border-t border-slate-200 mt-6 pt-6">
+          <div class="flex justify-between text-sm mb-2"><span class="text-slate-600">Subtotal</span><span id="summary-subtotal" class="font-medium">₦0.00</span></div>
+          <div class="flex justify-between text-sm mb-2"><span class="text-slate-600">Shipping</span><span class="text-emerald-600">Calculated at delivery</span></div>
+          <div class="flex justify-between text-xl font-bold mt-4 pt-4 border-t">
+            <span>Total</span>
+            <span id="summary-total" class="text-emerald-600">₦0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+        <h3 class="font-semibold text-lg mb-5">Choose Payment Method</h3>
+        <div class="grid grid-cols-2 gap-4 mb-8">
+          <button id="btn-method-card" onclick="selectPaymentMethod('card')" class="payment-method-btn flex flex-col items-center gap-3 p-6 border-2 border-slate-100 hover:border-emerald-500 rounded-2xl transition-all active:scale-95">
+            <i data-lucide="credit-card" class="w-8 h-8 text-emerald-600"></i>
+            <span class="font-medium">Card Payment</span>
+          </button>
+          <button id="btn-method-bank" onclick="selectPaymentMethod('bank')" class="payment-method-btn flex flex-col items-center gap-3 p-6 border-2 border-slate-100 hover:border-emerald-500 rounded-2xl transition-all active:scale-95">
+            <i data-lucide="building-2" class="w-8 h-8 text-emerald-600"></i>
+            <span class="font-medium">Bank Transfer</span>
+          </button>
+        </div>
+
+        <div id="card-payment-form" class="hidden">
+          <button onclick="payWithPaystack()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-2xl text-lg transition-all active:scale-[0.98]">
+            Pay with Paystack (Card / Bank / USSD)
+          </button>
+          <p class="text-center text-xs text-slate-500 mt-4">🔒 Secured by Paystack • Accepts all cards</p>
+        </div>
+
+        <div id="bank-transfer-info" class="hidden text-center py-8">
+          <p class="text-2xl font-mono font-bold text-slate-800 mb-2">₦<span id="bank-amount">0</span></p>
+          <div class="bg-slate-50 rounded-2xl p-5 text-left max-w-xs mx-auto text-sm space-y-1">
+            <p><strong>Bank:</strong> GTBank</p>
+            <p><strong>Account Name:</strong> ELS Online Store</p>
+            <p><strong>Account Number:</strong> 1234567890</p>
+          </div>
+          <p class="text-xs text-slate-500 mt-6">Send proof of payment to support after transfer</p>
+        </div>
+      </div>
+
+      <div class="text-center mt-8">
+        <button onclick="goTo('shop')" class="text-slate-500 hover:text-slate-700 text-sm flex items-center gap-2 mx-auto">← Back to Shop</button>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Runtime global reactive application database structure
+    window.unifiedMarketplaceState = {
+      products: [],
+      selectedProductForCheckout: null
+    };
+
+    document.addEventListener("DOMContentLoaded", () => {
+      // Initialize layout vectors and process lucide indicators
+      lucide.createIcons();
+      setupInputListeners();
+    });
+
+    function setupInputListeners() {
+      ['prod-name', 'prod-price', 'prod-category', 'prod-desc'].forEach(id => {
+        document.getElementById(id).addEventListener('input', checkFormValidity);
+      });
+    }
+
+    function checkFormValidity() {
+      const name = document.getElementById('prod-name').value.trim();
+      const price = document.getElementById('prod-price').value;
+      const category = document.getElementById('prod-category').value;
+      const desc = document.getElementById('prod-desc').value.trim();
+      
+      const isValid = name && price > 0 && category && desc;
+      document.getElementById('add-product-btn').disabled = !isValid;
+    }
+
+    function processProductSubmission() {
+      const imgVal = document.getElementById('prod-image-url').value.trim();
+      
+      const newProduct = {
+        id: 'prod_' + Date.now(),
+        name: document.getElementById('prod-name').value.trim(),
+        price: parseFloat(document.getElementById('prod-price').value).toFixed(2),
+        category: document.getElementById('prod-category').value,
+        description: document.getElementById('prod-desc').value.trim(),
+        image: imgVal || 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80'
+      };
+
+      window.unifiedMarketplaceState.products.unshift(newProduct);
+      
+      // Clear forms
+      document.getElementById('add-product-form').reset();
+      document.getElementById('add-product-btn').disabled = true;
+      
+      renderShopCatalog();
+    }
+
+    function renderShopCatalog() {
+      const grid = document.getElementById('shop-grid');
+      const emptyState = document.getElementById('shop-empty-state');
+      const stream = window.unifiedMarketplaceState.products;
+
+      if(stream.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      // Clear old listings without losing template state references
+      grid.querySelectorAll('.product-card-instance').forEach(el => el.remove());
+
+      stream.forEach(prod => {
+        const card = document.createElement('div');
+        card.className = "product-card-instance bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col p-4 hover:shadow-md transition";
+        card.innerHTML = `
+          <div class="h-48 rounded-2xl overflow-hidden bg-slate-50 mb-4">
+            <img src="${prod.image}" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-grow flex flex-col">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md self-start mb-2">${prod.category}</span>
+            <h4 class="font-bold text-slate-900 text-base mb-1">${prod.name}</h4>
+            <p class="text-xs text-slate-500 line-clamp-2 mb-4">${prod.description}</p>
+            <div class="mt-auto flex items-center justify-between pt-2 border-t border-slate-50">
+              <span class="font-extrabold text-slate-900">₦${Number(prod.price).toLocaleString()}</span>
+              <button onclick="initializeCheckoutPipeline('${prod.id}')" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition">
+                Purchase Item
+              </button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Navigation and workflow engine links
+    function goTo(target) {
+      if(target === 'shop') {
+        document.getElementById('page-payment').classList.add('hidden');
+        document.getElementById('page-open-store').classList.remove('hidden');
+        document.getElementById('page-shop').classList.remove('hidden');
+        window.scrollTo({ top: document.getElementById('page-shop').offsetTop - 20, behavior: 'smooth' });
+      } else if (target === 'cart') {
+        // Fallback for custom link routing configurations matching template parameters
+        alert('Returning route state safely to primary shopping collection view.');
+        goTo('shop');
+      }
+    }
+
+    // Connect Purchase triggers directly to the Payment component UI fields
+    function initializeCheckoutPipeline(productId) {
+      const match = window.unifiedMarketplaceState.products.find(p => p.id === productId);
+      if(!match) return;
+
+      window.unifiedMarketplaceState.selectedProductForCheckout = match;
+
+      // Populate layout container segments with live pricing context data structures
+      const formattedPrice = Number(match.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      document.getElementById('summary-subtotal').innerText = `₦${formattedPrice}`;
+      document.getElementById('summary-total').innerText = `₦${formattedPrice}`;
+      document.getElementById('bank-amount').innerText = formattedPrice;
+
+      // Render specific product line entry within payment summaries framework
+      const itemsContainer = document.getElementById('payment-items');
+      itemsContainer.innerHTML = `
+        <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100">
+          <img src="${match.image}" class="w-12 h-12 rounded-xl object-cover border bg-white shrink-0">
+          <div class="min-w-0 flex-grow">
+            <h5 class="font-bold text-sm text-slate-900 truncate">${match.name}</h5>
+            <p class="text-xs text-slate-400 truncate">${match.category}</p>
+          </div>
+          <div class="font-bold text-sm text-slate-900">₦${formattedPrice}</div>
+        </div>
+      `;
+
+      // Reset selection configurations state view metrics
+      document.getElementById('card-payment-form').classList.add('hidden');
+      document.getElementById('bank-transfer-info').classList.add('hidden');
+      document.querySelectorAll('.payment-method-btn').forEach(b => b.classList.remove('border-emerald-500', 'bg-emerald-50/20'));
+
+      // Switch workspace views context smoothly
+      document.getElementById('page-open-store').classList.add('hidden');
+      document.getElementById('page-shop').classList.add('hidden');
+      document.getElementById('page-payment').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Payment Selection View Router Method 
+    function selectPaymentMethod(methodType) {
+      const cardForm = document.getElementById('card-payment-form');
+      const bankInfo = document.getElementById('bank-transfer-info');
+      const btnCard = document.getElementById('btn-method-card');
+      const btnBank = document.getElementById('btn-method-bank');
+
+      // Clear layout visual outlines
+      btnCard.classList.remove('border-emerald-500', 'bg-emerald-50/20');
+      btnBank.classList.remove('border-emerald-500', 'bg-emerald-50/20');
+
+      if (methodType === 'card') {
+        cardForm.classList.remove('hidden');
+        bankInfo.classList.add('hidden');
+        btnCard.classList.add('border-emerald-500', 'bg-emerald-50/20');
+      } else if (methodType === 'bank') {
+        bankInfo.classList.remove('hidden');
+        cardForm.classList.add('hidden');
+        btnBank.classList.add('border-emerald-500', 'bg-emerald-50/20');
+      }
+    }
+
+    // Processing simulations for external integrations
+    function payWithPaystack() {
+      const product = window.unifiedMarketplaceState.selectedProductForCheckout;
+      if(!product) return;
+
+      alert(`Initializing Secure Paystack Payment Engine API Gateway connection...\n\nTransaction Authorization Request payload targeting entry amount item context: ₦${Number(product.price).toLocaleString()}`);
+    }
+  </script>
+</body>
+</html>

@@ -330,7 +330,16 @@ function replaceProductImageFromUrl(prodId) {
   showToast('Product image updated from URL');
 }
 
+// ========== LEGACY RENDERESHOP (FALLBACK) ==========
+// Updated to use ProductCatalog if available, otherwise fallback to client-side filtering
 function renderShop() {
+  // If ProductCatalog is loaded, use it instead
+  if (window.productCatalog) {
+    window.productCatalog.loadProducts();
+    return;
+  }
+
+  // FALLBACK: Client-side filtering (when ProductCatalog not available)
   const search = (document.getElementById('shop-search')?.value || '').toLowerCase();
   let filtered = allProducts.filter(p => p.name && (p.public !== false || p.seller === currentUser.name));
   if (currentCategory !== 'All') filtered = filtered.filter(p => p.category === currentCategory);
@@ -412,21 +421,19 @@ function renderMyProducts() {
 async function handleAddProduct(e) {
   e.preventDefault();
   if (allProducts.length >= 999) { document.getElementById('store-limit-msg').classList.remove('hidden'); return; }
-  const btn = document.getElementById('add-product-btn');
-  btn.disabled = true;
-  document.getElementById('add-prod-text').classList.add('hidden');
-  document.getElementById('add-prod-loading').classList.remove('hidden');
+  const submitBtn = (e && e.submitter) ? e.submitter : document.getElementById('publish-product-btn') || document.getElementById('save-draft-btn');
+  const actionPublish = submitBtn && submitBtn.dataset && submitBtn.dataset.publish === 'true';
+  if (submitBtn) submitBtn.disabled = true;
   if (!validateOpenStoreForm()) {
     showToast('Please complete all required fields');
-    btn.disabled = false; document.getElementById('add-prod-text').classList.remove('hidden'); document.getElementById('add-prod-loading').classList.add('hidden');
+    if (submitBtn) submitBtn.disabled = false;
     return;
   }
   if (!selectedImages.length) {
     showToast('Please add at least one product image');
-    btn.disabled = false; document.getElementById('add-prod-text').classList.remove('hidden'); document.getElementById('add-prod-loading').classList.add('hidden');
+    if (submitBtn) submitBtn.disabled = false;
     return;
   }
-  const forcePublish = (e && e.submitter && e.submitter.dataset && e.submitter.dataset.publish === 'true');
   const productPayload = {
     name: document.getElementById('prod-name').value,
     price: parseFloat(document.getElementById('prod-price').value) || 0,
@@ -436,7 +443,8 @@ async function handleAddProduct(e) {
     images: Array.isArray(selectedImages) ? selectedImages.slice() : [],
     primary_image: selectedImages[primaryImageIndex] || (selectedImages[0] || ''),
     image_data: selectedImages[primaryImageIndex] || (selectedImages[0] || ''),
-    public: forcePublish ? true : (document.getElementById('prod-public') ? Boolean(document.getElementById('prod-public').checked) : true),
+    public: actionPublish ? true : false,
+    status: actionPublish ? 'published' : 'draft',
     created_at: new Date().toISOString()
   };
   if (selectedImages.length && (window.cloudImageUploadUrl || window.CLOUD_IMAGE_UPLOAD_URL || typeof window.cloudImageUploadHandler === 'function' || window.FIREBASE_CONFIG)) {
@@ -465,7 +473,7 @@ async function handleAddProduct(e) {
           const remoteUrl = await uploadImageToCloud(selectedImages[i], uid);
           if (!remoteUrl) { window.__uploadProgressHandler(uid, {status:'failed'}); uploaded.push(selectedImages[i]); }
           else { window.__uploadProgressHandler(uid, {status:'done', url: remoteUrl}); uploaded.push(remoteUrl || selectedImages[i]); }
-        } catch (err) { console.warn('image upload failed for index', i, err); showToast('Image upload failed'); hideUploadModal(); btn.disabled = false; document.getElementById('add-prod-text').classList.remove('hidden'); document.getElementById('add-prod-loading').classList.add('hidden'); return; }
+        } catch (err) { console.warn('image upload failed for index', i, err); showToast('Image upload failed'); hideUploadModal(); if (submitBtn) submitBtn.disabled = false; return; }
       }
       hideUploadModal();
       if (uploaded.length) { productPayload.images = uploaded; productPayload.primary_image = uploaded[primaryImageIndex] || uploaded[0]; productPayload.image_data = productPayload.primary_image; }
@@ -493,10 +501,35 @@ async function handleAddProduct(e) {
     allProducts.push(localProd); window.lastCreatedProductId = localProd.__backendId;
     renderShop(); renderHomeProducts(); renderMyProducts(); try { saveProductsToLocal(); } catch (e) {} createdOk = true;
   }
+<<<<<<< HEAD:frontend/js/products.js
   btn.disabled = false; document.getElementById('add-prod-text').classList.remove('hidden'); document.getElementById('add-prod-loading').classList.add('hidden');
-  if (createdOk) { document.getElementById('add-product-form').reset(); removeImage(); document.getElementById('prod-image').value = ''; showToast('🎉 Product listed successfully!'); try { saveProductsToLocal(); } catch (e) {} }
+  if (createdOk) { document.getElementById('add-product-form').reset(); removeImage(); document.getElementById('prod-image').value = ''; showToast(forcePublish ? '🎉 Product published successfully!' : '📝 Product saved as draft.'); try { saveProductsToLocal(); } catch (e) {} }
   else { showToast('Failed to list product. Try again.'); }
   if (createdOk) { try { const cat = (sdkResult && sdkResult.item && sdkResult.item.category) || productPayload.category; if (cat) filterShopCategory(cat); else goTo('shop'); } catch (e) { goTo('shop'); } }
+=======
+  const saveDraftBtn = document.getElementById('save-draft-btn');
+  const publishBtn = document.getElementById('publish-product-btn');
+  if (saveDraftBtn) { saveDraftBtn.disabled = !validateOpenStoreForm(); }
+  if (publishBtn) { publishBtn.disabled = !validateOpenStoreForm(); }
+  if (createdOk) {
+    document.getElementById('add-product-form').reset();
+    removeImage();
+    document.getElementById('prod-image').value = '';
+    showToast(actionPublish ? '🎉 Product published successfully!' : 'Draft saved successfully!');
+    try { saveProductsToLocal(); } catch (e) {}
+  } else {
+    showToast('Failed to list product. Try again.');
+  }
+  if (createdOk) {
+    try {
+      const cat = (sdkResult && sdkResult.item && sdkResult.item.category) || productPayload.category;
+      if (cat) filterShopCategory(cat);
+      else goTo('shop');
+    } catch (e) {
+      goTo('shop');
+    }
+  }
+>>>>>>> zohan-work:js/products.js
 }
 
 async function deleteProduct(id, btnEl) {

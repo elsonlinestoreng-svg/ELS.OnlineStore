@@ -34,6 +34,11 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     default: 'KES'
   },
+  payment_method: {
+    type: String,
+    enum: ['card', 'bank', 'google_pay', 'cod', 'cash_on_delivery'],
+    default: 'card'
+  },
   gateway: {
     type: String,
     default: 'paystack'

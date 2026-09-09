@@ -1,4 +1,4 @@
-# ELS Online Store — Summary
+# JAS JovAli Store — Summary
 
 **Date:** June 27, 2026  
 **Focus:** Bug fixes + Phase 2 completion (Marketplace Core)

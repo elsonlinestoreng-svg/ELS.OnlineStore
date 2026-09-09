@@ -20,7 +20,7 @@ router.get('/', (req, res) => {
 // Register User
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, confirmPassword } = req.body;
+    const { name, email, password, confirmPassword, role, region, provider } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
@@ -39,10 +39,17 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already registered. Please login instead.' });
     }
 
-    const user = new User({ name, email: email.toLowerCase(), password });
+    const user = new User({
+      name,
+      email: email.toLowerCase(),
+      password,
+      role: role || 'buyer',
+      region: region || 'global',
+      provider: provider || (/@gmail\.com$/i.test(email) ? 'gmail' : 'email')
+    });
     await user.save();
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.status(201).json({
       success: true, message: 'User registered successfully', token,
@@ -57,7 +64,7 @@ router.post('/register', async (req, res) => {
 // Login User
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, role, region, provider } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
@@ -73,11 +80,20 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const normalizedRole = role || user.role || 'buyer';
+    const normalizedRegion = region || user.region || 'global';
+    const normalizedProvider = provider || (/@gmail\.com$/i.test(user.email) ? 'gmail' : 'email');
+
+    user.role = normalizedRole;
+    user.region = normalizedRegion;
+    user.provider = normalizedProvider;
+    await user.save();
+
+    const token = jwt.sign({ userId: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.json({
       success: true, message: 'Login successful', token,
-      user: { _id: user._id, name: user.name, email: user.email }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, region: user.region, provider: user.provider }
     });
   } catch (err) {
     console.error('Login error:', err);
@@ -137,7 +153,7 @@ router.post('/verify-otp', async (req, res) => {
     otpStore.delete(email.toLowerCase());
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.json({ success: true, message: 'OTP verified successfully', token, user: { _id: user._id, name: user.name, email: user.email } });
   } catch (err) {
@@ -145,22 +161,60 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
+// Validate Password Reset Token
+router.get('/validate-reset', (req, res) => {
+  try {
+    const token = req.query.token;
+    if (!token) return res.status(400).json({ success: false, message: 'Reset token is required' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.purpose !== 'password-reset') {
+      return res.status(400).json({ success: false, message: 'Invalid reset token' });
+    }
+
+    res.json({ success: true, ok: true, message: 'Reset token is valid', user: { userId: decoded.userId } });
+  } catch (err) {
+    res.status(400).json({ success: false, ok: false, message: 'Invalid or expired reset token' });
+  }
+});
+
 // Send Password Reset
 router.post('/send-reset', async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, resetBase } = req.body;
     if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
 
     const user = await User.findOne({ email: email.toLowerCase() });
-    if (!user) return res.json({ success: true, message: 'If an account exists, a reset link has been sent' });
+    if (!user) {
+      return res.json({ success: true, ok: true, message: 'If an account exists, a reset link has been sent' });
+    }
 
     const resetToken = jwt.sign({ userId: user._id, purpose: 'password-reset' }, JWT_SECRET, { expiresIn: '1h' });
+    const resetUrl = `${resetBase || 'http://localhost:8081'}#reset=${resetToken}`;
 
-    console.log('🔗 Reset link for ' + email + ': http://localhost:8081/reset-password?token=' + resetToken);
+    console.log('🔗 Reset link for ' + email + ': ' + resetUrl);
 
-    res.json({ success: true, message: 'If an account exists, a reset link has been sent' });
+    res.json({ success: true, ok: true, message: 'If an account exists, a reset link has been sent', token: resetToken, resetUrl });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to send reset email' });
+  }
+});
+
+// Validate Reset Token
+router.get('/validate-reset', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ success: false, message: 'Token is required' });
+
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.purpose !== 'password-reset') return res.status(400).json({ success: false, message: 'Invalid reset token' });
+
+    const user = await User.findById(decoded.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    res.json({ success: true, ok: true, message: 'Token valid' });
+  } catch (err) {
+    res.status(400).json({ success: false, message: 'Token invalid or expired' });
   }
 });
 
@@ -186,7 +240,7 @@ router.post('/reset-complete', async (req, res) => {
     user.password = newPassword;
     await user.save();
 
-    res.json({ success: true, message: 'Password reset successful. You can now login.' });
+    res.json({ success: true, ok: true, message: 'Password reset successful. You can now login.' });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Failed to reset password' });
   }
@@ -215,17 +269,27 @@ router.put('/profile', async (req, res) => {
     if (!token) return res.status(401).json({ success: false, message: 'No token provided' });
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    const { name, phone, avatar } = req.body;
+    const { name, phone, avatar, bio, email, logistics_id } = req.body;
 
     const updateFields = {};
-    if (name) updateFields.name = name;
-    if (phone) updateFields.phone = phone;
-    if (avatar) updateFields.avatar = avatar;
+    const allowedFields = { name, phone, avatar, bio, email, logistics_id };
+
+    for (const [key, value] of Object.entries(allowedFields)) {
+      if (value !== undefined) {
+        updateFields[key] = value;
+      }
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return res.status(400).json({ success: false, message: 'No profile fields provided' });
+    }
 
     const user = await User.findByIdAndUpdate(decoded.userId, { $set: updateFields }, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
     res.json({ success: true, message: 'Profile updated', user });
   } catch (err) {
+    console.error('Profile update failed:', err);
     res.status(401).json({ success: false, message: 'Invalid token' });
   }
 });

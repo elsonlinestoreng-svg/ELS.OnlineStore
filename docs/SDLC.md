@@ -1,7 +1,7 @@
 # ELS ONLINE STORE — FULL PROJECT SDLC + FRONTEND GUIDE
 
 **Date:** May 24, 2026  
-**Project:** ELS Online Store  
+**Project:** Jovli Store  
 **Team:** Sunday (Founder), Zohan (Frontend/Backend), You (Backend Lead)  
 **Stack:** Node.js, Express.js, MongoDB, Vanilla HTML/CSS/JS, JWT, Multer, Paystack/Flutterwave
 
@@ -9,7 +9,7 @@
 
 # PROJECT OVERVIEW
 
-ELS Online Store is a multi-vendor e-commerce marketplace where:
+JovAli Store is a multi-vendor e-commerce marketplace where:
 - Sellers create stores
 - Sellers upload products
 - Buyers add products to cart
@@ -57,8 +57,8 @@ Architecture:
 ### Frontend Auth Storage
 
 ```javascript
-localStorage.setItem('els_token', token);
-localStorage.setItem('els_user', JSON.stringify(user));
+localStorage.setItem('jas_token', token);
+localStorage.setItem('jas_user', JSON.stringify(user));
 ```
 
 ---
@@ -141,7 +141,7 @@ goTo('create-store');
 
 ---
 
-# PHASE 2 — MARKETPLACE CORE 🔴 IN PROGRESS (May 24–June 7)
+# PHASE 2 — MARKETPLACE CORE ✅ COMPLETE (May 24–June 27)
 
 # OBJECTIVE
 
@@ -652,13 +652,13 @@ Phone
 # DATABASE COLLECTIONS
 
 | Collection | Purpose | Status |
-|---|---|---|
+|---|---|---|---|
 | users | Authentication | ✅ |
 | products | Product listings | ✅ |
-| stores | Seller stores | 🔴 |
-| carts | Buyer carts | 🔴 |
-| orders | Seller orders | 🔴 |
-| transactions | Payment tracking | 🔴 |
+| stores | Seller stores | ✅ |
+| carts | Buyer carts | ✅ |
+| orders | Seller orders | ✅ |
+| transactions | Payment tracking | ✅ |
 | messages | Buyer-seller chat | 🟡 |
 | notifications | Alerts system | 🟡 |
 

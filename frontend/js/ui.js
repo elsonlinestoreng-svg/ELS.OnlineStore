@@ -11,8 +11,24 @@ let isLogisticsProvider = false;
 let logisticsFees = { 'Standard': 5, 'Express': 12, 'Overnight': 25, 'Pickup': 0 };
 window.activeUploads = [];
 
+// Ensure `window.API_BASE` is available early so session restore works
+if (!window.API_BASE) {
+  try {
+    if (location && location.protocol === 'file:') {
+      window.API_BASE = 'http://localhost:8001/api';
+    } else if (location && location.protocol && location.hostname) {
+      const port = location.port ? `:${location.port}` : '';
+      window.API_BASE = `${location.protocol}//${location.hostname}${port}/api`;
+    } else {
+      window.API_BASE = 'http://localhost:8001/api';
+    }
+  } catch (e) {
+    window.API_BASE = 'http://localhost:8001/api';
+  }
+}
+
 const defaultConfig = {
-  site_name: 'ELS.OnlineStores',
+  site_name: 'JovA Marketplace',
   tagline: 'Shop. Sell. Thrive.',
   hero_heading: 'Discover What You Love',
   bg_color: '#f8f6f3',
@@ -124,7 +140,68 @@ function setupHomeCarousel(keywords) {
 window.addEventListener('load', () => {
   setupHomeCarousel();
   try { bindButtonTouchResponses(); } catch (e) { }
+  try { initAccessibility(); } catch (e) { }
 });
+
+function initAccessibility() {
+  const toast = document.getElementById('toast');
+  if (toast) {
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
+    toast.setAttribute('aria-atomic', 'true');
+  }
+
+  const loader = document.getElementById('loading-overlay');
+  if (loader) {
+    loader.setAttribute('role', 'status');
+    loader.setAttribute('aria-live', 'polite');
+  }
+
+  document.querySelectorAll('form').forEach((form) => {
+    if (!form.hasAttribute('novalidate')) form.setAttribute('novalidate', 'true');
+  });
+
+  const passEl = document.getElementById('reg-pass');
+  const confirmEl = document.getElementById('reg-confirm-pass');
+  if (passEl && confirmEl) {
+    passEl.addEventListener('input', updatePasswordStrengthUI);
+    confirmEl.addEventListener('input', updatePasswordStrengthUI);
+  }
+
+  updatePasswordStrengthUI();
+}
+
+function updatePasswordStrengthUI() {
+  const passEl = document.getElementById('reg-pass');
+  const labelEl = document.getElementById('password-strength-label');
+  const meterEl = document.getElementById('password-strength')?.querySelector('div');
+  if (!passEl || !labelEl || !meterEl) return;
+
+  const password = passEl.value || '';
+  let score = 0;
+  if (password.length >= 8) score += 1;
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[^A-Za-z0-9]/.test(password)) score += 1;
+
+  const width = Math.min(100, score * 20);
+  const [label, color] = score >= 4 ? ['Strong', '#10b981'] : score >= 3 ? ['Good', '#f59e0b'] : score >= 2 ? ['Fair', '#f97316'] : ['Weak', '#ef4444'];
+
+  meterEl.style.width = `${width}%`;
+  meterEl.style.backgroundColor = color;
+  labelEl.textContent = label;
+  labelEl.style.color = color;
+}
+
+function setAppLoading(loading, label = 'Loading...') {
+  const overlay = document.getElementById('loading-overlay');
+  if (!overlay) return;
+  const textEl = overlay.querySelector('[data-loading-text]');
+  if (textEl) textEl.textContent = label;
+  overlay.classList.toggle('hidden', !loading);
+  overlay.classList.toggle('flex', loading);
+}
 
 function showUploadModal(count) {
   const modal = document.getElementById('upload-modal');
@@ -265,11 +342,32 @@ function acceptSuggestedCategory() {
 }
 
 function updateAddProductButtonState() {
+<<<<<<< HEAD:frontend/js/ui.js
   const btn = document.getElementById('add-product-btn');
+  const draftBtn = document.getElementById('save-draft-btn');
+  const statusEl = document.getElementById('product-publish-status');
   if (!btn) return;
   const valid = validateOpenStoreForm();
   btn.disabled = !valid;
   btn.style.opacity = valid ? '1' : '0.6';
+  if (draftBtn) {
+    draftBtn.disabled = !valid;
+    draftBtn.style.opacity = valid ? '1' : '0.6';
+  }
+  if (statusEl) {
+    const payoutReady = localStorage.getItem('els_payout_ready') === 'true';
+    statusEl.textContent = payoutReady
+      ? 'Seller payout details are ready. You can save as draft or publish instantly.'
+      : 'Add payout details in store setup to enable direct publishing.';
+    statusEl.className = payoutReady ? 'text-xs text-emerald-600 mt-3' : 'text-xs text-slate-500 mt-3';
+  }
+=======
+  const saveDraftBtn = document.getElementById('save-draft-btn');
+  const publishBtn = document.getElementById('publish-product-btn');
+  const valid = validateOpenStoreForm();
+  if (saveDraftBtn) { saveDraftBtn.disabled = !valid; saveDraftBtn.style.opacity = valid ? '1' : '0.6'; }
+  if (publishBtn) { publishBtn.disabled = !valid; publishBtn.style.opacity = valid ? '1' : '0.6'; }
+>>>>>>> zohan-work:js/ui.js
 }
 
 // Toggle button loading state: adds small spinner and disables button
@@ -339,8 +437,11 @@ function switchAuthTab(tab) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('login-email').value;
+  const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-pass').value;
+  const role = document.getElementById('login-role')?.value || 'buyer';
+  const region = document.getElementById('login-region')?.value || 'global';
+  const rememberMe = Boolean(document.getElementById('remember-login')?.checked);
 
   if (!email || !password) {
     showToast('Please enter email and password');
@@ -348,11 +449,19 @@ async function handleLogin(e) {
   }
 
   try {
+    setAppLoading(true, 'Signing you in...');
+    setButtonLoading(document.querySelector('#login-form button[type="submit"]'), true, 'Signing in');
     showToast('Logging in...', 'loading');
     const response = await fetch(window.API_BASE + '/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({
+        email,
+        password,
+        role,
+        region,
+        provider: /@gmail\.com$/i.test(email) ? 'gmail' : 'email'
+      })
     });
 
     const text = await response.text();
@@ -360,33 +469,44 @@ async function handleLogin(e) {
     try {
       data = JSON.parse(text);
     } catch (err) {
-      showToast(`Login failed: ${response.status} ${text}`);
+      showToast(`Login failed: ${response.status} ${text}`, 'error');
       return;
     }
 
     if (!data.success) {
-      showToast(data.message || 'Login failed');
+      showToast(data.message || 'Login failed', 'error');
       return;
     }
 
-    // Store token and user data
-    localStorage.setItem('els_token', data.token);
-    localStorage.setItem('els_user', JSON.stringify(data.user));
-    
-    currentUser = data.user;
+    const userPayload = {
+      ...(data.user || {}),
+      role: (data.user && data.user.role) || role,
+      region: (data.user && data.user.region) || region,
+      provider: (data.user && data.user.provider) || (/@gmail\.com$/i.test(email) ? 'gmail' : 'email')
+    };
+
+    persistAuthSession(userPayload, data.token, rememberMe);
     enterApp();
   } catch (err) {
     console.error('Login error:', err);
-    showToast('Connection error. Make sure server is running on port 8001');
+    const attempted = window.API_BASE || 'http://localhost:8001/api';
+    showToast(`Connection error to ${attempted}. Is the backend running?`, 'error');
+  } finally {
+    setAppLoading(false);
+    setButtonLoading(document.querySelector('#login-form button[type="submit"]'), false);
   }
 }
 
 async function handleRegister(e) {
   e.preventDefault();
-  const name = document.getElementById('reg-name').value;
-  const email = document.getElementById('reg-email').value;
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
   const password = document.getElementById('reg-pass').value;
   const confirmPassword = document.getElementById('reg-confirm-pass').value;
+  const rememberMe = Boolean(document.getElementById('remember-register')?.checked);
+  const role = 'buyer';
+  const region = 'global';
+  const provider = /@gmail\.com$/i.test(email) ? 'gmail' : 'email';
 
   if (!name || !email || !password || !confirmPassword) {
     showToast('Please fill all fields');
@@ -404,11 +524,13 @@ async function handleRegister(e) {
   }
 
   try {
+    setAppLoading(true, 'Creating your account...');
+    setButtonLoading(document.querySelector('#register-form button[type="submit"]'), true, 'Creating account');
     showToast('Creating account...', 'loading');
     const response = await fetch(window.API_BASE + '/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, confirmPassword })
+      body: JSON.stringify({ name, email, password, confirmPassword, role, region, provider })
     });
 
     const text = await response.text();
@@ -416,42 +538,61 @@ async function handleRegister(e) {
     try {
       data = JSON.parse(text);
     } catch (err) {
-      showToast(`Registration failed: ${response.status} ${text}`);
+      showToast(`Registration failed: ${response.status} ${text}`, 'error');
       return;
     }
 
     if (!data.success) {
-      showToast(data.message || 'Registration failed');
+      showToast(data.message || 'Registration failed', 'error');
       return;
     }
 
-    // Store token and user data
-    localStorage.setItem('els_token', data.token);
-    localStorage.setItem('els_user', JSON.stringify(data.user));
-    
-    currentUser = data.user;
-    showToast('Account created successfully!');
+    const userPayload = {
+      ...(data.user || {}),
+      role: (data.user && data.user.role) || role,
+      region: (data.user && data.user.region) || region,
+      provider: (data.user && data.user.provider) || provider
+    };
+
+    persistAuthSession(userPayload, data.token, rememberMe);
+    showToast('Account created successfully!', 'success');
     enterApp();
   } catch (err) {
     console.error('Register error:', err);
-    showToast('Connection error. Make sure server is running on port 8001');
+    const attempted = window.API_BASE || 'http://localhost:8001/api';
+    showToast(`Connection error to ${attempted}. Is the backend running?`, 'error');
+  } finally {
+    setAppLoading(false);
+    setButtonLoading(document.querySelector('#register-form button[type="submit"]'), false);
   }
 }
 
-function enterApp() {
-  document.getElementById('auth-screen').classList.add('hidden');
-  document.getElementById('main-app').classList.remove('hidden');
-  document.getElementById('user-avatar').textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
+function enterApp(targetPage = 'home') {
+  const authScreen = document.getElementById('auth-screen');
+  const mainApp = document.getElementById('main-app');
+  if (authScreen) authScreen.classList.add('hidden');
+  if (mainApp) mainApp.classList.remove('hidden');
+  const avatar = document.getElementById('user-avatar');
+  if (avatar) avatar.textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
   lucide.createIcons();
   loadProductsFromBackend();
   updateCartBadge();
+  const role = (currentUser.role || 'buyer').toLowerCase();
+  if (role === 'seller') {
+    goTo('open-store');
+  } else {
+    goTo(targetPage);
+  }
   showToast('Welcome, ' + (currentUser.name || currentUser.email) + '!');
 }
 
 function handleLogout() {
   localStorage.removeItem('els_token');
   localStorage.removeItem('els_user');
-  currentUser = {};
+  sessionStorage.removeItem('els_token');
+  sessionStorage.removeItem('els_user');
+  currentUser = { name: 'User', email: '' };
+  window.currentUser = currentUser;
   
   document.getElementById('main-app').classList.add('hidden');
   document.getElementById('auth-screen').classList.remove('hidden');
@@ -470,32 +611,94 @@ function handleLogout() {
 }
 
 function goTo(page) {
+  if (page === 'open-store') page = 'merchant';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById('page-' + page);
   if (target) target.classList.add('active');
 
-  document.querySelectorAll('.nav-link').forEach(l => { l.style.background = l.dataset.nav === page ? 'rgba(255,255,255,0.1)' : ''; l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db'; });
-  document.querySelectorAll('.side-link').forEach(l => { l.style.background = l.dataset.nav === page ? 'rgba(255,255,255,0.1)' : ''; l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db'; });
+  document.querySelectorAll('.nav-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.nav === page);
+    l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db';
+  });
+  document.querySelectorAll('.side-link').forEach(l => {
+    l.classList.toggle('active', l.dataset.nav === page);
+    l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db';
+  });
+
+  const mobileSidebar = document.getElementById('sidebar');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  if (mobileSidebar) mobileSidebar.classList.remove('open');
+  if (sidebarOverlay) sidebarOverlay.classList.remove('open');
 
   if (page === 'cart') renderCart();
   if (page === 'payment') renderPayment();
   if (page === 'shop') renderShop();
   if (page === 'messages') renderConversations();
+<<<<<<< HEAD:frontend/js/ui.js
   if (page === 'my-store') { if (window.MyStore) window.MyStore.init(); }
   if (page === 'orders') { if (typeof loadBuyerOrders === 'function') loadBuyerOrders(); }
   window.scrollTo(0, 0);
+=======
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+>>>>>>> zohan-work:js/ui.js
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-overlay').classList.toggle('open');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  if (!sidebar || !overlay) return;
+  const isOpen = sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', !isOpen);
+  overlay.classList.toggle('open', !isOpen);
 }
 
+<<<<<<< HEAD:frontend/js/ui.js
+function showToast(msg, type = 'info', duration = 2600) {
+=======
+document.addEventListener('DOMContentLoaded', () => {
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  if (sidebarToggle) sidebarToggle.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggleSidebar();
+  });
+  if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+  document.addEventListener('click', (event) => {
+    const sidebar = document.getElementById('sidebar');
+    const isOpen = sidebar && sidebar.classList.contains('open');
+    if (!isOpen) return;
+    const insideSidebar = sidebar.contains(event.target);
+    const toggleButton = document.getElementById('sidebar-toggle');
+    if (toggleButton && toggleButton.contains(event.target)) return;
+    if (!insideSidebar) toggleSidebar();
+  });
+});
+
 function showToast(msg) {
+>>>>>>> zohan-work:js/ui.js
   const t = document.getElementById('toast');
+  if (!t) return;
+  const normalizedType = ['success', 'error', 'loading', 'info'].includes(type) ? type : 'info';
+  t.className = `toast-msg ${normalizedType}`;
   t.textContent = msg;
   t.classList.remove('hidden');
-  setTimeout(() => t.classList.add('hidden'), 2500);
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => t.classList.add('hidden'), duration);
+}
+
+function persistAuthSession(user, token, rememberMe = true) {
+  const safeUser = { ...(user || {}), role: user?.role || 'buyer', region: user?.region || 'global', provider: user?.provider || 'email' };
+  if (rememberMe) {
+    localStorage.setItem('els_token', token);
+    localStorage.setItem('els_user', JSON.stringify(safeUser));
+  } else {
+    sessionStorage.setItem('els_token', token);
+    sessionStorage.setItem('els_user', JSON.stringify(safeUser));
+    localStorage.removeItem('els_token');
+    localStorage.removeItem('els_user');
+  }
+  currentUser = safeUser;
+  window.currentUser = safeUser;
 }
 
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
@@ -529,14 +732,20 @@ function initHomeCarousel(images = [], speedPerImage = 6) {
 // Restore session from localStorage on page load
 async function restoreSession() {
 
+<<<<<<< HEAD:frontend/js/ui.js
+  const token = localStorage.getItem('els_token') || sessionStorage.getItem('els_token');
+  const savedUser = localStorage.getItem('els_user') || sessionStorage.getItem('els_user');
+=======
   const token = localStorage.getItem('els_token');
   const userData = localStorage.getItem('els_user');
+  const apiBase = window.API_BASE || 'http://localhost:8001/api';
+>>>>>>> zohan-work:js/ui.js
 
-  if (!token || !userData) return false;
+  if (!token || !savedUser) return false;
 
   try {
 
-    const response = await fetch(`${window.API_BASE}/auth/verify`, {
+    const response = await fetch(`${apiBase}/auth/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -549,10 +758,14 @@ async function restoreSession() {
     if (!data.success) {
       localStorage.removeItem('els_token');
       localStorage.removeItem('els_user');
+      sessionStorage.removeItem('els_token');
+      sessionStorage.removeItem('els_user');
       return false;
     }
 
-    currentUser = JSON.parse(userData);
+    const parsedUser = JSON.parse(savedUser);
+    currentUser = parsedUser;
+    window.currentUser = parsedUser;
 
     enterApp();
 
@@ -564,6 +777,8 @@ async function restoreSession() {
 
     localStorage.removeItem('els_token');
     localStorage.removeItem('els_user');
+    sessionStorage.removeItem('els_token');
+    sessionStorage.removeItem('els_user');
 
     return false;
 
@@ -608,27 +823,56 @@ document.addEventListener('DOMContentLoaded', async () => {
 function handleContact(e) {
   e.preventDefault();
   const form = document.getElementById('contact-form');
-  const nameInput = form.querySelector('input[name="name"]');
-  const emailInput = form.querySelector('input[name="email"]');
-  const subjectInput = form.querySelector('input[name="subject"]');
-  const messageInput = form.querySelector('textarea[name="message"]');
+  const success = document.getElementById('contact-success');
+  const nameInput = document.getElementById('contact-name');
+  const emailInput = document.getElementById('contact-email');
+  const messageInput = document.getElementById('contact-msg');
 
-  if (!nameInput.value || !emailInput.value || !subjectInput.value || !messageInput.value) {
+  if (!form || !nameInput || !emailInput || !messageInput) return;
+
+  const name = nameInput.value.trim();
+  const email = emailInput.value.trim();
+  const message = messageInput.value.trim();
+
+  if (!name || !email || !message) {
     showToast('Please fill all fields');
     return;
   }
 
-  // Show success page
-  document.getElementById('contact-form').style.display = 'none';
-  document.getElementById('contact-success').classList.remove('hidden');
-  
-  // Log contact attempt (no backend yet)
-  console.log('Contact submitted:', {
-    name: nameInput.value,
-    email: emailInput.value,
-    subject: subjectInput.value,
-    message: messageInput.value
-  });
+  const alertPayload = {
+    id: `contact-${Date.now()}`,
+    name,
+    email,
+    subject: 'Carrier logistics notification',
+    message,
+    createdAt: new Date().toISOString(),
+    source: 'contact'
+  };
+
+  try {
+    const existingAlerts = JSON.parse(localStorage.getItem('els_logistics_alerts') || '[]');
+    existingAlerts.unshift(alertPayload);
+    localStorage.setItem('els_logistics_alerts', JSON.stringify(existingAlerts.slice(0, 20)));
+    localStorage.setItem('els_latest_logistics_alert', JSON.stringify(alertPayload));
+
+    if (typeof window.dispatchContactToLogistics === 'function') {
+      window.dispatchContactToLogistics(alertPayload);
+    } else if (typeof window.startLogisticsLiveStream === 'function') {
+      window.startLogisticsLiveStream(alertPayload);
+    }
+
+    form.style.display = 'none';
+    if (success) success.classList.remove('hidden');
+    form.reset();
+    showToast('Carrier alert sent to logistics');
+
+    if (typeof goTo === 'function') {
+      setTimeout(() => goTo('logistics'), 250);
+    }
+  } catch (err) {
+    console.error('Failed to dispatch logistics alert', err);
+    showToast('Could not send alert right now');
+  }
 }
 
 // Logistics Role Toggle

@@ -35,4 +35,8 @@ async function initializeTransaction(params) {
   return paystackRequest('POST', '/transaction/initialize', params);
 }
 
-module.exports = { verifyTransaction, initializeTransaction };
+async function createSubaccount(params) {
+  return paystackRequest('POST', '/subaccount', params);
+}
+
+module.exports = { verifyTransaction, initializeTransaction, createSubaccount };

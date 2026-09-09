@@ -21,8 +21,32 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+    enum: ['buyer', 'seller', 'delivery', 'user', 'admin'],
+    default: 'buyer'
+  },
+  region: {
+    type: String,
+    default: 'global'
+  },
+  avatar: {
+    type: String,
+    default: ''
+  },
+  phone: {
+    type: String,
+    default: ''
+  },
+  bio: {
+    type: String,
+    default: ''
+  },
+  logistics_id: {
+    type: String,
+    default: ''
+  },
+  provider: {
+    type: String,
+    default: 'email'
   },
   created_at: {
     type: Date,

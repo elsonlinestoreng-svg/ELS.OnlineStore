@@ -2,8 +2,39 @@ const express = require('express');
 const router = express.Router();
 const Store = require('../models/Store');
 const auth = require('../middleware/auth');
+const { createSubaccount } = require('../services/paystack');
 
 const PAYMENT_METHODS = ['bank_transfer', 'cash_on_delivery', 'google_pay', 'international_card'];
+
+async function maybeCreatePaystackSubaccount(store) {
+  if (store.paystack_subaccount_code) return store.paystack_subaccount_code;
+  if (!process.env.PAYSTACK_SECRET_KEY) return null;
+  if (!store.paystack_business_name || !store.paystack_contact_email || !store.paystack_settlement_bank || !store.paystack_account_number || !store.paystack_account_name) return null;
+
+  try {
+    const result = await createSubaccount({
+      business_name: store.paystack_business_name,
+      settlement_bank: store.paystack_settlement_bank,
+      account_number: store.paystack_account_number,
+      percentage_charge: store.paystack_percentage_charge || 0,
+      primary_contact_name: store.paystack_account_name,
+      primary_contact_email: store.paystack_contact_email,
+      description: `ELS seller ${store.store_name}`
+    });
+
+    if (result && result.status && result.data && result.data.subaccount_code) {
+      store.paystack_subaccount_code = result.data.subaccount_code;
+      store.paystack_verification_status = 'verified';
+      await store.save();
+      return store.paystack_subaccount_code;
+    }
+
+    return null;
+  } catch (err) {
+    console.error('Paystack subaccount creation failed:', err);
+    return null;
+  }
+}
 
 // Create store
 router.post('/', auth, async (req, res) => {
@@ -17,9 +48,17 @@ router.post('/', auth, async (req, res) => {
       });
     }
 
-    const { store_name, description, bank_account_name, bank_account_number, bank_name, preferred_payment_method } = req.body;
+    const {
+      store_name, description, bank_account_name, bank_account_number, bank_name,
+      preferred_payment_method, bank_verification_status, payment_verification_note,
+      paystack_business_name, paystack_contact_email, paystack_settlement_bank,
+      paystack_account_number, paystack_account_name, paystack_percentage_charge
+    } = req.body;
 
-    if (!store_name || !bank_account_name || !bank_account_number || !bank_name) {
+    const finalBankAccountName = bank_account_name || paystack_account_name || '';
+    const finalBankAccountNumber = bank_account_number || paystack_account_number || '';
+
+    if (!store_name || !finalBankAccountName || !finalBankAccountNumber || !bank_name) {
       return res.status(400).json({
         success: false,
         message: 'Store name, bank account name, number, and bank name are required'
@@ -41,11 +80,21 @@ router.post('/', auth, async (req, res) => {
       bank_account_number,
       bank_name,
       preferred_payment_method: preferred_payment_method || 'bank_transfer',
+      bank_verification_status: bank_verification_status || 'pending_verification',
+      payment_verification_note: payment_verification_note || '',
+      paystack_business_name: paystack_business_name || '',
+      paystack_contact_email: paystack_contact_email || '',
+      paystack_settlement_bank: paystack_settlement_bank || '',
+      paystack_account_number: paystack_account_number || '',
+      paystack_account_name: paystack_account_name || '',
+      paystack_percentage_charge: Number(paystack_percentage_charge || 0),
+      paystack_verification_status: paystack_business_name && paystack_contact_email ? 'pending_verification' : 'pending_verification',
       logo_url: req.body.logo_url || '',
       banner_url: req.body.banner_url || ''
     });
 
     await store.save();
+    await maybeCreatePaystackSubaccount(store);
 
     res.status(201).json({
       success: true,
@@ -90,7 +139,7 @@ router.get('/:id', async (req, res) => {
   try {
     const store = await Store.findById(req.params.id)
       .populate('owner_id', 'name email')
-      .select('-bank_account_number -bank_account_name -paystack_subaccount_code');
+      .select('-bank_account_number -bank_account_name -paystack_subaccount_code -paystack_contact_email -paystack_account_number -paystack_account_name');
 
     if (!store) {
       return res.status(404).json({ success: false, message: 'Store not found' });
@@ -137,7 +186,10 @@ router.put('/:id', auth, async (req, res) => {
     const allowedUpdates = [
       'store_name', 'description', 'logo_url', 'banner_url',
       'bank_account_name', 'bank_account_number', 'bank_name',
-      'preferred_payment_method'
+      'preferred_payment_method', 'bank_verification_status', 'payment_verification_note',
+      'paystack_business_name', 'paystack_contact_email', 'paystack_settlement_bank',
+      'paystack_account_number', 'paystack_account_name', 'paystack_percentage_charge',
+      'paystack_verification_status', 'paystack_subaccount_code'
     ];
 
     allowedUpdates.forEach(field => {
@@ -147,6 +199,7 @@ router.put('/:id', auth, async (req, res) => {
     });
 
     await store.save();
+    await maybeCreatePaystackSubaccount(store);
 
     res.json({ success: true, message: 'Store updated', store });
   } catch (err) {

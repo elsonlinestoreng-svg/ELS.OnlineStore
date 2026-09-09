@@ -6,6 +6,7 @@ const Transaction = require('../models/Transaction');
 const Product = require('../models/Product');
 const Store = require('../models/Store');
 const auth = require('../middleware/auth');
+const { initializePayment } = require('../services/payment-methods');
 const { notify } = require('../services/notify');
 
 // Generate unique reference
@@ -18,7 +19,11 @@ function generateRef(prefix) {
 // Checkout
 router.post('/', auth, async (req, res) => {
   try {
-    const { shipping_address } = req.body;
+    const { shipping_address, payment_method = 'card' } = req.body;
+
+    // Validate payment method
+    const validMethods = ['card', 'bank', 'google_pay', 'cod', 'cash_on_delivery'];
+    const selectedMethod = validMethods.includes(payment_method) ? payment_method : 'card';
 
     // Get cart
     const cart = await Cart.findOne({ buyer_id: req.user.userId });
@@ -115,11 +120,12 @@ router.post('/', auth, async (req, res) => {
       is_platform: true
     });
 
-    // Create transaction record
+    // Create transaction record with selected payment method
     const transaction = new Transaction({
       parent_transaction_id: parentTxnId,
       buyer_id: req.user.userId,
       total_amount: totalAmount,
+      payment_method: selectedMethod,
       split_details: splitDetails,
       platform_commission_total: platformTotal,
       order_ids: orderIds,
@@ -144,8 +150,39 @@ router.post('/', auth, async (req, res) => {
     // Clear cart
     await Cart.findOneAndDelete({ buyer_id: req.user.userId });
 
-    // TODO: Integrate with Paystack/Flutterwave here
-    // For now, return transaction details for manual payment testing
+    // Initialize payment based on selected method
+    let paymentResponse = null;
+    try {
+      const currency = 'NGN';
+      const customerEmail = req.user.email || 'customer@els.store';
+      const oneSellerGroup = Object.values(sellerGroups).length === 1 ? Object.values(sellerGroups)[0] : null;
+      const subaccountCode = oneSellerGroup ? (await Store.findById(oneSellerGroup.store_id)).paystack_subaccount_code : null;
+
+      const initializeData = {
+        email: customerEmail,
+        amount: Math.round(totalAmount * 100), // Convert to kobo/cents
+        reference: parentTxnId,
+        currency,
+        metadata: {
+          parent_transaction_id: parentTxnId,
+          order_ids: orderIds,
+          split_details: splitDetails,
+          payment_method: selectedMethod
+        }
+      };
+
+      // Add Paystack subaccount if single seller
+      if (['card', 'bank'].includes(selectedMethod) && subaccountCode) {
+        initializeData.subaccount = subaccountCode;
+        initializeData.transaction_charge = Math.round(oneSellerGroup.subtotal * oneSellerGroup.commission_rate / 100 * 100) || 0;
+        initializeData.bearer = 'account';
+      }
+
+      paymentResponse = await initializePayment(selectedMethod, initializeData);
+    } catch (err) {
+      console.error('Payment initialization error:', err);
+      // Don't fail checkout for payment gateway issues - client can retry
+    }
 
     res.status(201).json({
       success: true,
@@ -153,7 +190,8 @@ router.post('/', auth, async (req, res) => {
       transaction: {
         parent_transaction_id: parentTxnId,
         total_amount: totalAmount,
-        currency: 'KES',
+        currency: 'NGN',
+        payment_method: selectedMethod,
         split_summary: splitDetails.map(s => ({
           seller: s.seller_id || 'Platform',
           amount: s.amount,
@@ -163,7 +201,7 @@ router.post('/', auth, async (req, res) => {
         order_count: orderIds.length,
         orders: orderIds
       },
-      payment_url: null // Will be set when gateway is integrated
+      payment_data: paymentResponse
     });
   } catch (err) {
     console.error('Checkout error:', err);
