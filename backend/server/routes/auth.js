@@ -20,7 +20,7 @@ router.get('/', (req, res) => {
 // Register User
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, role, region, provider } = req.body;
+    const { name, email, password, confirmPassword, role, region, provider, continent, country, state, local_region } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide name, email, and password' });
@@ -45,15 +45,16 @@ router.post('/register', async (req, res) => {
       password,
       role: role || 'buyer',
       region: region || 'global',
+      continent: continent || 'global', country: country || 'global', state: state || 'global', local_region: local_region || 'global',
       provider: provider || (/@gmail\.com$/i.test(email) ? 'gmail' : 'email')
     });
     await user.save();
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, region: user.region, continent: user.continent, country: user.country, state: user.state, local_region: user.local_region }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.status(201).json({
       success: true, message: 'User registered successfully', token,
-      user: { _id: user._id, name: user.name, email: user.email }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, region: user.region, continent: user.continent, country: user.country, state: user.state, local_region: user.local_region, provider: user.provider }
     });
   } catch (err) {
     console.error('Register error:', err);
@@ -64,7 +65,7 @@ router.post('/register', async (req, res) => {
 // Login User
 router.post('/login', async (req, res) => {
   try {
-    const { email, password, role, region, provider } = req.body;
+    const { email, password, role, region, provider, continent, country, state, local_region } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Please provide email and password' });
@@ -86,14 +87,18 @@ router.post('/login', async (req, res) => {
 
     user.role = normalizedRole;
     user.region = normalizedRegion;
+    user.continent = continent || user.continent || 'global';
+    user.country = country || user.country || 'global';
+    user.state = state || user.state || 'global';
+    user.local_region = local_region || user.local_region || 'global';
     user.provider = normalizedProvider;
     await user.save();
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
+    const token = jwt.sign({ userId: user._id, email: user.email, region: user.region, continent: user.continent, country: user.country, state: user.state, local_region: user.local_region }, JWT_SECRET, { expiresIn: JWT_EXPIRE });
 
     res.json({
       success: true, message: 'Login successful', token,
-      user: { _id: user._id, name: user.name, email: user.email, role: user.role, region: user.region, provider: user.provider }
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role, region: user.region, continent: user.continent, country: user.country, state: user.state, local_region: user.local_region, provider: user.provider }
     });
   } catch (err) {
     console.error('Login error:', err);

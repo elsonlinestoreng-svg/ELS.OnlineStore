@@ -26,6 +26,17 @@ const ProductSchema = new mongoose.Schema({
     required: true
   },
 
+  region: {
+    type: String,
+    default: 'global',
+    lowercase: true,
+    trim: true
+  },
+  continent: { type: String, default: 'global', lowercase: true, trim: true },
+  country: { type: String, default: 'global', lowercase: true, trim: true },
+  state: { type: String, default: 'global', lowercase: true, trim: true },
+  local_region: { type: String, default: 'global', lowercase: true, trim: true },
+
   images: {
     type: [String],
     default: []

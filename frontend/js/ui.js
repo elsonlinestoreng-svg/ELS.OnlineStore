@@ -11,6 +11,98 @@ let isLogisticsProvider = false;
 let logisticsFees = { 'Standard': 5, 'Express': 12, 'Overnight': 25, 'Pickup': 0 };
 window.activeUploads = [];
 
+const regionalRoutes = {
+  global: {
+    label: 'Global',
+    countries: { global: { label: 'Global Market', states: { global: ['All locations'] } } }
+  },
+  africa: {
+    label: 'Africa',
+    countries: {
+      kenya: {
+        label: 'Kenya',
+        states: {
+          nairobi: ['Nairobi CBD', 'Westlands', 'Kasarani', 'Embakasi'],
+          mombasa: ['Mombasa Island', 'Nyali', 'Likoni'],
+          kisumu: ['Kisumu Central', 'Manyatta', 'Nyalenda'],
+          nakuru: ['Nakuru Town', 'Naivasha', 'Eldoret Road']
+        }
+      },
+      nigeria: {
+        label: 'Nigeria',
+        states: {
+          lagos: ['Lagos Island', 'Ikeja', 'Lekki', 'Yaba'],
+          fct: ['Abuja Municipal', 'Gwarinpa', 'Kubwa', 'Wuse'],
+          rivers: ['Port Harcourt City', 'Obio-Akpor', 'Eleme'],
+          oyo: ['Ibadan North', 'Ibadan South-West', 'Akinyele'],
+          kano: ['Kano Municipal', 'Nassarawa', 'Fagge'],
+          enugu: ['Enugu North', 'Enugu South', 'Nsukka']
+        }
+      }
+    }
+  }
+};
+
+function routeSlug(value) {
+  return String(value || 'global').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'global';
+}
+
+function setRegionOptions(select, options, placeholder) {
+  if (!select) return;
+  select.innerHTML = Object.entries(options).map(([value, item]) => `<option value="${value}">${item.label || item}</option>`).join('');
+  if (placeholder) select.insertAdjacentHTML('afterbegin', `<option value="" disabled selected>${placeholder}</option>`);
+}
+
+function setupRegionalSelectors() {
+  ['login', 'register'].forEach(scope => {
+    const continent = document.getElementById(scope === 'register' ? 'reg-continent' : 'login-continent');
+    const country = document.querySelector(`[data-region-country="${scope}"]`);
+    const state = document.getElementById(scope === 'register' ? 'reg-state' : 'login-state');
+    const local = document.getElementById(scope === 'register' ? 'reg-local-region' : 'login-local-region');
+    const hiddenRegion = document.getElementById(scope === 'register' ? 'reg-region' : 'login-region');
+    if (!country || !state || !local) return;
+
+    const update = () => {
+      const continentData = regionalRoutes[continent?.value || 'global'] || regionalRoutes.global;
+      const countryData = continentData.countries[country.value] || Object.values(continentData.countries)[0];
+      const states = countryData?.states || { global: ['All locations'] };
+      setRegionOptions(state, Object.fromEntries(Object.keys(states).map(value => [value, { label: value.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) }])), 'Select state');
+      if (!state.value || !states[state.value]) state.value = Object.keys(states)[0];
+      setRegionOptions(local, Object.fromEntries((states[state.value] || []).map(value => [routeSlug(value), { label: value }])), 'Select local area');
+      if (!local.value || !(states[state.value] || []).some(value => routeSlug(value) === local.value)) local.value = routeSlug((states[state.value] || ['global'])[0]);
+      if (hiddenRegion) hiddenRegion.value = `${routeSlug(continent?.value)}:${routeSlug(country.value)}:${routeSlug(state.value)}:${routeSlug(local.value)}`;
+    };
+
+    if (continent) {
+      setRegionOptions(continent, { global: regionalRoutes.global, africa: regionalRoutes.africa }, 'Select continent');
+      continent.addEventListener('change', () => {
+        const data = regionalRoutes[continent.value] || regionalRoutes.global;
+        setRegionOptions(country, data.countries, 'Select country');
+        update();
+      });
+    }
+    country.addEventListener('change', update);
+    state.addEventListener('change', update);
+    local.addEventListener('change', update);
+    if (continent) continent.value = 'africa';
+    const data = regionalRoutes.africa;
+    setRegionOptions(country, data.countries, 'Select country');
+    country.value = 'nigeria';
+    update();
+  });
+}
+
+function getSelectedRoute(scope) {
+  const prefix = scope === 'register' ? 'reg' : 'login';
+  return {
+    continent: document.getElementById(`${prefix}-continent`)?.value || 'global',
+    country: document.getElementById(`${prefix}-country`)?.value || 'global',
+    state: document.getElementById(`${prefix}-state`)?.value || 'global',
+    local_region: document.getElementById(`${prefix}-local-region`)?.value || 'global',
+    region: document.getElementById(`${prefix}-region`)?.value || 'global'
+  };
+}
+
 // Ensure `window.API_BASE` is available early so session restore works
 if (!window.API_BASE) {
   try {
@@ -342,7 +434,6 @@ function acceptSuggestedCategory() {
 }
 
 function updateAddProductButtonState() {
-<<<<<<< HEAD:frontend/js/ui.js
   const btn = document.getElementById('add-product-btn');
   const draftBtn = document.getElementById('save-draft-btn');
   const statusEl = document.getElementById('product-publish-status');
@@ -361,13 +452,6 @@ function updateAddProductButtonState() {
       : 'Add payout details in store setup to enable direct publishing.';
     statusEl.className = payoutReady ? 'text-xs text-emerald-600 mt-3' : 'text-xs text-slate-500 mt-3';
   }
-=======
-  const saveDraftBtn = document.getElementById('save-draft-btn');
-  const publishBtn = document.getElementById('publish-product-btn');
-  const valid = validateOpenStoreForm();
-  if (saveDraftBtn) { saveDraftBtn.disabled = !valid; saveDraftBtn.style.opacity = valid ? '1' : '0.6'; }
-  if (publishBtn) { publishBtn.disabled = !valid; publishBtn.style.opacity = valid ? '1' : '0.6'; }
->>>>>>> zohan-work:js/ui.js
 }
 
 // Toggle button loading state: adds small spinner and disables button
@@ -440,7 +524,8 @@ async function handleLogin(e) {
   const email = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-pass').value;
   const role = document.getElementById('login-role')?.value || 'buyer';
-  const region = document.getElementById('login-region')?.value || 'global';
+  const route = getSelectedRoute('login');
+  const region = route.region;
   const rememberMe = Boolean(document.getElementById('remember-login')?.checked);
 
   if (!email || !password) {
@@ -460,6 +545,10 @@ async function handleLogin(e) {
         password,
         role,
         region,
+        continent: route.continent,
+        country: route.country,
+        state: route.state,
+        local_region: route.local_region,
         provider: /@gmail\.com$/i.test(email) ? 'gmail' : 'email'
       })
     });
@@ -483,6 +572,10 @@ async function handleLogin(e) {
       role: (data.user && data.user.role) || role,
       region: (data.user && data.user.region) || region,
       provider: (data.user && data.user.provider) || (/@gmail\.com$/i.test(email) ? 'gmail' : 'email')
+      ,continent: (data.user && data.user.continent) || route.continent
+      ,country: (data.user && data.user.country) || route.country
+      ,state: (data.user && data.user.state) || route.state
+      ,local_region: (data.user && data.user.local_region) || route.local_region
     };
 
     persistAuthSession(userPayload, data.token, rememberMe);
@@ -505,7 +598,8 @@ async function handleRegister(e) {
   const confirmPassword = document.getElementById('reg-confirm-pass').value;
   const rememberMe = Boolean(document.getElementById('remember-register')?.checked);
   const role = 'buyer';
-  const region = 'global';
+  const route = getSelectedRoute('register');
+  const region = route.region;
   const provider = /@gmail\.com$/i.test(email) ? 'gmail' : 'email';
 
   if (!name || !email || !password || !confirmPassword) {
@@ -530,7 +624,7 @@ async function handleRegister(e) {
     const response = await fetch(window.API_BASE + '/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, confirmPassword, role, region, provider })
+      body: JSON.stringify({ name, email, password, confirmPassword, role, region, provider, continent: route.continent, country: route.country, state: route.state, local_region: route.local_region })
     });
 
     const text = await response.text();
@@ -552,6 +646,10 @@ async function handleRegister(e) {
       role: (data.user && data.user.role) || role,
       region: (data.user && data.user.region) || region,
       provider: (data.user && data.user.provider) || provider
+      ,continent: (data.user && data.user.continent) || route.continent
+      ,country: (data.user && data.user.country) || route.country
+      ,state: (data.user && data.user.state) || route.state
+      ,local_region: (data.user && data.user.local_region) || route.local_region
     };
 
     persistAuthSession(userPayload, data.token, rememberMe);
@@ -576,6 +674,7 @@ function enterApp(targetPage = 'home') {
   if (avatar) avatar.textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
   lucide.createIcons();
   loadProductsFromBackend();
+  if (window.productCatalog) window.productCatalog.loadProducts();
   updateCartBadge();
   const role = (currentUser.role || 'buyer').toLowerCase();
   if (role === 'seller') {
@@ -634,13 +733,9 @@ function goTo(page) {
   if (page === 'payment') renderPayment();
   if (page === 'shop') renderShop();
   if (page === 'messages') renderConversations();
-<<<<<<< HEAD:frontend/js/ui.js
   if (page === 'my-store') { if (window.MyStore) window.MyStore.init(); }
   if (page === 'orders') { if (typeof loadBuyerOrders === 'function') loadBuyerOrders(); }
   window.scrollTo(0, 0);
-=======
-  window.scrollTo({ top: 0, behavior: 'smooth' });
->>>>>>> zohan-work:js/ui.js
 }
 
 function toggleSidebar() {
@@ -652,30 +747,7 @@ function toggleSidebar() {
   overlay.classList.toggle('open', !isOpen);
 }
 
-<<<<<<< HEAD:frontend/js/ui.js
 function showToast(msg, type = 'info', duration = 2600) {
-=======
-document.addEventListener('DOMContentLoaded', () => {
-  const sidebarToggle = document.getElementById('sidebar-toggle');
-  const sidebarOverlay = document.getElementById('sidebar-overlay');
-  if (sidebarToggle) sidebarToggle.addEventListener('click', (event) => {
-    event.stopPropagation();
-    toggleSidebar();
-  });
-  if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
-  document.addEventListener('click', (event) => {
-    const sidebar = document.getElementById('sidebar');
-    const isOpen = sidebar && sidebar.classList.contains('open');
-    if (!isOpen) return;
-    const insideSidebar = sidebar.contains(event.target);
-    const toggleButton = document.getElementById('sidebar-toggle');
-    if (toggleButton && toggleButton.contains(event.target)) return;
-    if (!insideSidebar) toggleSidebar();
-  });
-});
-
-function showToast(msg) {
->>>>>>> zohan-work:js/ui.js
   const t = document.getElementById('toast');
   if (!t) return;
   const normalizedType = ['success', 'error', 'loading', 'info'].includes(type) ? type : 'info';
@@ -731,15 +803,9 @@ function initHomeCarousel(images = [], speedPerImage = 6) {
 
 // Restore session from localStorage on page load
 async function restoreSession() {
-
-<<<<<<< HEAD:frontend/js/ui.js
   const token = localStorage.getItem('els_token') || sessionStorage.getItem('els_token');
   const savedUser = localStorage.getItem('els_user') || sessionStorage.getItem('els_user');
-=======
-  const token = localStorage.getItem('els_token');
-  const userData = localStorage.getItem('els_user');
   const apiBase = window.API_BASE || 'http://localhost:8001/api';
->>>>>>> zohan-work:js/ui.js
 
   if (!token || !savedUser) return false;
 
@@ -787,6 +853,8 @@ async function restoreSession() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+
+  setupRegionalSelectors();
 
   initHomeCarousel();
 

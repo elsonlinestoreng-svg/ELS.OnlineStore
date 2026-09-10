@@ -341,7 +341,8 @@ function renderShop() {
 
   // FALLBACK: Client-side filtering (when ProductCatalog not available)
   const search = (document.getElementById('shop-search')?.value || '').toLowerCase();
-  let filtered = allProducts.filter(p => p.name && (p.public !== false || p.seller === currentUser.name));
+  const region = (window.currentUser?.region || 'global').toLowerCase();
+  let filtered = allProducts.filter(p => p.name && (p.public !== false || p.seller === currentUser.name) && (!p.region || p.region === 'global' || p.region === region));
   if (currentCategory !== 'All') filtered = filtered.filter(p => p.category === currentCategory);
   if (search) filtered = filtered.filter(p => (p.name || '').toLowerCase().includes(search) || (p.description || '').toLowerCase().includes(search));
   const grid = document.getElementById('shop-grid');
@@ -389,7 +390,8 @@ function filterShopCategory(cat) {
 }
 function renderHomeProducts() {
   const container = document.getElementById('home-products');
-  const prods = allProducts.filter(p => p.name).slice(-4).reverse();
+  const region = (window.currentUser?.region || 'global').toLowerCase();
+  const prods = allProducts.filter(p => p.name && (!p.region || p.region === 'global' || p.region === region)).slice(-4).reverse();
   if (!prods.length) {
     container.innerHTML = '<div class="col-span-full text-center py-12"><p class="text-gray-400 text-lg">📦 No products yet.</p><p class="text-gray-500 text-sm mt-2">Be the first to <button onclick="goTo(\'open-store\')" class="underline font-semibold" style="color:#e94560;">open a store</button> and list something!</p></div>';
     return;
@@ -501,35 +503,10 @@ async function handleAddProduct(e) {
     allProducts.push(localProd); window.lastCreatedProductId = localProd.__backendId;
     renderShop(); renderHomeProducts(); renderMyProducts(); try { saveProductsToLocal(); } catch (e) {} createdOk = true;
   }
-<<<<<<< HEAD:frontend/js/products.js
   btn.disabled = false; document.getElementById('add-prod-text').classList.remove('hidden'); document.getElementById('add-prod-loading').classList.add('hidden');
   if (createdOk) { document.getElementById('add-product-form').reset(); removeImage(); document.getElementById('prod-image').value = ''; showToast(forcePublish ? '🎉 Product published successfully!' : '📝 Product saved as draft.'); try { saveProductsToLocal(); } catch (e) {} }
   else { showToast('Failed to list product. Try again.'); }
   if (createdOk) { try { const cat = (sdkResult && sdkResult.item && sdkResult.item.category) || productPayload.category; if (cat) filterShopCategory(cat); else goTo('shop'); } catch (e) { goTo('shop'); } }
-=======
-  const saveDraftBtn = document.getElementById('save-draft-btn');
-  const publishBtn = document.getElementById('publish-product-btn');
-  if (saveDraftBtn) { saveDraftBtn.disabled = !validateOpenStoreForm(); }
-  if (publishBtn) { publishBtn.disabled = !validateOpenStoreForm(); }
-  if (createdOk) {
-    document.getElementById('add-product-form').reset();
-    removeImage();
-    document.getElementById('prod-image').value = '';
-    showToast(actionPublish ? '🎉 Product published successfully!' : 'Draft saved successfully!');
-    try { saveProductsToLocal(); } catch (e) {}
-  } else {
-    showToast('Failed to list product. Try again.');
-  }
-  if (createdOk) {
-    try {
-      const cat = (sdkResult && sdkResult.item && sdkResult.item.category) || productPayload.category;
-      if (cat) filterShopCategory(cat);
-      else goTo('shop');
-    } catch (e) {
-      goTo('shop');
-    }
-  }
->>>>>>> zohan-work:js/products.js
 }
 
 async function deleteProduct(id, btnEl) {

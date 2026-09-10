@@ -12,6 +12,10 @@ class ProductCatalog {
       min_price: 0,    // minimum price
       max_price: 1000000, // maximum price
       sort: 'newest',  // sort order
+      region: window.currentUser?.region || 'global',
+      country: window.currentUser?.country || 'global',
+      state: window.currentUser?.state || 'global',
+      local_region: window.currentUser?.local_region || 'global',
       page: 1,         // pagination
       limit: 20,       // items per page
     };
@@ -102,6 +106,10 @@ class ProductCatalog {
 
     try {
       this.isLoading = true;
+      this.filters.region = (window.currentUser?.region || 'global').toLowerCase();
+      this.filters.country = (window.currentUser?.country || 'global').toLowerCase();
+      this.filters.state = (window.currentUser?.state || 'global').toLowerCase();
+      this.filters.local_region = (window.currentUser?.local_region || 'global').toLowerCase();
       
       // Show loading state
       const container = document.getElementById('shop-grid');
@@ -112,7 +120,7 @@ class ProductCatalog {
       // Try to load from API
       try {
         const response = await window.api.get('/products', this.filters);
-        this.products = response.data || [];
+        this.products = Array.isArray(response) ? response : (response.data || []);
         this.totalCount = response.meta?.totalCount || this.products.length;
       } catch (apiError) {
         // If API not available, fall back to client-side filtering
@@ -134,7 +142,8 @@ class ProductCatalog {
    * Client-side filtering fallback (when API not available)
    */
   filterClientSide() {
-    let filtered = allProducts.filter(p => p.name && (p.public !== false || p.seller === currentUser?.name));
+    const region = (window.currentUser?.region || 'global').toLowerCase();
+    let filtered = allProducts.filter(p => p.name && (p.public !== false || p.seller === currentUser?.name) && (!p.region || p.region === 'global' || p.region === region));
 
     // Category filter
     if (this.filters.category) {
@@ -307,6 +316,10 @@ class ProductCatalog {
       min_price: 0,
       max_price: 1000000,
       sort: 'newest',
+      region: window.currentUser?.region || 'global',
+      country: window.currentUser?.country || 'global',
+      state: window.currentUser?.state || 'global',
+      local_region: window.currentUser?.local_region || 'global',
       page: 1,
       limit: 20,
     };

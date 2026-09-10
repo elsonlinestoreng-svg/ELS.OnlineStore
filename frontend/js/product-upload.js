@@ -99,7 +99,12 @@ async function saveProduct() {
     images,
     primary_image: images[0],
     image_data: images[0],
-    public: true
+    public: true,
+    region: window.currentUser?.region || 'global',
+    continent: window.currentUser?.continent || 'global',
+    country: window.currentUser?.country || 'global',
+    state: window.currentUser?.state || 'global',
+    local_region: window.currentUser?.local_region || 'global'
   };
 
   const token = localStorage.getItem('els_token') || '';

@@ -24,10 +24,6 @@ function processProductImageFile(file) {
     showToast('You can upload up to ' + maxImages + ' images per product.');
     return;
   }
-<<<<<<< HEAD:frontend/js/cloudupload.js
-
-=======
->>>>>>> zohan-work:js/cloudupload.js
   const reader = new FileReader();
   reader.onload = async (e) => {
     try {

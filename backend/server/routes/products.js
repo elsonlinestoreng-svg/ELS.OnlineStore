@@ -4,7 +4,7 @@ const Product = require('../models/Product');
 const auth = require('../middleware/auth');
 
 // Whitelist of allowed fields
-const ALLOWED_FIELDS = ['name', 'price', 'category', 'description', 'images', 'primary_image', 'image_data', 'public'];
+const ALLOWED_FIELDS = ['name', 'price', 'category', 'description', 'images', 'primary_image', 'image_data', 'public', 'region', 'continent', 'country', 'state', 'local_region'];
 
 function filterBody(body) {
   const filtered = {};
@@ -30,6 +30,13 @@ router.get('/', async (req, res) => {
     if (req.query.seller_id) {
       filter.seller_id = req.query.seller_id;
     }
+
+    if (req.query.region) {
+      filter.region = { $in: [req.query.region.toLowerCase(), 'global', null] };
+    }
+    if (req.query.country) filter.country = { $in: [req.query.country.toLowerCase(), 'global', null] };
+    if (req.query.state) filter.state = { $in: [req.query.state.toLowerCase(), 'global', null] };
+    if (req.query.local_region) filter.local_region = { $in: [req.query.local_region.toLowerCase(), 'global', null] };
     
     const products = await Product.find(filter).sort({ created_at: -1 });
     res.json(products);
@@ -68,6 +75,11 @@ router.post('/', auth, async (req, res) => {
     }
 
     productData.seller = req.user.email;
+    productData.region = (req.user.region || productData.region || 'global').toLowerCase();
+    productData.continent = (req.user.continent || productData.continent || 'global').toLowerCase();
+    productData.country = (req.user.country || productData.country || 'global').toLowerCase();
+    productData.state = (req.user.state || productData.state || 'global').toLowerCase();
+    productData.local_region = (req.user.local_region || productData.local_region || 'global').toLowerCase();
     productData.category = productData.category || 'Other';
     productData.description = productData.description || '';
 

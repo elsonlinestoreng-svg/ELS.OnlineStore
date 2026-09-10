@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'global'
   },
+  continent: { type: String, default: 'global' },
+  country: { type: String, default: 'global' },
+  state: { type: String, default: 'global' },
+  local_region: { type: String, default: 'global' },
   avatar: {
     type: String,
     default: ''

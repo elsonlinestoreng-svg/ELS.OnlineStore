@@ -54,7 +54,14 @@ window.dataSdk = {
 
   async getAll() {
     try {
-      const res = await fetch(`${window.API_BASE}/products`);
+      const user = window.currentUser || {};
+      const params = new URLSearchParams({
+        region: user.region || 'global',
+        country: user.country || 'global',
+        state: user.state || 'global',
+        local_region: user.local_region || 'global'
+      });
+      const res = await fetch(`${window.API_BASE}/products?${params}`);
       return await res.json();
     } catch (err) {
       console.error('getAll failed', err);
