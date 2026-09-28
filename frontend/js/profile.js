@@ -132,6 +132,21 @@ function renderProfile() {
   }
 
   bindProfileAutoSave();
+  renderAdminEntry();
+}
+
+/**
+ * Reveals the admin panel link for admin accounts only.
+ *
+ * This is presentation, not security: the value comes from the cached session
+ * user and could be stale or tampered with. The support inbox itself is gated
+ * by the server, which returns 403 for a non-admin token.
+ */
+function renderAdminEntry() {
+  const entry = document.getElementById('admin-entry');
+  if (!entry) return;
+  const role = String(currentUser?.role || '').toLowerCase();
+  entry.classList.toggle('hidden', role !== 'admin');
 }
 
 /**

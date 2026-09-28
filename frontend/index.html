@@ -932,6 +932,20 @@
             </div>
 
             <div class="mt-8 grid gap-6 lg:grid-cols-[22rem_1fr]">
+              <!-- Admin link, shown only for admin accounts -->
+              <div id="admin-entry" class="hidden rounded-3xl bg-slate-900 p-6 text-white sm:col-span-2 lg:col-span-2">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.3em] text-rose-300">Admin</p>
+                    <h3 class="mt-2 text-lg font-semibold">Support inbox</h3>
+                    <p class="mt-1 text-sm text-slate-300">Review and triage contact form inquiries.</p>
+                  </div>
+                  <a href="admin.html" class="inline-flex items-center gap-2 rounded-2xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-400">
+                    Open inbox
+                    <i data-lucide="arrow-right" class="h-4 w-4"></i>
+                  </a>
+                </div>
+              </div>
               <!-- Avatar -->
               <div class="rounded-3xl bg-slate-50 p-6 text-center ring-1 ring-slate-200">
                 <div class="mx-auto h-28 w-28 overflow-hidden rounded-full bg-gradient-to-tr from-rose-500 to-fuchsia-500 ring-4 ring-white shadow-lg">

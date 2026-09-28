@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Support Inbox &middot; ELS Admin</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Resolve the API base before anything else reads it. The storefront uses
+    // port 8081 locally, where the API lives on 8001.
+    if (!window.API_BASE) {
+      var port = location.port === '8081' || location.port === '5500' || location.hostname === 'localhost';
+      window.API_BASE = port ? 'http://localhost:8001/api' : location.origin + '/api';
+    }
+  </script>
+</head>
+<body class="min-h-screen bg-slate-100 font-sans text-slate-900">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+      <div class="flex items-center gap-3">
+        <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white">
+          <i data-lucide="shield" class="h-5 w-5"></i>
+        </span>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900">Support Inbox</h1>
+          <p class="text-xs text-slate-500">Contact form inquiries stored in MongoDB</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="button" onclick="window.location.reload()"
+          class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+          <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+          Refresh
+        </button>
+        <a href="index.html"
+          class="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-700">
+          <i data-lucide="arrow-left" class="h-4 w-4"></i>
+          Store
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-6 py-6">
+    <div id="inbox-content">
+      <div id="inbox-summary" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"></div>
+
+      <div class="mt-6 overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200">
+        <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+          <div class="relative min-w-[14rem] flex-1">
+            <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+            <input type="search" id="inbox-search" placeholder="Search name, email or reference"
+              class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+          </div>
+          <select id="inbox-status"
+            class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+            <option value="">All statuses</option>
+            <option value="new">New</option>
+            <option value="in_progress">In progress</option>
+            <option value="resolved">Resolved</option>
+            <option value="spam">Spam</option>
+          </select>
+        </div>
+
+        <div class="grid lg:grid-cols-[22rem_1fr]">
+          <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+            <div id="inbox-list" class="max-h-[36rem] overflow-y-auto"></div>
+            <p id="inbox-empty" class="hidden px-4 py-10 text-center text-sm text-slate-500"></p>
+          </div>
+          <div id="inbox-detail" class="max-h-[36rem] overflow-y-auto">
+            <p class="px-6 py-16 text-center text-sm text-slate-500">Select an inquiry to read it.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/admin-panel.js"></script>
+  <script>if (window.lucide) window.lucide.createIcons();</script>
+</body>
+</html>

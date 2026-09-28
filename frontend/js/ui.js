@@ -615,6 +615,7 @@ function goTo(page) {
   if (page === 'messages') renderConversations();
   if (page === 'my-store') { if (window.MyStore) window.MyStore.init(); }
   if (page === 'orders') { if (typeof loadBuyerOrders === 'function') loadBuyerOrders(); }
+  if (page === 'profile') { if (typeof renderProfile === 'function') renderProfile(); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
