@@ -5,11 +5,13 @@ const Store = require('../models/Store');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Transaction = require('../models/Transaction');
+const ContactInquiry = require('../models/ContactInquiry');
 const admin = require('../middleware/admin');
 const { escapeRegex, toObjectId } = require('../utils/security');
 
 const VALID_ROLES = ['user', 'admin'];
 const VALID_STORE_STATUSES = ['active', 'suspended', 'pending_review'];
+const VALID_INQUIRY_STATUSES = ['new', 'in_progress', 'resolved', 'spam'];
 
 // GET /api/admin/stats — platform overview
 router.get('/stats', admin, async (req, res) => {
@@ -217,6 +219,81 @@ router.get('/earnings/platform', admin, async (req, res) => {
   } catch (err) {
     console.error('Platform earnings error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch platform earnings' });
+  }
+});
+
+/**
+ * GET /api/admin/contact-inquiries
+ * Support inbox. Newest first, optionally filtered by status, and searchable.
+ */
+router.get('/contact-inquiries', admin, async (req, res) => {
+  try {
+    const filter = {};
+    if (req.query.status) {
+      if (!VALID_INQUIRY_STATUSES.includes(req.query.status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status' });
+      }
+      filter.status = req.query.status;
+    }
+    if (req.query.q && req.query.q.trim()) {
+      const term = escapeRegex(req.query.q.trim().slice(0, 100));
+      filter.$or = [
+        { name: { $regex: term, $options: 'i' } },
+        { email: { $regex: term, $options: 'i' } },
+        { reference_id: { $regex: term, $options: 'i' } }
+      ];
+    }
+
+    const inquiries = await ContactInquiry.find(filter).sort({ created_at: -1 }).limit(100);
+    res.json({ success: true, count: inquiries.length, inquiries });
+  } catch (err) {
+    console.error('Contact inquiries error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch contact inquiries' });
+  }
+});
+
+/** GET /api/admin/contact-inquiries/stats - counts by status and mail outcome. */
+router.get('/contact-inquiries/stats', admin, async (req, res) => {
+  try {
+    const [byStatus, byEmail] = await Promise.all([
+      ContactInquiry.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      ContactInquiry.aggregate([{ $group: { _id: '$email_status', count: { $sum: 1 } } }])
+    ]);
+    res.json({
+      success: true,
+      by_status: byStatus.reduce((acc, r) => ({ ...acc, [r._id]: r.count }), {}),
+      by_email_status: byEmail.reduce((acc, r) => ({ ...acc, [r._id]: r.count }), {})
+    });
+  } catch (err) {
+    console.error('Contact inquiry stats error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch contact inquiry stats' });
+  }
+});
+
+/** PATCH /api/admin/contact-inquiries/:id - move an inquiry through the workflow. */
+router.patch('/contact-inquiries/:id', admin, async (req, res) => {
+  try {
+    const inquiryId = toObjectId(req.params.id);
+    if (!inquiryId) {
+      return res.status(400).json({ success: false, message: 'Invalid inquiry id' });
+    }
+    const { status } = req.body || {};
+    if (!VALID_INQUIRY_STATUSES.includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    const inquiry = await ContactInquiry.findByIdAndUpdate(
+      inquiryId,
+      { status, resolved_at: status === 'resolved' ? new Date() : null },
+      { new: true }
+    );
+    if (!inquiry) {
+      return res.status(404).json({ success: false, message: 'Inquiry not found' });
+    }
+    res.json({ success: true, inquiry });
+  } catch (err) {
+    console.error('Update contact inquiry error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update contact inquiry' });
   }
 });
 

@@ -7,8 +7,10 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const nodemailer = require('nodemailer');
-const { escapeHtml, cleanText, isValidEmail } = require('../utils/security');
+const { escapeHtml, cleanText, isValidEmail, toObjectId } = require('../utils/security');
 const env = require('../config/env');
+const ContactInquiry = require('../models/ContactInquiry');
+const optionalAuth = require('../middleware/auth').optionalAuth;
 
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -68,9 +70,9 @@ function initializeTransporter() {
  * POST /api/contact
  * Submit a contact inquiry
  */
-router.post('/', contactLimiter, async (req, res) => {
+router.post('/', contactLimiter, optionalAuth, async (req, res) => {
   try {
-    const { name, email, message, subject } = req.body || {};
+    const { name, email, message, subject, phone, region } = req.body || {};
 
     // Validation
     if (!name || !email || !message) {
@@ -100,32 +102,63 @@ router.post('/', contactLimiter, async (req, res) => {
     const sanitizedEmail = cleanText(email, 254).toLowerCase().trim();
     const sanitizedMessage = cleanText(message, 1000);
     const sanitizedSubject = cleanText(subject || 'No subject provided', 200).replace(/[\r\n]+/g, ' ');
+    const sanitizedPhone = cleanText(phone || '', 32).replace(/[\r\n]+/g, ' ');
+    const sanitizedRegion = cleanText(region || 'global', 64).replace(/[\r\n]+/g, ' ');
 
-    // Try to send email
-    const emailSent = await sendContactEmail({
+    const referenceId = generateReferenceId();
+
+    // Delivery is attempted first, but it is never the only record: if the
+    // relay is down or rejects the message, the inquiry is still written to
+    // MongoDB below for support staff to pick up manually.
+    const emailResult = await sendContactEmail({
       name: sanitizedName,
       email: sanitizedEmail,
       subject: sanitizedSubject,
       message: sanitizedMessage,
     });
 
-    // Log inquiry (even if email fails)
+    const saved = await saveInquiry({
+      reference_id: referenceId,
+      name: sanitizedName,
+      email: sanitizedEmail,
+      subject: sanitizedSubject,
+      message: sanitizedMessage,
+      phone: sanitizedPhone,
+      region: sanitizedRegion,
+      user_id: toObjectId(req.user && req.user.userId),
+      email_status: emailResult.delivered ? 'sent' : (emailResult.reason === 'smtp-not-configured' ? 'not_configured' : 'failed'),
+      email_error: emailResult.delivered ? '' : cleanText(String(emailResult.reason || ''), 300),
+    });
+
+    if (!saved) {
+      // The message was not stored anywhere. Do not claim success.
+      return res.status(503).json({
+        success: false,
+        message: 'We could not record your message. Please email us directly so nothing is lost.',
+      });
+    }
+
+    // Mirror to the console log for operators tailing the process.
     logContactInquiry({
       name: sanitizedName,
       email: sanitizedEmail,
       subject: sanitizedSubject,
-      message: sanitizedMessage,
+      reference_id: referenceId,
       timestamp: new Date().toISOString(),
-      emailSent,
+      emailSent: emailResult.delivered,
     });
 
-    // Return success response
     res.json({
       success: true,
-      message: 'Your inquiry has been received. We will respond shortly.',
+      // Be honest when the mail relay failed: the message is saved and support
+      // will still see it, but the reply will not come by email automatically.
+      message: emailResult.delivered
+        ? 'Your inquiry has been received. We will respond shortly.'
+        : 'Your inquiry has been saved. Our email relay is unavailable right now, so we will follow up by phone or in store.',
       data: {
         received_at: new Date().toISOString(),
-        reference_id: generateReferenceId(),
+        reference_id: referenceId,
+        email_sent: emailResult.delivered,
       },
     });
   } catch (error) {
@@ -157,8 +190,8 @@ async function sendContactEmail({ name, email, subject, message }) {
     }
 
     if (!transporter) {
-      console.warn('Email service not available. Inquiry will be logged locally.');
-      return false;
+      console.warn('Email service not available. Inquiry will still be stored.');
+      return { delivered: false, reason: 'smtp-not-configured' };
     }
 
     // Prepare email content
@@ -331,31 +364,46 @@ For urgent matters, call us at +234 (902) 505-8674
     });
 
     console.log('✓ Contact emails sent successfully to admin and customer');
-    return true;
+    return { delivered: true };
   } catch (error) {
     console.error('Email sending error:', error);
-    // Return false but don't throw - allow form to succeed even if email fails
-    return false;
+    // Report the failure instead of throwing: the inquiry is still stored, so
+    // support can follow up manually.
+    return { delivered: false, reason: (error && error.message) || 'send-failed' };
   }
 }
 
 /**
- * Log contact inquiry to file/database
+ * Stores an inquiry in MongoDB.
+ *
+ * @returns {Promise<object|null>} the saved document, or null when the write
+ *   failed. The caller treats null as a hard failure, because a message that
+ *   exists neither in the database nor in an inbox is worse than an error the
+ *   customer can act on.
+ */
+async function saveInquiry(inquiry) {
+  try {
+    return await ContactInquiry.create(inquiry);
+  } catch (error) {
+    console.error('Failed to persist contact inquiry:', error && error.message);
+    return null;
+  }
+}
+
+/**
+ * Mirror of the stored inquiry for operators tailing the process output.
+ * The database is the record of truth; this is only a convenience.
  */
 function logContactInquiry(inquiry) {
   try {
-    // In production, this would be saved to a database
-    // For now, we just log it
     console.log('[Contact Inquiry]', {
+      reference_id: inquiry.reference_id,
       name: inquiry.name,
       email: inquiry.email,
       subject: inquiry.subject,
       timestamp: inquiry.timestamp,
       emailSent: inquiry.emailSent,
     });
-
-    // Optionally: Save to database
-    // Example: ContactInquiry.create(inquiry)
   } catch (error) {
     console.error('Failed to log contact inquiry:', error);
   }

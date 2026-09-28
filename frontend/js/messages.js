@@ -100,13 +100,21 @@ async function submitContactForm(event) {
     ? 'http://localhost:8001/api'
     : `${location.origin}/api`);
 
+  // Send the session token when signed in so the server can link the inquiry
+  // to the customer's account. The endpoint treats it as optional.
+  const token = typeof getAuthToken === 'function' ? getAuthToken() : '';
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
   try {
     const res = await fetch(`${base}/contact`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({
         name,
         email,
+        phone,
+        region,
         message,
         subject: `Support request from ${name} (${region})`,
       }),

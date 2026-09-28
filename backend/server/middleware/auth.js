@@ -9,6 +9,33 @@ const { toObjectId } = require('../utils/security');
  * The user is re-read from the database on every request so that a deleted or
  * suspended account cannot keep acting with a still-valid token.
  */
+async function resolveUser(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
+
+  const token = authHeader.slice('Bearer '.length).trim();
+  if (!token) return null;
+
+  const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] });
+  const userId = toObjectId(decoded && decoded.userId);
+  if (!userId) return null;
+
+  const user = await User.findById(userId).select('role email name region provider tokenVersion');
+  if (!user) return null;
+
+  const tokenVersion = typeof decoded.tokenVersion === 'number' ? decoded.tokenVersion : 0;
+  if ((user.tokenVersion || 0) !== tokenVersion) return null;
+
+  return {
+    userId: user._id.toString(),
+    email: user.email,
+    name: user.name,
+    role: user.role,
+    region: user.region,
+    provider: user.provider
+  };
+}
+
 module.exports = async function requireAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -69,4 +96,21 @@ module.exports = async function requireAuth(req, res, next) {
       message: 'Invalid or expired token.'
     });
   }
+};
+
+/**
+ * Attaches req.user when a valid token is present, but never rejects.
+ *
+ * Used by routes that are open to the public (the contact form) where linking
+ * a signed-in customer to their inquiry is useful but not required. An
+ * invalid or expired token is simply ignored, so this must not be relied on
+ * for authorization.
+ */
+module.exports.optionalAuth = async function optionalAuth(req, res, next) {
+  try {
+    req.user = await resolveUser(req) || undefined;
+  } catch (err) {
+    req.user = undefined;
+  }
+  next();
 };
