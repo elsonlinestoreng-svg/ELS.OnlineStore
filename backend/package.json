@@ -8,7 +8,6 @@
     "make-admin": "node scripts/make-admin.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
