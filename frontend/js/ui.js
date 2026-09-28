@@ -551,11 +551,14 @@ function enterApp(targetPage = 'home') {
   const mainApp = document.getElementById('main-app');
   if (authScreen) authScreen.classList.add('hidden');
   if (mainApp) mainApp.classList.remove('hidden');
-  const avatar = document.getElementById('user-avatar');
-  if (avatar) avatar.textContent = (currentUser.name || currentUser.email || 'U').charAt(0).toUpperCase();
+  // updateHeaderAvatar owns the header badge and keeps the photo intact;
+  // writing textContent here would delete the avatar <img>.
+  if (typeof updateHeaderAvatar === 'function') updateHeaderAvatar();
   lucide.createIcons();
   loadProductsFromBackend();
   updateCartBadge();
+  // Only safe once a session exists: the notification endpoints are behind auth.
+  if (window.notificationsPanel) window.notificationsPanel.init();
   const role = (currentUser.role || 'buyer').toLowerCase();
   if (role === 'seller') {
     goTo('open-store');

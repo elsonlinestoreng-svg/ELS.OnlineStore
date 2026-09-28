@@ -30,6 +30,9 @@ loadUserFromLocal();
 
 /**
  * Syncs current authentication identities with header avatar DOM elements.
+ *
+ * Covers both avatar slots: the header badge (#user-avatar) and the larger
+ * profile-page preview (#user-avatar-img / #user-avatar-initial).
  */
 function updateHeaderAvatar() {
   const avatarImg = document.getElementById('user-avatar-img');
@@ -37,17 +40,39 @@ function updateHeaderAvatar() {
   const avatarBtn = document.getElementById('user-avatar');
   if (!avatarBtn) return;
 
-  if (avatarImg && currentUser.avatarDataUrl) {
-    avatarImg.src = currentUser.avatarDataUrl;
+  const name = (currentUser && currentUser.name) || '';
+  const photo = currentUser && (currentUser.avatarDataUrl || currentUser.avatar);
+
+  if (avatarImg && photo) {
+    avatarImg.src = photo;
     avatarImg.classList.remove('hidden');
     if (avatarInitial) avatarInitial.classList.add('hidden');
   } else {
-    if (avatarInitial && currentUser.name) {
-      avatarInitial.textContent = currentUser.name.charAt(0).toUpperCase();
+    if (avatarInitial && name) {
+      avatarInitial.textContent = name.charAt(0).toUpperCase();
     }
     if (avatarImg) avatarImg.classList.add('hidden');
     if (avatarInitial) avatarInitial.classList.remove('hidden');
   }
+
+  // Header badge. The initial and the photo are sibling children toggled by
+  // visibility, so no innerHTML/textContent juggling is needed.
+  const headerInitial = document.getElementById('user-avatar-header-initial');
+  const headerImg = document.getElementById('user-avatar-header-img');
+  if (headerImg && photo) {
+    headerImg.src = photo;
+    headerImg.classList.remove('hidden');
+    if (headerInitial) headerInitial.classList.add('hidden');
+  } else {
+    if (headerImg) headerImg.classList.add('hidden');
+    if (headerInitial) {
+      headerInitial.textContent = name ? name.charAt(0).toUpperCase() : 'U';
+      headerInitial.classList.remove('hidden');
+    }
+  }
+
+  const nameEl = document.getElementById('header-user-name');
+  if (nameEl) nameEl.textContent = name || 'Member';
 }
 
 /**

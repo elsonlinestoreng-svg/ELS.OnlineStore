@@ -329,24 +329,43 @@
             Merchant Hub
           </button>
           
-          <button class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:bg-slate-800 hover:text-white" title="Notifications">
-            <i data-lucide="bell" class="h-4 w-4"></i>
-            <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500"></span>
-          </button>
+          <div class="relative">
+            <button id="notification-bell" type="button" aria-label="Notifications" aria-haspopup="true" aria-expanded="false"
+              class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:bg-slate-800 hover:text-white" title="Notifications">
+              <i data-lucide="bell" class="h-4 w-4"></i>
+              <span id="notification-badge" class="absolute -top-1.5 -right-1.5 hidden min-w-[18px] rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-[18px] text-white">0</span>
+            </button>
+
+            <div id="notification-dropdown"
+              class="absolute right-0 z-50 mt-2 hidden w-[22rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200">
+              <div class="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                <p class="text-sm font-bold text-slate-900">Notifications</p>
+                <button id="notification-mark-all" type="button"
+                  class="text-xs font-semibold text-rose-500 transition hover:text-rose-400">Mark all read</button>
+              </div>
+              <div id="notification-list" class="max-h-96 overflow-y-auto">
+                <p class="px-4 py-8 text-center text-sm text-slate-500">You have no notifications yet.</p>
+              </div>
+            </div>
+          </div>
 
           <button type="button" onclick="goTo('cart')" class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:bg-slate-800 hover:text-white" title="Cart" aria-label="Open cart">
             <i data-lucide="shopping-cart" class="h-4 w-4"></i>
             <span id="cart-badge" class="absolute -top-1.5 -right-1.5 hidden min-w-[18px] rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-[18px] text-white">0</span>
           </button>
 
-          <!-- User Account Badge -->
-          <div class="inline-flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/90 p-1.5 pr-3">
-            <div id="user-avatar" class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-tr from-rose-500 to-fuchsia-500 text-xs font-bold text-white shadow-sm">U</div>
-            <div class="hidden md:block text-left">
-              <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Welcome Back</p>
-              <p class="text-xs font-semibold text-white">Member</p>
-            </div>
-          </div>
+          <!-- User Account Badge: opens the profile page for avatar, bio and details -->
+          <button type="button" onclick="goTo('profile')" title="Your profile"
+            class="inline-flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/90 p-1.5 pr-3 transition hover:border-rose-500/60 hover:bg-slate-800">
+            <span id="user-avatar" class="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-tr from-rose-500 to-fuchsia-500 text-xs font-bold text-white shadow-sm">
+              <span id="user-avatar-header-initial">U</span>
+              <img id="user-avatar-header-img" alt="" class="absolute inset-0 hidden h-full w-full object-cover" />
+            </span>
+            <span class="hidden md:block text-left">
+              <span class="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Welcome Back</span>
+              <span id="header-user-name" class="block max-w-[9rem] truncate text-xs font-semibold text-white">Member</span>
+            </span>
+          </button>
         </div>
 
       </div>
@@ -1382,6 +1401,7 @@
   <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/profile.js"></script>
+  <script src="js/notifications.js"></script>
   <script src="js/dataSdk.js"></script>
   <script src="js/register.js"></script>
 </body>
