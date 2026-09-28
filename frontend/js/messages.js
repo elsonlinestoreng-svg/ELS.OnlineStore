@@ -132,10 +132,16 @@ async function submitContactForm(event) {
     }
 
     if (successEl) {
-      successEl.className = 'text-sm text-emerald-600';
-      successEl.textContent = 'Message sent. We will reply by email shortly.';
+      // The server distinguishes "delivered" from "saved but the relay was
+      // down". Do not promise an email reply that will never arrive.
+      const delivered = payload.data?.email_sent !== false;
+      successEl.className = `text-sm ${delivered ? 'text-emerald-600' : 'text-amber-600'}`;
+      successEl.textContent = payload.message
+        || (delivered
+          ? 'Message sent. We will reply by email shortly.'
+          : 'Message saved. Our email relay is unavailable, so we will follow up another way.');
     }
-    showToast('Message sent to support');
+    showToast(payload.data?.email_sent === false ? 'Message saved' : 'Message sent to support');
 
     const form = document.getElementById('contact-form');
     if (form) form.reset();

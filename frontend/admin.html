@@ -7,14 +7,8 @@
   <title>Support Inbox &middot; ELS Admin</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <script>
-    // Resolve the API base before anything else reads it. The storefront uses
-    // port 8081 locally, where the API lives on 8001.
-    if (!window.API_BASE) {
-      var port = location.port === '8081' || location.port === '5500' || location.hostname === 'localhost';
-      window.API_BASE = port ? 'http://localhost:8001/api' : location.origin + '/api';
-    }
-  </script>
+  <!-- Must load before admin-panel.js: settles window.API_BASE. -->
+  <script src="js/config.js"></script>
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900">
   <header class="border-b border-slate-200 bg-white">

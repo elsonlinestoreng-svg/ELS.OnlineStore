@@ -143,6 +143,11 @@ class SupportInbox {
         by_status: payload.by_status || {},
         by_email_status: payload.by_email_status || {},
       };
+      // Repaint here rather than relying on the caller. This request races the
+      // list request, so whichever finishes first may render before the counts
+      // exist; painting on completion keeps the tiles correct either way, and
+      // also refreshes them after a status change.
+      this.renderSummary();
     } catch (error) {
       // The list call renders the real error state, so a stats failure is not
       // worth surfacing twice.
