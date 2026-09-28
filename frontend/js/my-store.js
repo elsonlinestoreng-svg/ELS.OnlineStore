@@ -6,7 +6,7 @@
 
   async function authFetch(url, opts={}){
     opts.headers = opts.headers || {};
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
     if(token) opts.headers.Authorization = `Bearer ${token}`;
     const res = await fetch(url, opts);
     const text = await res.text();
@@ -21,11 +21,11 @@
       if(tab==='products') loadSellerProducts(); if(tab==='orders') loadSellerOrders(); if(tab==='earnings') loadSellerEarningsFromApi(); }); }); }
 
   // PRODUCTS
-  async function loadSellerProducts(){ showLoader(true); try{ const container = document.getElementById('seller-products-list'); if(!container) return; container.innerHTML = '';
+  async function loadSellerProducts(){ if(!getAuthToken()) return; showLoader(true); try{ const container = document.getElementById('seller-products-list'); if(!container) return; container.innerHTML = '';
       // if localSdk available, use it
       let products = [];
       try{
-        if(window.localSdk && window.localSdk.products){ const u = JSON.parse(localStorage.getItem('els_user')||'null'); const userEmail = u && u.email ? u.email : (u && u.name ? u.name : ''); products = await window.localSdk.products.sellerMine(userEmail); }
+        if(window.localSdk && window.localSdk.products){ const u = JSON.parse(getAuthItem('els_user')||'null'); const userEmail = u && u.email ? u.email : (u && u.name ? u.name : ''); products = await window.localSdk.products.sellerMine(userEmail); }
         else {
           const r = await authFetch(`${API}/products/seller/mine`);
           if(!r.ok){ console.error('failed load products', r); container.innerHTML = '<p class="muted">Failed to load products</p>'; return; }
@@ -33,16 +33,16 @@
         }
       }catch(e){ console.error('loadSellerProducts fetch error', e); container.innerHTML = '<p class="muted">Failed to load products</p>'; return; }
 
-      products.forEach(p=>{ const card = document.createElement('div'); card.className='product-card-mini'; card.innerHTML = `<div><strong>${escapeHtml(p.name)}</strong><div class="muted">$${(p.price||0).toFixed(2)}</div></div><div class="actions"><button class="btn-sm edit" data-id="${p._id}">Edit</button><button class="btn-sm del" data-id="${p._id}">Delete</button></div>`; container.appendChild(card); });
+      products.forEach(p=>{ const card = document.createElement('div'); card.className='product-card-mini'; const safeId = escapeHtml(p._id); card.innerHTML = `<div><strong>${escapeHtml(p.name)}</strong><div class="muted">$${(Number(p.price)||0).toFixed(2)}</div></div><div class="actions"><button class="btn-sm edit" data-id="${safeId}">Edit</button><button class="btn-sm del" data-id="${safeId}">Delete</button></div>`; container.appendChild(card); });
       // bind actions
       qsa('#seller-products-list .del').forEach(b=>b.addEventListener('click', async (e)=>{ if(!confirm('Delete this product?')) return; const id=b.dataset.id; try{ if(window.localSdk && window.localSdk.products){ await window.localSdk.products.delete(id); showToast('Product deleted'); loadSellerProducts(); return; } const res = await authFetch(`${API}/products/${id}`, { method:'DELETE' }); if(!res.ok) return alert('Delete failed'); showToast('Product deleted'); loadSellerProducts(); }catch(err){ console.error(err); alert('Delete failed'); } }));
       qsa('#seller-products-list .edit').forEach(b=>b.addEventListener('click', (e)=>{ const id=b.dataset.id; const prod = products.find(x=>x._id===id) || {}; openEditInline(id, prod); }));
     }catch(err){ console.error(err); } finally{ showLoader(false); } }
 
   // ORDERS
-  async function loadSellerOrders(){ showLoader(true); try{ const tbody = document.getElementById('seller-orders-list'); if(!tbody) return; tbody.innerHTML = ''; let orders = [];
+  async function loadSellerOrders(){ if(!getAuthToken()) return; showLoader(true); try{ const tbody = document.getElementById('seller-orders-list'); if(!tbody) return; tbody.innerHTML = ''; let orders = [];
       try{
-        if(window.localSdk && window.localSdk.orders){ const u = JSON.parse(localStorage.getItem('els_user')||'null'); const userEmail = u && u.email ? u.email : (u && u.name ? u.name : ''); orders = await window.localSdk.orders.listForSeller(userEmail); }
+        if(window.localSdk && window.localSdk.orders){ const u = JSON.parse(getAuthItem('els_user')||'null'); const userEmail = u && u.email ? u.email : (u && u.name ? u.name : ''); orders = await window.localSdk.orders.listForSeller(userEmail); }
         else {
           const r = await authFetch(`${API}/orders/seller`);
           if(!r.ok){ console.error('failed load orders', r); tbody.innerHTML = '<tr><td colspan="6">Failed to load orders</td></tr>'; return; }
@@ -50,7 +50,7 @@
         }
       }catch(e){ console.error('loadSellerOrders error', e); tbody.innerHTML = '<tr><td colspan="6">Failed to load orders</td></tr>'; return; }
 
-      orders.forEach(o=>{ const items = (o.items||[]).map(it=>`${escapeHtml(it.name)} x${it.quantity}`).join('<br>'); const tr = document.createElement('tr'); tr.innerHTML = `<td>${escapeHtml(o.order_reference||o._id)}</td><td>${escapeHtml((o.buyer_id&&o.buyer_id.name)||o.buyer_name||'Buyer')}</td><td>${items}</td><td>${formatCurrency(o.seller_payout||o.total||0)}</td><td>${escapeHtml(o.order_status||o.payment_status||'')}</td><td><select class="order-status" data-id="${o._id}"><option value="pending">pending</option><option value="confirmed">confirmed</option><option value="processing">processing</option><option value="shipped">shipped</option><option value="delivered">delivered</option></select><input class="trk" data-id="${o._id}" placeholder="tracking number" style="margin-left:6px;width:120px"/><button class="btn-sm upd" data-id="${o._id}">Save</button></td>`; tbody.appendChild(tr); });
+      orders.forEach(o=>{ const items = (o.items||[]).map(it=>`${escapeHtml(it.name)} x${it.quantity}`).join('<br>'); const tr = document.createElement('tr'); const safeOid = escapeHtml(o._id); tr.innerHTML = `<td>${escapeHtml(o.order_reference||o._id)}</td><td>${escapeHtml((o.buyer_id&&o.buyer_id.name)||o.buyer_name||'Buyer')}</td><td>${items}</td><td>${formatCurrency(o.seller_payout||o.total||0)}</td><td>${escapeHtml(o.order_status||o.payment_status||'')}</td><td><select class="order-status" data-id="${safeOid}"><option value="pending">pending</option><option value="confirmed">confirmed</option><option value="processing">processing</option><option value="shipped">shipped</option><option value="delivered">delivered</option></select><input class="trk" data-id="${safeOid}" placeholder="tracking number" style="margin-left:6px;width:120px"/><button class="btn-sm upd" data-id="${safeOid}">Save</button></td>`; tbody.appendChild(tr); });
       // bind update
       qsa('#seller-orders-list .upd').forEach(btn=>btn.addEventListener('click', async ()=>{ const id=btn.dataset.id; const sel = document.querySelector(`.order-status[data-id="${id}"]`); const trk = document.querySelector(`.trk[data-id="${id}"]`); const status = sel? sel.value : ''; const tracking_number = trk? trk.value : ''; try{
         if(window.localSdk && window.localSdk.orders){ // update local storage orders
@@ -61,7 +61,7 @@
     }catch(err){ console.error(err); } finally{ showLoader(false); } }
 
   // EARNINGS
-  async function loadSellerEarnings(){ showLoader(true); try{ const u = JSON.parse(localStorage.getItem('els_user')||'null'); const userEmail = u && u.email ? u.email : (u && u.name ? u.name : ''); let orders = [];
+  async function loadSellerEarnings(){ if(!getAuthToken()) return; showLoader(true); try{ const u = JSON.parse(getAuthItem('els_user')||'null'); const userEmail = u && u.email ? u.email : (u && u.name ? u.name : ''); let orders = [];
       try{
         if(window.localSdk && window.localSdk.orders){ orders = await window.localSdk.orders.listForSeller(userEmail); }
         else { const r = await authFetch(`${API}/orders/seller`); if(!r.ok){ console.error('failed load orders for earnings', r); return; } orders = r.data.orders || r.data || []; }
@@ -79,7 +79,7 @@
     }catch(err){ console.error(err); } finally{ showLoader(false); } }
 
     // Try earnings endpoint which aggregates on server; fallback to orders aggregation above
-    async function loadSellerEarningsFromApi(){ showLoader(true); try{
+    async function loadSellerEarningsFromApi(){ if(!getAuthToken()) return; showLoader(true); try{
         const r = await authFetch(`${API}/earnings/seller`);
         if(!r.ok){ console.warn('earnings endpoint unavailable, using orders fallback'); return loadSellerEarnings(); }
         const data = r.data || {};
@@ -109,7 +109,7 @@
   }
 
   // expose loaderable entry
-  window.MyStore = { init: function(){ bindTabs(); loadSellerProducts(); } };
+  window.MyStore = { init: function(){ if(!getAuthToken()) return; bindTabs(); loadSellerProducts(); } };
 
   document.addEventListener('DOMContentLoaded', ()=>{ try{ if(document.getElementById('page-my-store')) window.MyStore.init(); }catch(e){ console.error(e); } });
 

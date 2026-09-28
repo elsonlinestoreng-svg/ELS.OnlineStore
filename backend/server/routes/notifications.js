@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Notification = require('../models/Notification');
 const auth = require('../middleware/auth');
+const { toObjectId, sameUser } = require('../utils/security');
 
 // GET /api/notifications — my notifications
 router.get('/', auth, async (req, res) => {
@@ -37,13 +38,18 @@ router.get('/unread-count', auth, async (req, res) => {
 // PUT /api/notifications/:id/read — mark single notification read
 router.put('/:id/read', auth, async (req, res) => {
   try {
-    const notification = await Notification.findById(req.params.id);
+    const notificationId = toObjectId(req.params.id);
+    if (!notificationId) {
+      return res.status(400).json({ success: false, message: 'Invalid notification id' });
+    }
+
+    const notification = await Notification.findById(notificationId);
 
     if (!notification) {
       return res.status(404).json({ success: false, message: 'Notification not found' });
     }
 
-    if (notification.user_id.toString() !== req.user.userId) {
+    if (!sameUser(notification.user_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 

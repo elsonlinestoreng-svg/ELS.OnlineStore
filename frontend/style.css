@@ -16,9 +16,12 @@ body {
     min-height: calc(100vh - 180px);
     transition: opacity 0.4s ease, transform 0.3s ease; 
   }
-.page.active {
+ .page.active {
    display: block;
-    animation: pageIn 0.4s ease;
+   /* The fade is motion-only on purpose: the page must never depend on an
+      animation to become visible (a stalled/filled pageIn left opacity at 0). */
+    opacity: 1;
+    animation: pageIn 0.4s ease both;
    }
 @keyframes pageIn {
    from { opacity: 0;

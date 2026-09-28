@@ -5,6 +5,9 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { notify } = require('../services/notify');
+const { toObjectId, cleanText, sameUser } = require('../utils/security');
+
+const MAX_MESSAGE_LENGTH = 2000;
 
 // GET /api/messages/conversations — list my conversations
 router.get('/conversations', auth, async (req, res) => {
@@ -90,13 +93,18 @@ router.post('/conversations', auth, async (req, res) => {
 // GET /api/messages/conversations/:id — conversation detail with messages
 router.get('/conversations/:id', auth, async (req, res) => {
   try {
-    const conversation = await Conversation.findById(req.params.id);
+    const conversationId = toObjectId(req.params.id);
+    if (!conversationId) {
+      return res.status(400).json({ success: false, message: 'Invalid conversation id' });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
 
     if (!conversation) {
       return res.status(404).json({ success: false, message: 'Conversation not found' });
     }
 
-    if (!conversation.participants.some(p => p.toString() === req.user.userId)) {
+    if (!conversation.participants.some(p => sameUser(p, req.user.userId))) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
@@ -114,26 +122,36 @@ router.get('/conversations/:id', auth, async (req, res) => {
 // POST /api/messages/conversations/:id/messages — send a message
 router.post('/conversations/:id/messages', auth, async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text } = req.body || {};
 
-    if (!text || !text.trim()) {
+    if (!text || typeof text !== 'string' || !text.trim()) {
       return res.status(400).json({ success: false, message: 'Message text is required' });
     }
 
-    const conversation = await Conversation.findById(req.params.id);
+    const cleanTextValue = cleanText(text, MAX_MESSAGE_LENGTH);
+    if (cleanTextValue.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({ success: false, message: 'Message is too long' });
+    }
+
+    const conversationId = toObjectId(req.params.id);
+    if (!conversationId) {
+      return res.status(400).json({ success: false, message: 'Invalid conversation id' });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
 
     if (!conversation) {
       return res.status(404).json({ success: false, message: 'Conversation not found' });
     }
 
-    if (!conversation.participants.some(p => p.toString() === req.user.userId)) {
+    if (!conversation.participants.some(p => sameUser(p, req.user.userId))) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
     const message = new Message({
       conversation_id: conversation._id,
       sender_id: req.user.userId,
-      text: text.trim()
+      text: cleanTextValue
     });
     await message.save();
 
@@ -167,13 +185,18 @@ router.post('/conversations/:id/messages', auth, async (req, res) => {
 // PUT /api/messages/conversations/:id/read — mark all my messages read
 router.put('/conversations/:id/read', auth, async (req, res) => {
   try {
-    const conversation = await Conversation.findById(req.params.id);
+    const conversationId = toObjectId(req.params.id);
+    if (!conversationId) {
+      return res.status(400).json({ success: false, message: 'Invalid conversation id' });
+    }
+
+    const conversation = await Conversation.findById(conversationId);
 
     if (!conversation) {
       return res.status(404).json({ success: false, message: 'Conversation not found' });
     }
 
-    if (!conversation.participants.some(p => p.toString() === req.user.userId)) {
+    if (!conversation.participants.some(p => sameUser(p, req.user.userId))) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 

@@ -342,32 +342,11 @@ function acceptSuggestedCategory() {
 }
 
 function updateAddProductButtonState() {
-<<<<<<< HEAD:frontend/js/ui.js
-  const btn = document.getElementById('add-product-btn');
-  const draftBtn = document.getElementById('save-draft-btn');
-  const statusEl = document.getElementById('product-publish-status');
-  if (!btn) return;
-  const valid = validateOpenStoreForm();
-  btn.disabled = !valid;
-  btn.style.opacity = valid ? '1' : '0.6';
-  if (draftBtn) {
-    draftBtn.disabled = !valid;
-    draftBtn.style.opacity = valid ? '1' : '0.6';
-  }
-  if (statusEl) {
-    const payoutReady = localStorage.getItem('els_payout_ready') === 'true';
-    statusEl.textContent = payoutReady
-      ? 'Seller payout details are ready. You can save as draft or publish instantly.'
-      : 'Add payout details in store setup to enable direct publishing.';
-    statusEl.className = payoutReady ? 'text-xs text-emerald-600 mt-3' : 'text-xs text-slate-500 mt-3';
-  }
-=======
   const saveDraftBtn = document.getElementById('save-draft-btn');
   const publishBtn = document.getElementById('publish-product-btn');
   const valid = validateOpenStoreForm();
   if (saveDraftBtn) { saveDraftBtn.disabled = !valid; saveDraftBtn.style.opacity = valid ? '1' : '0.6'; }
   if (publishBtn) { publishBtn.disabled = !valid; publishBtn.style.opacity = valid ? '1' : '0.6'; }
->>>>>>> zohan-work:js/ui.js
 }
 
 // Toggle button loading state: adds small spinner and disables button
@@ -634,13 +613,9 @@ function goTo(page) {
   if (page === 'payment') renderPayment();
   if (page === 'shop') renderShop();
   if (page === 'messages') renderConversations();
-<<<<<<< HEAD:frontend/js/ui.js
   if (page === 'my-store') { if (window.MyStore) window.MyStore.init(); }
   if (page === 'orders') { if (typeof loadBuyerOrders === 'function') loadBuyerOrders(); }
-  window.scrollTo(0, 0);
-=======
   window.scrollTo({ top: 0, behavior: 'smooth' });
->>>>>>> zohan-work:js/ui.js
 }
 
 function toggleSidebar() {
@@ -652,9 +627,6 @@ function toggleSidebar() {
   overlay.classList.toggle('open', !isOpen);
 }
 
-<<<<<<< HEAD:frontend/js/ui.js
-function showToast(msg, type = 'info', duration = 2600) {
-=======
 document.addEventListener('DOMContentLoaded', () => {
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const sidebarOverlay = document.getElementById('sidebar-overlay');
@@ -674,8 +646,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function showToast(msg) {
->>>>>>> zohan-work:js/ui.js
+function showToast(msg, type = 'info', duration = 2600) {
   const t = document.getElementById('toast');
   if (!t) return;
   const normalizedType = ['success', 'error', 'loading', 'info'].includes(type) ? type : 'info';
@@ -684,6 +655,33 @@ function showToast(msg) {
   t.classList.remove('hidden');
   clearTimeout(t._hideTimer);
   t._hideTimer = setTimeout(() => t.classList.add('hidden'), duration);
+}
+
+/**
+ * Single source of truth for the auth token.
+ *
+ * `persistAuthSession` stores the token in sessionStorage when the user does NOT
+ * tick "keep me signed in" (the default). Every other module must therefore read
+ * both stores, otherwise signed-in users silently get 401s on cart, orders,
+ * store and payment requests.
+ */
+function getAuthToken() {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('els_token')) return localStorage.getItem('els_token');
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('els_token')) return sessionStorage.getItem('els_token');
+  return '';
+}
+
+/** Returns the storage that currently holds the session ('local' | 'session' | null). */
+function getAuthStorage() {
+  if (typeof localStorage !== 'undefined' && localStorage.getItem('els_token')) return localStorage;
+  if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('els_token')) return sessionStorage;
+  return null;
+}
+
+/** Reads a session value from whichever store holds the session. */
+function getAuthItem(key) {
+  const store = getAuthStorage();
+  return store ? store.getItem(key) : null;
 }
 
 function persistAuthSession(user, token, rememberMe = true) {
@@ -732,14 +730,9 @@ function initHomeCarousel(images = [], speedPerImage = 6) {
 // Restore session from localStorage on page load
 async function restoreSession() {
 
-<<<<<<< HEAD:frontend/js/ui.js
-  const token = localStorage.getItem('els_token') || sessionStorage.getItem('els_token');
-  const savedUser = localStorage.getItem('els_user') || sessionStorage.getItem('els_user');
-=======
-  const token = localStorage.getItem('els_token');
-  const userData = localStorage.getItem('els_user');
+  const token = getAuthToken() || sessionStorage.getItem('els_token');
+  const savedUser = getAuthItem('els_user') || sessionStorage.getItem('els_user');
   const apiBase = window.API_BASE || 'http://localhost:8001/api';
->>>>>>> zohan-work:js/ui.js
 
   if (!token || !savedUser) return false;
 
@@ -887,40 +880,3 @@ function toggleLogisticsRole() {
   showToast(`Switched to ${newRole} mode`);
   console.log(`Current logistics role: ${newRole}`);
 }
-
-// Send Message Handler
-function sendMessage() {
-  const input = document.getElementById('msg-input');
-  if (!input || !input.value.trim()) {
-    showToast('Message cannot be empty');
-    return;
-  }
-
-  const msg = input.value.trim();
-  
-  if (!currentConversation) {
-    showToast('Select a conversation first');
-    return;
-  }
-
-  // Add message to current conversation
-  if (!currentConversation.messages) {
-    currentConversation.messages = [];
-  }
-
-  currentConversation.messages.push({
-    sender: currentUser.name,
-    text: msg,
-    timestamp: new Date().toLocaleTimeString()
-  });
-
-  input.value = '';
-  
-  // Re-render messages
-  if (typeof renderMessageContent === 'function') {
-    renderMessageContent();
-  }
-  
-  showToast('Message sent');
-}
-

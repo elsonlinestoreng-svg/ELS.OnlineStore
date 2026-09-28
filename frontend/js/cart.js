@@ -1,5 +1,5 @@
 async function addToCart(backendId) {
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   if (!token) {
     showToast('Please login first');
     return;
@@ -33,7 +33,7 @@ async function addToCart(backendId) {
 }
 
 async function removeFromCart(backendId) {
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   if (!token) return;
 
   try {
@@ -58,7 +58,7 @@ async function removeFromCart(backendId) {
 
 async function updateCartBadge() {
   const badge = document.getElementById('cart-badge');
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   if (!token) {
     if (badge) badge.classList.add('hidden');
     return;
@@ -83,7 +83,7 @@ async function updateCartBadge() {
 async function renderCart() {
   const container = document.getElementById('cart-items');
   const summary = document.getElementById('cart-summary');
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
 
   if (!token) {
     container.innerHTML = '<p class="text-gray-400 text-center py-16">Please login to view your cart.</p>';
@@ -109,16 +109,21 @@ async function renderCart() {
     container.innerHTML = data.cart.items.map(c => {
       const sub = c.price * c.quantity;
       total += sub;
-      const imgUrl = c.image_url || '';
+      // Only http(s) URLs are rendered; anything else (a javascript: URI or a
+      // quote-breakout string) is dropped.
+      const rawUrl = typeof c.image_url === 'string' ? c.image_url.trim() : '';
+      const isSafeUrl = /^https?:\/\//i.test(rawUrl);
+      const imgUrl = isSafeUrl ? escHtml(rawUrl) : '';
+      const safeQty = Math.max(1, parseInt(c.quantity, 10) || 1);
       return `
       <div class="flex items-center gap-4 rounded-xl p-4" style="background:white;">
-        <div class="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">${imgUrl ? '<img src="'+imgUrl+'" class="w-full h-full object-cover" alt="'+escHtml(c.name)+'" loading="lazy">' : '<span class="text-3xl">📦</span>'}</div>
+        <div class="w-20 h-20 rounded-lg bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">${imgUrl ? '<img src="'+imgUrl+'" class="w-full h-full object-cover" alt="'+escHtml(c.name)+'" loading="lazy" referrerpolicy="no-referrer">' : '<span class="text-3xl">📦</span>'}</div>
         <div class="flex-1 min-w-0">
           <h4 class="font-bold text-sm" style="color:#1a1a2e;">${escHtml(c.name)}</h4>
-          <p class="text-sm text-gray-500">$${Number(c.price).toFixed(2)} × ${c.quantity}</p>
+          <p class="text-sm text-gray-500">$${Number(c.price).toFixed(2)} × ${safeQty}</p>
         </div>
         <span class="font-bold flex-shrink-0" style="color:#e94560;">$${sub.toFixed(2)}</span>
-        <button onclick="removeFromCart('${c.product_id}')" class="text-gray-400 hover:text-red-500 p-1 flex-shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <button onclick="removeFromCart('${escHtml(String(c.product_id))}')" class="text-gray-400 hover:text-red-500 p-1 flex-shrink-0"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>`;
     }).join('');
 

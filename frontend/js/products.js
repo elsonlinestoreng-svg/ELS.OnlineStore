@@ -501,12 +501,6 @@ async function handleAddProduct(e) {
     allProducts.push(localProd); window.lastCreatedProductId = localProd.__backendId;
     renderShop(); renderHomeProducts(); renderMyProducts(); try { saveProductsToLocal(); } catch (e) {} createdOk = true;
   }
-<<<<<<< HEAD:frontend/js/products.js
-  btn.disabled = false; document.getElementById('add-prod-text').classList.remove('hidden'); document.getElementById('add-prod-loading').classList.add('hidden');
-  if (createdOk) { document.getElementById('add-product-form').reset(); removeImage(); document.getElementById('prod-image').value = ''; showToast(forcePublish ? '🎉 Product published successfully!' : '📝 Product saved as draft.'); try { saveProductsToLocal(); } catch (e) {} }
-  else { showToast('Failed to list product. Try again.'); }
-  if (createdOk) { try { const cat = (sdkResult && sdkResult.item && sdkResult.item.category) || productPayload.category; if (cat) filterShopCategory(cat); else goTo('shop'); } catch (e) { goTo('shop'); } }
-=======
   const saveDraftBtn = document.getElementById('save-draft-btn');
   const publishBtn = document.getElementById('publish-product-btn');
   if (saveDraftBtn) { saveDraftBtn.disabled = !validateOpenStoreForm(); }
@@ -529,7 +523,6 @@ async function handleAddProduct(e) {
       goTo('shop');
     }
   }
->>>>>>> zohan-work:js/products.js
 }
 
 async function deleteProduct(id, btnEl) {

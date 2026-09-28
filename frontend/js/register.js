@@ -1,136 +1,5 @@
-<<<<<<< HEAD:frontend/js/register.js
-// Auth functions are now in ui.js - this file only contains password reset helpers
-=======
-// ===== AUTH =====
-function switchAuthTab(tab) {
-  const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
-  const regLogo = document.getElementById('register-logo');
-  const loginTab = document.getElementById('login-tab');
-  const registerTab = document.getElementById('register-tab');
-
-  if (tab === 'login') {
-    loginForm.classList.remove('hidden'); loginForm.setAttribute('aria-hidden', 'false');
-    registerForm.classList.add('hidden'); registerForm.setAttribute('aria-hidden', 'true');
-    if (regLogo) regLogo.classList.add('hidden');
-    loginTab.classList.add('text-white'); loginTab.classList.remove('text-gray-400'); loginTab.setAttribute('aria-pressed','true');
-    registerTab.classList.remove('text-white'); registerTab.classList.add('text-gray-400'); registerTab.setAttribute('aria-pressed','false');
-    // focus first input
-    setTimeout(()=>document.getElementById('login-email')?.focus(), 80);
-  } else {
-    loginForm.classList.add('hidden'); loginForm.setAttribute('aria-hidden', 'true');
-    registerForm.classList.remove('hidden'); registerForm.setAttribute('aria-hidden', 'false');
-    if (regLogo) regLogo.classList.remove('hidden');
-    registerTab.classList.add('text-white'); registerTab.classList.remove('text-gray-400'); registerTab.setAttribute('aria-pressed','true');
-    loginTab.classList.remove('text-white'); loginTab.classList.add('text-gray-400'); loginTab.setAttribute('aria-pressed','false');
-    setTimeout(()=>document.getElementById('reg-name')?.focus(), 80);
-  }
-}
-function handleLogin(e) {
-  e.preventDefault();
-  const email = (document.getElementById('login-email')?.value || '').trim();
-  const pass = (document.getElementById('login-pass')?.value || '');
-  if (!email) return showToast('Please enter your email');
-  if (!pass) return showToast('Please enter your password');
-  const USER_API = window.USER_API_URL || 'http://localhost:8001/api/auth';
-  const remember = !!document.getElementById('remember-login')?.checked;
-  // try server login first
-  try {
-    return fetch(USER_API + '/login', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ email, password: pass })
-    }).then(r => r.json()).then(json => {
-      if (json && json.ok && json.user) {
-        currentUser.name = json.user.name;
-        currentUser.email = json.user.email;
-        currentUser.__serverId = json.user.id;
-        try { localStorage.setItem('els_user', JSON.stringify({ name: currentUser.name, email: currentUser.email, __serverId: currentUser.__serverId, password: remember ? btoa(pass) : '', remember })); } catch(e){}
-        if (json.token) {
-          try { localStorage.setItem('els_token', json.token); } catch(e){}
-        }
-        enterApp();
-      } else {
-        // server responded but not OK -> fallback to local check
-        const loaded = loadUserIfExists(email);
-        if (!loaded) {
-          if (remember) try { localStorage.setItem('els_user', JSON.stringify({ name: email.split('@')[0], email: email, password: btoa(pass), remember: true })); } catch(e){}
-          currentUser.email = email; currentUser.name = email.split('@')[0]; enterApp(); return;
-        }
-        // verify stored local password if present
-        if (currentUser.password) {
-          try { if (currentUser.password === btoa(pass)) { enterApp(); return; } } catch(e){}
-        }
-        showToast((json && json.error) ? json.error : 'Invalid credentials');
-      }
-    }).catch(err => {
-      // server unreachable — fallback to local
-      const loaded = loadUserIfExists(email);
-      if (!loaded) {
-        if (remember) try { localStorage.setItem('els_user', JSON.stringify({ name: email.split('@')[0], email: email, password: btoa(pass), remember: true })); } catch(e){}
-        currentUser.email = email; currentUser.name = email.split('@')[0]; enterApp(); return;
-      }
-      if (currentUser.password) {
-        try { if (currentUser.password === btoa(pass)) { enterApp(); return; } } catch(e){}
-      }
-      showToast('Incorrect password. Click "Forgot password?" to reset.');
-    });
-  } catch (e) {
-    // fall back to local behavior
-    const loaded = loadUserIfExists(email);
-    if (!loaded) { if (remember) try { localStorage.setItem('els_user', JSON.stringify({ name: email.split('@')[0], email: email, password: btoa(pass), remember: true })); } catch(e){}; currentUser.email = email; currentUser.name = email.split('@')[0]; enterApp(); return; }
-    if (currentUser.password) { try { if (currentUser.password === btoa(pass)) { enterApp(); return; } } catch(e){} }
-    showToast('Incorrect password. Click "Forgot password?" to reset.');
-  }
-}
-function handleRegister(e) {
-  e.preventDefault();
-  const name = (document.getElementById('reg-name')?.value || '').trim();
-  const email = (document.getElementById('reg-email')?.value || '').trim();
-  const pass = (document.getElementById('reg-pass')?.value || '');
-  if (!email || !name || !pass) return showToast('Please enter name, email and password to register');
-  const USER_API = window.USER_API_URL || 'http://localhost:8001/api/auth';
-  // try server register
-  try {
-    return fetch(USER_API + '/register', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, email, password: pass, confirmPassword: pass })
-    }).then(r => r.json()).then(json => {
-      if (json && json.ok && json.user) {
-        currentUser.name = json.user.name; currentUser.email = json.user.email; currentUser.__serverId = json.user.id;
-        try { const remember = !!document.getElementById('remember-register')?.checked; localStorage.setItem('els_user', JSON.stringify({ name: currentUser.name, email: currentUser.email, __serverId: currentUser.__serverId, password: remember ? btoa(pass) : '', remember })); } catch(e){}
-        if (json.token) {
-          try { localStorage.setItem('els_token', json.token); } catch(e) {}
-        }
-        enterApp();
-      } else if (json && json.error && json.error === 'User exists') {
-        showToast('Account already exists — please login');
-      } else {
-        // fallback to local registration
-        const loaded = loadUserIfExists(email);
-        if (!loaded) {
-          const remember = !!document.getElementById('remember-register')?.checked;
-          currentUser.name = name; currentUser.email = email; try { currentUser.password = remember ? btoa(pass) : ''; } catch(e){ currentUser.password = pass; }
-          try { localStorage.setItem('els_user', JSON.stringify(Object.assign({}, currentUser, { remember }))); } catch(e){}
-        }
-        enterApp();
-      }
-    }).catch(err => {
-      // server unreachable - fallback
-      const loaded = loadUserIfExists(email);
-      if (!loaded) {
-        const remember = !!document.getElementById('remember-register')?.checked;
-        currentUser.name = name; currentUser.email = email; try { currentUser.password = remember ? btoa(pass) : ''; } catch(e){ currentUser.password = pass; }
-        try { localStorage.setItem('els_user', JSON.stringify(Object.assign({}, currentUser, { remember }))); } catch(e){}
-      }
-      enterApp();
-    });
-  } catch (e) {
-    const loaded = loadUserIfExists(email);
-    if (!loaded) { const remember = !!document.getElementById('remember-register')?.checked; currentUser.name = name; currentUser.email = email; try { currentUser.password = remember ? btoa(pass) : ''; } catch(e){ currentUser.password = pass; } try { localStorage.setItem('els_user', JSON.stringify(Object.assign({}, currentUser, { remember }))); } catch(e){} }
-    enterApp();
-  }
-}
->>>>>>> zohan-work:js/register.js
+// Auth functions (switchAuthTab / handleLogin / handleRegister) live in ui.js.
+// This file only contains the password reset helpers.
 
 // Password reset helpers
 function openResetRequestModal() {
@@ -141,14 +10,31 @@ function closeResetRequestModal() {
   document.getElementById('reset-request-result').innerHTML = '';
 }
 function openResetSetModal() {
-  document.getElementById('reset-set-modal').classList.remove('hidden');
+  const el = document.getElementById('reset-set-modal');
+  if (!el) return false;
+  el.classList.remove('hidden');
+  return true;
 }
 function closeResetSetModal() {
-  document.getElementById('reset-set-modal').classList.add('hidden');
-  document.getElementById('reset-set-result').innerHTML = '';
+  const el = document.getElementById('reset-set-modal');
+  if (el) el.classList.add('hidden');
+  const out = document.getElementById('reset-set-result');
+  if (out) out.textContent = '';
 }
-function openResetOtpModal() { document.getElementById('reset-otp-modal').classList.remove('hidden'); }
-function closeResetOtpModal() { document.getElementById('reset-otp-modal').classList.add('hidden'); document.getElementById('reset-otp-result').innerHTML = ''; document.getElementById('reset-otp-code').value=''; }
+function openResetOtpModal() {
+  const el = document.getElementById('reset-otp-modal');
+  if (!el) return false;
+  el.classList.remove('hidden');
+  return true;
+}
+function closeResetOtpModal() {
+  const el = document.getElementById('reset-otp-modal');
+  if (el) el.classList.add('hidden');
+  const out = document.getElementById('reset-otp-result');
+  if (out) out.textContent = '';
+  const input = document.getElementById('reset-otp-code');
+  if (input) input.value = '';
+}
 
 function getResetTokenFromLocation() {
   const hash = location.hash || '';
@@ -158,73 +44,101 @@ function getResetTokenFromLocation() {
   return params.get('token') || params.get('reset') || '';
 }
 
-async function verifyOtp(e) {
-  e.preventDefault();
-  const token = getResetTokenFromLocation();
-  if (!token) return showToast('Reset token not found');
-  const code = (document.getElementById('reset-otp-code')?.value || '').trim();
-  if (!code) return showToast('Enter the verification code');
-  const API = window.USER_API_URL || 'http://localhost:8001/api/auth';
+/**
+ * Passwordless sign-in.
+ *
+ * The server contract is { email, code } against /auth/verify-otp, which
+ * returns a normal session token on success. The previous version of this
+ * function posted { token, otp } to the root endpoint, which is a different
+ * (reset) flow and could never succeed from this modal.
+ */
+async function startOtpLogin() {
+  const emailField = document.getElementById('login-email');
+  const out = document.getElementById('reset-otp-result');
+  const email = (emailField ? emailField.value : '').trim()
+    || (document.getElementById('reset-otp-email') || {}).value;
+  const address = (email || '').trim();
+
+  if (!address) {
+    if (out) out.textContent = 'Enter your email address first, then choose "Sign in with a code".';
+    else showToast('Enter your email address first');
+    return;
+  }
+
+  if (!openResetOtpModal()) return;
+  const emailInput = document.getElementById('reset-otp-email');
+  if (emailInput) emailInput.value = address;
+
+  await sendOtpCode(address);
+}
+
+async function sendOtpCode(email) {
+  const out = document.getElementById('reset-otp-result');
+  if (out) out.textContent = 'Sending code...';
+  const API = window.USER_API_URL || (window.API_BASE || 'http://localhost:8001/api') + '/auth';
   try {
-    const res = await fetch(API + '/verify-otp', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ token, otp: code }) });
-    const json = await res.json();
-    if (res.ok && json && (json.ok || json.success)) {
-      closeResetOtpModal();
-      openResetSetModal();
-    } else {
-      document.getElementById('reset-otp-result').textContent = (json && json.error) ? json.error : 'Invalid code';
-    }
+    const res = await fetch(API + '/send-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const json = await res.json().catch(() => ({}));
+    if (out) out.textContent = (json && (json.message || json.error))
+      || 'If that email is registered, a verification code has been sent.';
   } catch (err) {
-    document.getElementById('reset-otp-result').textContent = 'Verification failed — try again.';
+    if (out) out.textContent = 'Could not reach the server. Try again later.';
+  }
+}
+
+async function verifyOtp(e) {
+  if (e) e.preventDefault();
+  const email = ((document.getElementById('reset-otp-email') || {}).value || '').trim();
+  const code = ((document.getElementById('reset-otp-code') || {}).value || '').trim();
+  const out = document.getElementById('reset-otp-result');
+
+  if (!email) { if (out) out.textContent = 'Email is required'; return; }
+  if (!/^\d{6}$/.test(code)) { if (out) out.textContent = 'Enter the six-digit code'; return; }
+
+  const API = window.USER_API_URL || (window.API_BASE || 'http://localhost:8001/api') + '/auth';
+  try {
+    const res = await fetch(API + '/verify-otp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code })
+    });
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok || !json || !json.success) {
+      if (out) out.textContent = (json && (json.message || json.error)) || 'That code is not valid.';
+      return;
+    }
+
+    // The verified code mints a full session, exactly like a password login.
+    const remember = !!(document.getElementById('remember-login') || {}).checked;
+    if (typeof persistAuthSession === 'function') {
+      persistAuthSession(json.user, json.token, remember);
+    } else {
+      localStorage.setItem('els_token', json.token);
+      localStorage.setItem('els_user', JSON.stringify(json.user || {}));
+    }
+    closeResetOtpModal();
+    showToast('Signed in', 'success');
+    if (typeof enterApp === 'function') enterApp();
+  } catch (err) {
+    if (out) out.textContent = 'Could not reach the server. Try again later.';
   }
 }
 
 async function resendResetCode() {
   const btn = document.getElementById('resend-reset-code-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Resending...'; }
-  const hash = location.hash || '';
-  const m = hash.match(/#reset=([A-Za-z0-9_-]+)/);
-  let email = '';
-  if (m) {
-    const token = m[1];
-    try {
-      const resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}');
-      if (resets && resets[token] && resets[token].email) email = resets[token].email;
-    } catch (e) { }
-  }
+  const email = ((document.getElementById('reset-otp-email') || {}).value || '').trim();
   if (!email) {
-    // as a fallback ask the user for their email
-    email = prompt('Enter your email to resend the verification code');
-    if (!email) {
-      if (btn) { btn.disabled = false; btn.textContent = 'Resend code'; }
-      return;
-    }
+    if (btn) { btn.disabled = false; btn.textContent = 'Resend code'; }
+    return;
   }
-  const API = window.RESET_API_URL || 'http://localhost:8001/api/auth';
-  try {
-    const res = await fetch(API + '/send-reset', { method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ email, resetBase: (location.href.split('#')[0].split('?')[0]), siteName: document.title }) });
-    const json = await res.json();
-    if (res.ok && json && json.ok) {
-      document.getElementById('reset-otp-result').textContent = 'Verification code resent — check your email.';
-      startResendCountdown(30);
-      // store returned token locally if provided
-      if (json.token) {
-        try {
-          const resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}');
-          resets[json.token] = { email: email, expires: Date.now() + (60*60*1000) };
-          localStorage.setItem('els_password_resets', JSON.stringify(resets));
-          // update location hash to new token so flow continues
-          location.hash = 'reset=' + json.token;
-        } catch(e){}
-      }
-    } else {
-      document.getElementById('reset-otp-result').textContent = (json && json.error) ? json.error : 'Failed to resend code';
-    }
-  } catch (err) {
-    document.getElementById('reset-otp-result').textContent = 'Unable to contact server — try again later.';
-    startResendCountdown(30);
-  }
-  // Start countdown/disable even if server fails to avoid spam
+  if (btn) { btn.disabled = true; btn.textContent = 'Resending...'; }
+  await sendOtpCode(email);
+  startResendCountdown();
 }
 
 function startResendCountdown(seconds) {
@@ -264,143 +178,95 @@ function togglePasswordVisibility(inputId, btn) {
   try { if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons(); } catch(e) {}
 }
 
-function generateResetToken() {
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-
 function sendPasswordResetRequest(e) {
   e.preventDefault();
   const email = (document.getElementById('reset-email')?.value || '').trim();
-  if (!email) return showToast('Please enter your registered email');
-  // check stored user
-  let user = null;
-  try {
-    const raw = localStorage.getItem('els_user');
-    if (raw) {
-      const u = JSON.parse(raw);
-      if (u && u.email && String(u.email).toLowerCase() === String(email).toLowerCase()) user = u;
-    }
-  } catch (e) { /* ignore */ }
+  const result = document.getElementById('reset-request-result');
+  if (!result) return;
+  if (!email) { result.textContent = 'Please enter your registered email'; return; }
 
-  const token = generateResetToken();
-  const expires = Date.now() + (60 * 60 * 1000); // 1 hour
-  let resets = {};
-  try { resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}'); } catch(e) { resets = {}; }
-  resets[token] = { email: email, expires };
-  try { localStorage.setItem('els_password_resets', JSON.stringify(resets)); } catch(e){}
-
-  const resetUrl = (location.href.split('#')[0].split('?')[0]) + '#reset=' + token;
-
-  // Prefer server-side email sending if configured
-  const serverUrl = window.RESET_API_URL || 'http://localhost:8001/api/auth/send-reset';
-  fetch(serverUrl, {
+  // Only the server may issue a reset token. The previous client-side token
+  // (Math.random() in localStorage) let anyone with devtools reset any account
+  // they were signed in as, and the mailto/Gmail fallback rendered a
+  // self-generated link that looked authentic but granted nothing.
+  const API = window.USER_API_URL || (window.API_BASE || 'http://localhost:8001/api') + '/auth';
+  fetch(API + '/send-reset', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, resetBase: (location.href.split('#')[0].split('?')[0]), siteName: document.title })
-  }).then(res => res.json()).then(json => {
-    const effectiveResetUrl = (json && json.resetUrl) ? json.resetUrl : resetUrl;
+    // No resetBase/siteName: the link origin is a server-side setting, so a
+    // caller cannot redirect a genuine reset mail to their own domain.
+    body: JSON.stringify({ email })
+  }).then(r => r.json().catch(() => ({}))).then(json => {
     if (json && (json.ok || json.success)) {
-      document.getElementById('reset-request-result').textContent = 'Reset email sent — check your inbox.';
+      result.textContent = json.message || 'If that email is registered, a reset link is on its way.';
       return;
     }
-    const subject = 'Password reset';
-    const body = 'Please click the link below to change your password for ' + (document.title || 'the site') + ':\n\n' + effectiveResetUrl + '\n\nIf you did not request this, please ignore.';
-    const mailto = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    const gmail = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    const header = (json && json.error && json.error === 'SMTP not configured on server') ? 'Server cannot send email. Use one of these to send the reset link:' : 'Reset link created. Use your email to send it, or open Gmail compose:';
-    document.getElementById('reset-request-result').innerHTML = '<div>' + header + '</div><div class="mt-2"><a target="_blank" href="' + gmail + '" class="underline text-indigo-600 mr-2">Open Gmail</a><a href="' + mailto + '" class="underline mr-2">Open mail client</a><button onclick="navigator.clipboard && navigator.clipboard.writeText(\'' + effectiveResetUrl + '\')?showToast(\'Link copied\'):null" class="ml-2 px-2 py-1 bg-gray-100 rounded">Copy link</button></div>';
-  }).catch(err => {
-    const subject = 'Password reset';
-    const body = 'Please click the link below to change your password for ' + (document.title || 'the site') + ':\n\n' + resetUrl + '\n\nIf you did not request this, please ignore.';
-    const mailto = 'mailto:' + encodeURIComponent(email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    const gmail = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(email) + '&su=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
-    document.getElementById('reset-request-result').innerHTML = '<div>Reset link created. Use your email to send it, or open Gmail compose:</div><div class="mt-2"><a target="_blank" href="' + gmail + '" class="underline text-indigo-600 mr-2">Open Gmail</a><a href="' + mailto + '" class="underline mr-2">Open mail client</a><button onclick="navigator.clipboard && navigator.clipboard.writeText(\'' + resetUrl + '\')?showToast(\'Link copied\'):null" class="ml-2 px-2 py-1 bg-gray-100 rounded">Copy link</button></div>';
+    result.textContent = (json && (json.error || json.message)) || 'Could not start password reset. Try again later.';
+  }).catch(() => {
+    result.textContent = 'Could not reach the server. Try again later.';
   });
 }
 
 function completePasswordReset(e) {
   e.preventDefault();
-  // token should be in location.hash
-  const hash = location.hash || '';
-  const m = hash.match(/#reset=([A-Za-z0-9_-]+)/);
-  if (!m) return showToast('Reset token not found');
-  const token = m[1];
-  let resets = {};
-  try { resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}'); } catch(e){ resets = {}; }
-  const info = resets[token];
-  if (!info) return showToast('Invalid or expired reset token');
-  if (Date.now() > info.expires) return showToast('Reset token expired');
+  const result = document.getElementById('reset-set-result');
+  if (!result) return;
+  const token = getResetTokenFromLocation();
+  if (!token) { result.textContent = 'Reset token not found'; return; }
+
   const pass = (document.getElementById('reset-new-pass')?.value || '');
-  const pass2 = (document.getElementById('reset-new-pass-confirm')?.value || '');
-  if (!pass || pass.length < 6) return showToast('Password must be at least 6 characters');
-  if (pass !== pass2) return showToast('Passwords do not match');
-  const USER_API = window.USER_API_URL || 'http://localhost:8001/api/auth';
-  // try server-side reset complete
-  try {
-    return fetch(USER_API + '/reset-complete', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ token, newPassword: pass }) })
-      .then(r => r.json()).then(json => {
-        if (json && (json.ok || json.success)) {
-          document.getElementById('reset-set-result').textContent = 'Password reset — you can now sign in.';
-          setTimeout(() => { closeResetSetModal(); location.hash = ''; }, 1200);
-        } else {
-          // fallback to local storage method
-          try {
-            const raw = localStorage.getItem('els_user');
-            if (raw) {
-              const u = JSON.parse(raw);
-              if (u && u.email && String(u.email).toLowerCase() === String(info.email).toLowerCase()) {
-                try { u.password = btoa(pass); } catch(e){ u.password = pass; }
-                localStorage.setItem('els_user', JSON.stringify(u));
-                document.getElementById('reset-set-result').textContent = 'Password reset — you can now sign in.';
-                delete resets[token];
-                try { localStorage.setItem('els_password_resets', JSON.stringify(resets)); } catch(e){}
-                setTimeout(() => { closeResetSetModal(); location.hash = ''; }, 1200);
-                return;
-              }
-            }
-          } catch(e){}
-          showToast((json && json.error) ? json.error : 'Account not found for that email');
-        }
-      }).catch(err => {
-        // server unreachable, fallback to local
-        try {
-          const raw = localStorage.getItem('els_user');
-          if (raw) {
-            const u = JSON.parse(raw);
-            if (u && u.email && String(u.email).toLowerCase() === String(info.email).toLowerCase()) {
-              try { u.password = btoa(pass); } catch(e){ u.password = pass; }
-              localStorage.setItem('els_user', JSON.stringify(u));
-              document.getElementById('reset-set-result').textContent = 'Password reset — you can now sign in.';
-              delete resets[token];
-              try { localStorage.setItem('els_password_resets', JSON.stringify(resets)); } catch(e){}
-              setTimeout(() => { closeResetSetModal(); location.hash = ''; }, 1200);
-              return;
-            }
-          }
-        } catch(e){}
-        showToast('Account not found for that email');
-      });
-  } catch(e) {
-    showToast('Failed to reset — try again');
+  const pass2 = (document.getElementById('reset-new-pass-confirm') || {}).value || '';
+  // Mirror the server policy (8+ chars, upper, lower, digit) so the user is
+  // told immediately instead of after a round trip.
+  if (pass.length < 8) { result.textContent = 'Password must be at least 8 characters'; return; }
+  if (!/[a-z]/.test(pass) || !/[A-Z]/.test(pass) || !/[0-9]/.test(pass)) {
+    result.textContent = 'Password needs upper case, lower case and a number';
+    return;
   }
+  if (pass !== pass2) { result.textContent = 'Passwords do not match'; return; }
+
+  const API = window.USER_API_URL || (window.API_BASE || 'http://localhost:8001/api') + '/auth';
+  fetch(API + '/reset-complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword: pass })
+  }).then(r => r.json().catch(() => ({}))).then(json => {
+    if (json && (json.ok || json.success)) {
+      result.textContent = 'Password reset — you can now sign in.';
+      // Drop any stale local session; the server has rotated the token version.
+      try {
+        localStorage.removeItem('els_token'); localStorage.removeItem('els_user');
+        sessionStorage.removeItem('els_token'); sessionStorage.removeItem('els_user');
+        localStorage.removeItem('els_password_resets');
+      } catch (err) { /* ignore */ }
+      setTimeout(() => { closeResetSetModal(); location.hash = ''; }, 1200);
+      return;
+    }
+    // No local fallback: a "local" reset cannot change the server password, so
+    // reporting success here would only mislead the user.
+    result.textContent = (json && (json.error || json.message)) || 'Reset failed. Request a new link.';
+  }).catch(() => {
+    result.textContent = 'Could not reach the server. Try again later.';
+  });
 }
 
 // On load, detect reset token and show set-password modal
 function checkForResetTokenOnLoad() {
   const token = getResetTokenFromLocation();
   if (!token) return;
-  const validateUrl = (window.RESET_API_URL || 'http://localhost:8001/api/auth/validate-reset') + '?token=' + encodeURIComponent(token);
+  const validateUrl = (window.USER_API_URL || (window.API_BASE || 'http://localhost:8001/api') + '/auth') + '/validate-reset?token=' + encodeURIComponent(token);
+  // Server is the only authority on whether a reset token is real. The old
+  // localStorage fallback opened the set-password modal for a token the server
+  // had never issued.
   fetch(validateUrl).then(r => r.json()).then(json => {
     if (json && (json.ok || json.success)) {
-      openResetSetModal();
+      if (openResetSetModal()) { /* set-password modal present */ }
+      else { showToast('Reset link verified, but this build has no set-password form.'); }
+    } else {
+      showToast('This reset link is invalid or has expired. Request a new one.');
     }
   }).catch(() => {
-    let resets = {};
-    try { resets = JSON.parse(localStorage.getItem('els_password_resets') || '{}'); } catch(e){ resets = {}; }
-    const info = resets[token];
-    if (!info) return;
-    if (Date.now() > info.expires) return;
-    openResetSetModal();
+    showToast('Could not verify the reset link. Try again later.');
   });
 }
 

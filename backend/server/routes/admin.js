@@ -6,6 +6,7 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const Transaction = require('../models/Transaction');
 const admin = require('../middleware/admin');
+const { escapeRegex, toObjectId } = require('../utils/security');
 
 const VALID_ROLES = ['user', 'admin'];
 const VALID_STORE_STATUSES = ['active', 'suspended', 'pending_review'];
@@ -107,7 +108,8 @@ router.get('/users', admin, async (req, res) => {
       filter.role = req.query.role;
     }
     if (req.query.q && req.query.q.trim()) {
-      const term = req.query.q.trim();
+      // Escaped before use in $regex to prevent ReDoS via a crafted pattern.
+      const term = escapeRegex(req.query.q.trim().slice(0, 100));
       filter.$or = [
         { name: { $regex: term, $options: 'i' } },
         { email: { $regex: term, $options: 'i' } }
@@ -130,17 +132,31 @@ router.get('/users', admin, async (req, res) => {
 router.put('/users/:id/role', admin, async (req, res) => {
   try {
     const { role } = req.body;
+    const userId = toObjectId(req.params.id);
+
+    if (!userId) {
+      return res.status(400).json({ success: false, message: 'Invalid user id' });
+    }
 
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({ success: false, message: 'Role must be one of: ' + VALID_ROLES.join(', ') });
     }
 
-    if (req.params.id === req.user.userId && role !== 'admin') {
-      return res.status(400).json({ success: false, message: 'You cannot demote yourself' });
+    // Guard against an admin locking the platform out by demoting the last
+    // remaining admin, and against self-demotion.
+    if (userId.toString() === req.user.userId) {
+      return res.status(400).json({ success: false, message: 'You cannot change your own role' });
+    }
+
+    if (role !== 'admin') {
+      const remainingAdmins = await User.countDocuments({ role: 'admin', _id: { $ne: userId } });
+      if (remainingAdmins === 0) {
+        return res.status(400).json({ success: false, message: 'At least one admin must remain' });
+      }
     }
 
     const user = await User.findByIdAndUpdate(
-      req.params.id,
+      userId,
       { $set: { role } },
       { new: true, runValidators: true }
     ).select('-password');
@@ -151,7 +167,7 @@ router.put('/users/:id/role', admin, async (req, res) => {
 
     res.json({ success: true, message: 'Role updated to ' + role, user });
   } catch (err) {
-    console.error('Update user role error:', err);
+    console.error('Update user role error:', err && err.message);
     res.status(500).json({ success: false, message: 'Failed to update user' });
   }
 });

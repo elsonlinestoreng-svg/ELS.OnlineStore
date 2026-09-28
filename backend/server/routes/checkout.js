@@ -31,9 +31,42 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Cart is empty' });
     }
 
+    // Re-read every product and use the CURRENT database price.
+    // The cart stores a snapshot of price and quantity; trusting it would let
+    // a buyer keep a stale or tampered price, and would allow ordering a
+    // product that is no longer published.
+    const pricedItems = [];
+    for (const item of cart.items) {
+      const product = await Product.findById(item.product_id).select('name price public seller primary_image images');
+      if (!product) {
+        return res.status(400).json({
+          success: false,
+          message: 'A product in your cart is no longer available: ' + String(item.name || '').slice(0, 60)
+        });
+      }
+      if (product.public === false) {
+        return res.status(400).json({
+          success: false,
+          message: 'A product in your cart is no longer available: ' + String(item.name || '').slice(0, 60)
+        });
+      }
+
+      const quantity = Math.max(1, Math.min(parseInt(item.quantity) || 1, 100));
+
+      pricedItems.push({
+        product_id: product._id,
+        store_id: item.store_id,
+        seller_id: item.seller_id,
+        name: product.name,
+        price: product.price,
+        quantity,
+        image_url: item.image_url
+      });
+    }
+
     // Group items by seller
     const sellerGroups = {};
-    for (const item of cart.items) {
+    for (const item of pricedItems) {
       const sellerKey = item.seller_id.toString();
       if (!sellerGroups[sellerKey]) {
         const store = await Store.findById(item.store_id);
@@ -78,8 +111,7 @@ router.post('/', auth, async (req, res) => {
           price: i.price,
           quantity: i.quantity,
           image_url: i.image_url
-        })),
-        subtotal: group.subtotal,
+        })),        subtotal: group.subtotal,
         total: group.subtotal,
         commission_rate: group.commission_rate,
         commission_amount: commission,

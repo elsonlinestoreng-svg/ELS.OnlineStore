@@ -27,9 +27,9 @@
       <div class="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
         <div class="grid gap-8 rounded-[2rem] bg-slate-900/95 p-8 shadow-2xl shadow-slate-950/20 lg:grid-cols-[0.9fr_0.7fr] lg:p-10">
           <div class="space-y-6">
-            <span class="inline-flex rounded-full bg-rose-500/10 px-4 py-1 text-sm uppercase tracking-[0.35em] text-rose-300">JovAli Online Market </span>
+            <span class="inline-flex rounded-full bg-rose-500/10 px-4 py-1 text-sm uppercase tracking-[0.35em] text-rose-300"><span id="auth-site-name">JovAli Online Market</span></span>
             <h1 class="section-title text-4xl font-bold leading-tight sm:text-5xl">Merchant storefront with modern checkout and inventory tools.</h1>
-            <p class="max-w-xl text-slate-300">Access the JovAli  merchant dashboard, manage listings, track orders, and process payments from a refined, professional interface.</p>
+            <p class="max-w-xl text-slate-300"><span id="auth-tagline">Access the JovAli merchant dashboard, manage listings, track orders, and process payments from a refined, professional interface.</span></p>
             <div class="grid gap-4 sm:grid-cols-2">
               <div class="rounded-3xl bg-slate-950/80 p-5 ring-1 ring-white/10">
                 <p class="text-sm uppercase tracking-[0.3em] text-rose-400">Designed for</p>
@@ -66,18 +66,61 @@
                 <label class="inline-flex items-center gap-2"><input id="remember-login" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> Remember me</label>
                 <button type="button" onclick="openResetRequestModal()" class="font-semibold text-rose-600 hover:text-rose-500">Forgot password?</button>
               </div>
+              <div class="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label for="login-role" class="block text-sm font-semibold text-slate-700">Signing in as</label>
+                  <select id="login-role" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                    <option value="buyer">Buyer</option>
+                    <option value="seller">Seller</option>
+                    <option value="delivery">Delivery partner</option>
+                    <option value="admin">Administrator</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="login-region" class="block text-sm font-semibold text-slate-700">Region</label>
+                  <select id="login-region" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                    <option value="global">Global</option>
+                    <option value="nigeria">Nigeria</option>
+                    <option value="ghana">Ghana</option>
+                    <option value="kenya">Kenya</option>
+                    <option value="south-africa">South Africa</option>
+                    <option value="uk">United Kingdom</option>
+                    <option value="us">United States</option>
+                  </select>
+                </div>
+              </div>
+              <p class="text-xs text-slate-500">Role only chooses which dashboard opens. Access is always verified by the server on every request.</p>
               <button type="submit" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Sign in</button>
+              <button type="button" id="otp-login-btn" onclick="startOtpLogin()" class="w-full rounded-2xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Sign in with a code instead</button>
             </form>
 
             <form id="register-form" onsubmit="handleRegister(event)" class="mt-8 hidden space-y-4">
+              <div id="register-logo" class="hidden rounded-2xl bg-slate-50 p-4 text-center">
+                <p class="text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">Create your account</p>
+                <p class="mt-1 text-sm text-slate-600">Start selling, buying, or delivering in a couple of minutes.</p>
+              </div>
               <label class="block text-sm font-semibold text-slate-700">Name</label>
               <input id="reg-name" type="text" required placeholder="Jane Doe" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
               <label class="block text-sm font-semibold text-slate-700">Email</label>
               <input id="reg-email" type="email" required placeholder="you@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
               <label class="block text-sm font-semibold text-slate-700">Password</label>
               <div class="relative">
-                <input id="reg-pass" type="password" required placeholder="Create a password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                <input id="reg-pass" type="password" required placeholder="Create a password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" autocomplete="new-password" />
                 <button type="button" onclick="togglePasswordVisibility('reg-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">Show</button>
+              </div>
+              <div>
+                <div class="mb-1 flex items-center justify-between text-xs">
+                  <span class="font-semibold text-slate-600">Strength: <span id="password-strength-label">Weak</span></span>
+                  <span class="text-slate-500">8+ chars, upper, lower, number, symbol</span>
+                </div>
+                <div id="password-strength" class="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+                  <div class="h-full w-0 bg-red-500 transition-all duration-300"></div>
+                </div>
+              </div>
+              <label class="block text-sm font-semibold text-slate-700">Confirm password</label>
+              <div class="relative">
+                <input id="reg-confirm-pass" type="password" required placeholder="Repeat your password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" autocomplete="new-password" />
+                <button type="button" onclick="togglePasswordVisibility('reg-confirm-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">Show</button>
               </div>
               <label class="inline-flex items-center gap-2 text-sm text-slate-600"><input id="remember-register" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" /> Keep me signed in</label>
               <button type="submit" class="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Create account</button>
@@ -135,6 +178,13 @@
               <button data-nav="shop" onclick="goTo('shop')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
                 <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="shopping-bag" class="h-4 w-4"></i></span>
                 <span class="truncate">Marketplace</span>
+              </button>
+
+              <button data-nav="my-store" onclick="goTo('my-store')" class="side-link menu-item group flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="menu-item-icon text-slate-400 transition-colors group-hover:text-rose-400"><i data-lucide="store" class="h-4 w-4"></i></span>
+                  <span class="truncate">My store</span>
+                </div>
               </button>
 
               <button data-nav="orders" onclick="goTo('orders')" class="side-link menu-item group flex w-full items-center justify-between rounded-xl px-3.5 py-2.5 text-left text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-slate-800/80 hover:text-white active:scale-[0.98]">
@@ -247,7 +297,7 @@
           
           <div>
             <p class="text-[10px] font-bold uppercase tracking-[0.25em] text-rose-400">Online Store</p>
-            <h1 class="text-base font-bold text-white lg:text-lg">JovAli Merchant Dashboard</h1>
+            <h1 class="text-base font-bold text-white lg:text-lg"><span id="nav-site-name">JovAli Merchant Dashboard</span></h1>
           </div>
         </div>
 
@@ -282,14 +332,17 @@
             <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500"></span>
           </button>
 
+          <button type="button" onclick="goTo('cart')" class="relative flex h-10 w-10 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-300 transition hover:bg-slate-800 hover:text-white" title="Cart" aria-label="Open cart">
+            <i data-lucide="shopping-cart" class="h-4 w-4"></i>
+            <span id="cart-badge" class="absolute -top-1.5 -right-1.5 hidden min-w-[18px] rounded-full bg-rose-500 px-1 text-center text-[10px] font-bold leading-[18px] text-white">0</span>
+          </button>
+
           <!-- User Account Badge -->
           <div class="inline-flex items-center gap-2.5 rounded-xl border border-slate-800 bg-slate-900/90 p-1.5 pr-3">
-            <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-tr from-rose-500 to-fuchsia-500 text-xs font-bold text-white shadow-sm">
-              U
-            </div>
+            <div id="user-avatar" class="flex h-7 w-7 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-tr from-rose-500 to-fuchsia-500 text-xs font-bold text-white shadow-sm">U</div>
             <div class="hidden md:block text-left">
               <p class="text-[9px] font-bold uppercase tracking-wider text-slate-400">Welcome Back</p>
-              <p class="text-xs font-semibold text-white">Merchant</p>
+              <p class="text-xs font-semibold text-white">Member</p>
             </div>
           </div>
         </div>
@@ -300,10 +353,11 @@
     <!-- Additional content area continues smoothly below header -->
         <main class="mx-auto max-w-7xl space-y-10 px-4 py-8 lg:px-8 min-h-[calc(100vh-124px)]">
           <section id="page-home" class="page active rounded-3xl bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-700 p-8 text-white shadow-xl">
+            <div id="home-bg-carousel" class="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl opacity-30" aria-hidden="true"></div>
             <div class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
               <div>
                 <span class="inline-flex rounded-full bg-rose-500/10 px-4 py-1 text-sm uppercase tracking-[0.35em] text-rose-300">Discover</span>
-                <h2 class="section-title mt-6 text-4xl font-bold leading-tight sm:text-5xl">Sell smarter, ship faster, and delight every customer.</h2>
+                <h2 id="hero-heading" class="section-title mt-6 text-4xl font-bold leading-tight sm:text-5xl">Sell smarter, ship faster, and delight every customer.</h2>
                 <p class="mt-6 max-w-2xl text-slate-200/90">JovAli gives your storefront a modern marketplace interface, complete with inventory management, a polished cart experience, and secure payment flows.</p>
                 <div class="mt-8 flex flex-wrap gap-3">
                   <button onclick="goTo('shop')" class="rounded-2xl bg-white px-6 py-3 text-sm font-semibold text-slate-900 shadow-lg shadow-slate-900/10 transition hover:shadow-xl">Browse shop</button>
@@ -323,6 +377,18 @@
                   <p>Built for easy onboarding, fast selling, and simple checkout.</p>
                 </div>
               </div>
+            </div>
+
+            <!-- Featured products (populated by products.js) -->
+            <div class="mt-12">
+              <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                  <p class="text-xs uppercase tracking-[0.3em] text-rose-300">Featured</p>
+                  <h3 class="section-title mt-2 text-2xl font-bold">Trending right now</h3>
+                </div>
+                <button onclick="goTo('shop')" class="rounded-full border border-white/20 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/10">View all products</button>
+              </div>
+              <div id="home-products" class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-4"></div>
             </div>
           </section>
 
@@ -458,6 +524,9 @@
                 <span class="rounded-full bg-rose-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">Merchant upload</span>
               </div>
               <form id="add-product-form" class="space-y-5" onsubmit="handleAddProduct(event)">
+                <p id="store-limit-msg" class="hidden rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800 ring-1 ring-amber-200">
+                  You have reached the maximum number of listings allowed on this plan. Remove an item before adding another.
+                </p>
                 <div class="grid gap-4 lg:grid-cols-2">
                   <div>
                     <label class="block text-sm font-semibold text-slate-700">Product name</label>
@@ -489,6 +558,7 @@
                     <label class="block text-sm font-semibold text-slate-700">Product images</label>
                     <div id="image-upload-area" class="mt-2 min-h-[140px] rounded-3xl border border-dashed border-slate-300 bg-white/90 p-4 text-center text-slate-500 transition hover:border-rose-500 hover:text-slate-700 cursor-pointer">
                       <input id="prod-image" type="file" accept="image/*" multiple class="hidden" />
+                      <input id="product-image-replace-input" type="file" accept="image/*" class="hidden" />
                       <p class="text-sm font-semibold">Upload photos</p>
                       <p class="mt-2 text-xs">Click or drop up to 6 images.</p>
                       <p id="image-info" class="mt-3 text-xs text-slate-400">No images selected</p>
@@ -564,6 +634,10 @@
                 <h2 class="section-title text-3xl font-bold">Live shop catalog</h2>
               </div>
               <div class="flex flex-wrap gap-3">
+                <div class="relative w-full sm:w-64">
+                  <label for="shop-search" class="sr-only">Search the catalog</label>
+                  <input id="shop-search" type="search" oninput="renderShop()" placeholder="Search products..." class="w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm text-slate-900 focus:border-rose-500 focus:outline-none" />
+                </div>
                 <button onclick="filterShopCategory('All')" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50">All items</button>
                 <button onclick="filterShopCategory('Electronics')" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50">Electronics</button>
                 <button onclick="filterShopCategory('Fashion')" class="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 transition hover:bg-slate-50">Fashion</button>
@@ -574,6 +648,13 @@
                 <p class="text-lg font-semibold text-slate-900">No active stock instances listed.</p>
                 <p class="mt-2 text-sm">Publish your first product to start building the live shop catalogue.</p>
               </div>
+            </div>
+
+            <!-- My listings -->
+            <div class="mt-12 border-t border-slate-200 pt-8">
+              <h3 class="section-title text-2xl font-bold">My listings</h3>
+              <p class="mt-1 text-sm text-slate-500">Everything you have published or saved as a draft.</p>
+              <div id="my-products" class="mt-5 space-y-3"></div>
             </div>
           </section>
 
@@ -604,21 +685,94 @@
                 <p class="mt-3 text-slate-600">Track every purchase, update order statuses, and manage customer fulfillment efficiently.</p>
               </div>
               <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
-                <span class="font-semibold">Today</span> <span class="block">3 new orders</span>
+                <span class="font-semibold">Live data</span> <span class="block">Loaded from your account</span>
               </div>
             </div>
             <div class="mt-8 grid gap-6 lg:grid-cols-3">
               <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Pending</p>
-                <p class="mt-4 text-3xl font-semibold text-slate-900">12</p>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Total orders</p>
+                <p id="total-orders" class="mt-4 text-3xl font-semibold text-slate-900">0</p>
               </div>
               <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Processing</p>
-                <p class="mt-4 text-3xl font-semibold text-slate-900">8</p>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">In transit</p>
+                <p id="in-transit-count" class="mt-4 text-3xl font-semibold text-slate-900">0</p>
               </div>
               <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
                 <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Delivered</p>
-                <p class="mt-4 text-3xl font-semibold text-slate-900">42</p>
+                <p id="delivered-count" class="mt-4 text-3xl font-semibold text-slate-900">0</p>
+              </div>
+            </div>
+
+            <div id="orders-list" class="mt-8 space-y-4">
+              <p class="py-16 text-center text-slate-500">Loading your orders...</p>
+            </div>
+          </section>
+
+          <section id="page-my-store" class="page rounded-3xl bg-white p-8 shadow-sm hidden">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Seller dashboard</p>
+                <h2 class="section-title text-3xl font-bold">My store</h2>
+                <p class="mt-3 text-slate-600">Track your listings, fulfil orders, and monitor payouts.</p>
+              </div>
+              <button onclick="goTo('merchant')" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Add a product</button>
+            </div>
+
+            <div id="dash-loader" class="mt-6 hidden items-center gap-3 rounded-3xl bg-slate-50 px-5 py-4 text-sm text-slate-600 ring-1 ring-slate-200">
+              <span class="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-rose-500"></span>
+              Loading your store data...
+            </div>
+
+            <ul class="dash-tabs-nav mt-8 flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+              <li data-tab="products" class="active cursor-pointer rounded-full bg-rose-500 px-4 py-2 text-sm font-semibold text-white">Products</li>
+              <li data-tab="orders" class="cursor-pointer rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Orders</li>
+              <li data-tab="earnings" class="cursor-pointer rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100">Earnings</li>
+            </ul>
+
+            <div id="tab-products" class="dash-tab-content mt-6">
+              <div id="seller-products-list" class="space-y-3">
+                <p class="py-8 text-center text-sm text-slate-500">Loading your products...</p>
+              </div>
+            </div>
+
+            <div id="tab-orders" class="dash-tab-content mt-6 hidden overflow-x-auto">
+              <table class="w-full min-w-[52rem] border-collapse text-left text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500">
+                    <th class="px-3 py-3">Reference</th>
+                    <th class="px-3 py-3">Buyer</th>
+                    <th class="px-3 py-3">Items</th>
+                    <th class="px-3 py-3">Payout</th>
+                    <th class="px-3 py-3">Status</th>
+                    <th class="px-3 py-3">Update</th>
+                  </tr>
+                </thead>
+                <tbody id="seller-orders-list" class="text-slate-700">
+                  <tr><td colspan="6" class="px-3 py-6 text-center text-slate-500">Loading orders...</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="tab-earnings" class="dash-tab-content mt-6 hidden space-y-6">
+              <div class="grid gap-6 sm:grid-cols-3">
+                <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                  <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Total earned</p>
+                  <p id="earn-total" class="mt-4 text-3xl font-semibold text-slate-900">$0.00</p>
+                </div>
+                <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                  <p class="text-sm uppercase tracking-[0.3em] text-rose-500">This month</p>
+                  <p id="earn-monthly" class="mt-4 text-3xl font-semibold text-slate-900">$0.00</p>
+                </div>
+                <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                  <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Pending</p>
+                  <p id="earn-pending" class="mt-4 text-3xl font-semibold text-slate-900">$0.00</p>
+                </div>
+              </div>
+              <div>
+                <h3 class="section-title text-xl font-bold">Payout history</h3>
+                <div id="seller-payouts-history" class="mt-4 space-y-2">
+                  <p class="text-sm text-slate-500">No payouts yet.</p>
+                </div>
               </div>
             </div>
           </section>
@@ -737,19 +891,33 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Messages</p>
-                <h2 class="section-title text-3xl font-bold">Customer support inbox</h2>
-                <p class="mt-3 text-slate-600">Review new requests, respond to buyers, and keep customer conversations on track.</p>
+                <h2 class="section-title text-3xl font-bold">Conversations</h2>
+                <p class="mt-3 text-slate-600">Chat with sellers, buyers, and delivery partners about orders and listings.</p>
               </div>
-              <button class="rounded-full bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Compose message</button>
+              <button type="button" onclick="openContactModal()" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Add contact</button>
             </div>
-            <div class="mt-8 space-y-4">
-              <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
-                <p class="font-semibold text-slate-900">Order #4532</p>
-                <p class="mt-2 text-sm text-slate-600">Customer asked about shipping updates for their electronics order.</p>
+
+            <div class="mt-8 grid gap-6 lg:grid-cols-[20rem_1fr]">
+              <!-- Conversation list -->
+              <div class="relative">
+                <div id="conversations-list" class="max-h-[32rem] space-y-2 overflow-y-auto pr-1">
+                  <p class="py-8 text-center text-sm text-slate-500">Loading conversations...</p>
+                </div>
               </div>
-              <div class="rounded-3xl bg-slate-50 p-5 ring-1 ring-slate-200">
-                <p class="font-semibold text-slate-900">Return request</p>
-                <p class="mt-2 text-sm text-slate-600">A buyer needs help with a return for a fashion item.</p>
+
+              <!-- Active chat -->
+              <div class="flex min-h-[28rem] flex-col rounded-3xl bg-slate-50 ring-1 ring-slate-200">
+                <div id="chat-header" class="border-b border-slate-200 px-5 py-4">
+                  <p class="text-sm text-slate-500">Select a conversation to start messaging.</p>
+                </div>
+                <div id="messages-container" class="flex-1 space-y-3 overflow-y-auto px-5 py-4"></div>
+                <div id="chat-input-area" class="hidden border-t border-slate-200 px-5 py-4">
+                  <div class="flex items-end gap-3">
+                    <label for="message-input" class="sr-only">Message</label>
+                    <textarea id="message-input" rows="1" placeholder="Write a message..." class="max-h-32 min-h-[2.75rem] flex-1 resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 focus:border-rose-500 focus:outline-none"></textarea>
+                    <button type="button" id="send-btn" onclick="if(typeof sendMessage==='function') sendMessage()" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400" aria-label="Send message">Send</button>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -759,26 +927,185 @@
               <div>
                 <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Profile</p>
                 <h2 class="section-title text-3xl font-bold">Account settings</h2>
-                <p class="mt-3 text-slate-600">Manage your store profile, payment details, and notification preferences.</p>
-              </div>
-              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
-                <span class="font-semibold">Verified seller</span>
+                <p class="mt-3 text-slate-600">Manage your profile and store details.</p>
               </div>
             </div>
-            <div class="mt-8 grid gap-6 lg:grid-cols-2">
-              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+
+            <div class="mt-8 grid gap-6 lg:grid-cols-[22rem_1fr]">
+              <!-- Avatar -->
+              <div class="rounded-3xl bg-slate-50 p-6 text-center ring-1 ring-slate-200">
+                <div class="mx-auto h-28 w-28 overflow-hidden rounded-full bg-gradient-to-tr from-rose-500 to-fuchsia-500 ring-4 ring-white shadow-lg">
+                  <img id="user-avatar-img" alt="" class="hidden h-full w-full object-cover" />
+                  <span id="user-avatar-initial" class="flex h-full w-full items-center justify-center text-3xl font-bold text-white">U</span>
+                </div>
+                <label for="profile-avatar-input" class="mt-5 inline-block cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100">
+                  Change photo
+                </label>
+                <input id="profile-avatar-input" type="file" accept="image/*" class="hidden" />
+                <p class="mt-4 text-xs text-slate-500">JPEG, PNG, GIF, WebP or AVIF up to 8MB.</p>
+              </div>
+
+              <!-- Profile form -->
+              <form id="profile-form" onsubmit="saveProfile(event)" class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
                 <h3 class="text-xl font-semibold text-slate-900">Personal info</h3>
-                <div class="mt-6 space-y-4 text-slate-600">
-                  <p><span class="font-semibold text-slate-900">Name:</span> Merchant</p>
-                  <p><span class="font-semibold text-slate-900">Email:</span> merchant@example.com</p>
-                  <p><span class="font-semibold text-slate-900">Region:</span> West Africa</p>
+                <div class="mt-6 space-y-4">
+                  <div>
+                    <label for="profile-name" class="block text-sm font-semibold text-slate-700">Display name</label>
+                    <input id="profile-name" name="name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="profile-email" class="block text-sm font-semibold text-slate-700">Email</label>
+                    <input id="profile-email" name="email" type="email" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-slate-500 focus:outline-none" readonly />
+                    <p class="mt-1 text-xs text-slate-500">Email is your sign-in identity and cannot be changed here.</p>
+                  </div>
+                  <div>
+                    <label for="profile-bio" class="block text-sm font-semibold text-slate-700">Bio</label>
+                    <textarea id="profile-bio" name="bio" rows="3" maxlength="500" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none"></textarea>
+                  </div>
+                  <div>
+                    <label for="profile-logistics-id" class="block text-sm font-semibold text-slate-700">Logistics partner ID</label>
+                    <input id="profile-logistics-id" name="logistics_id" type="text" maxlength="64" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                </div>
+                <div class="mt-6 flex flex-wrap items-center gap-3">
+                  <button type="submit" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Save profile</button>
+                  <span id="profile-avatar-preview-page" class="hidden"></span>
+                  <span id="profile-avatar-placeholder-page" class="hidden"></span>
+                </div>
+              </form>
+            </div>
+
+            <!-- Create a store -->
+            <form id="create-store-form" class="mt-8 rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+              <h3 class="text-xl font-semibold text-slate-900">Create a store</h3>
+              <p class="mt-1 text-sm text-slate-600">Set up a storefront to start selling. You can update these details later.</p>
+              <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                  <label for="store-name" class="block text-sm font-semibold text-slate-700">Store name</label>
+                  <input id="store-name" name="store_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                </div>
+                <div class="sm:col-span-2">
+                  <label for="store-description" class="block text-sm font-semibold text-slate-700">Store description</label>
+                  <textarea id="store-description" name="store_description" rows="3" maxlength="500" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none"></textarea>
+                </div>
+                <div>
+                  <label for="bank-name" class="block text-sm font-semibold text-slate-700">Bank name</label>
+                  <input id="bank-name" name="bank_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label for="bank-account-name" class="block text-sm font-semibold text-slate-700">Account name</label>
+                  <input id="bank-account-name" name="bank_account_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label for="bank-account-number" class="block text-sm font-semibold text-slate-700">Account number</label>
+                  <input id="bank-account-number" name="bank_account_number" type="text" inputmode="numeric" maxlength="20" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                </div>
+                <div>
+                  <label for="payment-method" class="block text-sm font-semibold text-slate-700">Payout method</label>
+                  <select id="payment-method" name="payment_method" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                    <option value="bank_transfer">Bank transfer</option>
+                    <option value="paystack">Paystack settlement</option>
+                  </select>
                 </div>
               </div>
+              <div class="mt-6 flex flex-wrap items-center gap-3">
+                <button type="submit" id="btn-submit-store" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Create store</button>
+                <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                  <input id="payment-verified" name="payment_verified" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                  Payment details verified
+                </label>
+              </div>
+              <div class="mt-4">
+                <label for="payment-verification-note" class="block text-sm font-semibold text-slate-700">Verification note (optional)</label>
+                <input id="payment-verification-note" name="payment_verification_note" type="text" maxlength="200" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+              </div>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label for="store-logo" class="block text-sm font-semibold text-slate-700">Store logo</label>
+                  <input id="store-logo" name="store_logo" type="file" accept="image/*" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 file:mr-3 file:rounded-full file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-700" />
+                </div>
+                <div>
+                  <label for="store-banner" class="block text-sm font-semibold text-slate-700">Store banner</label>
+                  <input id="store-banner" name="store_banner" type="file" accept="image/*" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 file:mr-3 file:rounded-full file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-700" />
+                </div>
+              </div>
+            </form>
+
+            <!-- Open a store / apply as a verified seller -->
+            <div class="mt-8 grid gap-6 lg:grid-cols-2">
+              <form id="open-store-create-form" class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-xl font-semibold text-slate-900">Apply to open a store</h3>
+                <p class="mt-1 text-sm text-slate-600">Submit your business and settlement details for verification.</p>
+                <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                  <div class="sm:col-span-2">
+                    <label for="open-store-store-name" class="block text-sm font-semibold text-slate-700">Business name</label>
+                    <input id="open-store-store-name" name="store_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label for="open-store-store-description" class="block text-sm font-semibold text-slate-700">What do you sell?</label>
+                    <textarea id="open-store-store-description" name="store_description" rows="3" maxlength="500" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none"></textarea>
+                  </div>
+                  <div>
+                    <label for="open-store-bank-name" class="block text-sm font-semibold text-slate-700">Bank name</label>
+                    <input id="open-store-bank-name" name="bank_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-bank-account-name" class="block text-sm font-semibold text-slate-700">Account name</label>
+                    <input id="open-store-bank-account-name" name="bank_account_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-bank-account-number" class="block text-sm font-semibold text-slate-700">Account number</label>
+                    <input id="open-store-bank-account-number" name="bank_account_number" type="text" inputmode="numeric" maxlength="20" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-payment-method" class="block text-sm font-semibold text-slate-700">Payout method</label>
+                    <select id="open-store-payment-method" name="payment_method" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+                      <option value="bank_transfer">Bank transfer</option>
+                      <option value="paystack">Paystack settlement</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="open-store-paystack-business-name" class="block text-sm font-semibold text-slate-700">Paystack business name</label>
+                    <input id="open-store-paystack-business-name" name="paystack_business_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-paystack-contact-email" class="block text-sm font-semibold text-slate-700">Paystack contact email</label>
+                    <input id="open-store-paystack-contact-email" name="paystack_contact_email" type="email" maxlength="120" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-paystack-settlement-bank" class="block text-sm font-semibold text-slate-700">Settlement bank</label>
+                    <input id="open-store-paystack-settlement-bank" name="paystack_settlement_bank" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-paystack-account-number" class="block text-sm font-semibold text-slate-700">Settlement account number</label>
+                    <input id="open-store-paystack-account-number" name="paystack_account_number" type="text" inputmode="numeric" maxlength="20" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-paystack-account-name" class="block text-sm font-semibold text-slate-700">Settlement account name</label>
+                    <input id="open-store-paystack-account-name" name="paystack_account_name" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div>
+                    <label for="open-store-paystack-percentage-charge" class="block text-sm font-semibold text-slate-700">Paystack charge (%)</label>
+                    <input id="open-store-paystack-percentage-charge" name="paystack_percentage_charge" type="number" min="0" max="100" step="0.01" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                  <div class="sm:col-span-2">
+                    <label for="open-store-payment-verification-note" class="block text-sm font-semibold text-slate-700">Verification note (optional)</label>
+                    <input id="open-store-payment-verification-note" name="payment_verification_note" type="text" maxlength="200" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                  </div>
+                </div>
+                <div class="mt-6 flex flex-wrap items-center gap-3">
+                  <button type="submit" id="open-store-submit-btn" class="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Submit application</button>
+                  <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                    <input id="open-store-payment-verified" name="payment_verified" type="checkbox" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500" />
+                    Payment details verified
+                  </label>
+                </div>
+              </form>
+
               <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-                <h3 class="text-xl font-semibold text-slate-900">Preferences</h3>
-                <div class="mt-6 space-y-4 text-slate-600">
-                  <p>Notifications: <span class="font-semibold text-slate-900">Enabled</span></p>
-                  <p>Store visibility: <span class="font-semibold text-slate-900">Public</span></p>
+                <h3 class="text-xl font-semibold text-slate-900">Application status</h3>
+                <div id="open-store-status" class="mt-6 text-sm text-slate-600">
+                  <p>Loading your application status...</p>
                 </div>
               </div>
             </div>
@@ -788,25 +1115,85 @@
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Checkout</p>
-                <h2 class="section-title text-3xl font-bold">Secure payment summary</h2>
-              </div>
-              <div class="rounded-3xl bg-slate-50 px-4 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
-                <span class="font-semibold">Pay with Paystack</span>
+                <h2 class="section-title text-3xl font-bold">Secure payment</h2>
+                <p class="mt-3 text-slate-600">Choose how you would like to pay. Card payments are verified by Paystack before your order is confirmed.</p>
               </div>
             </div>
-            <div id="payment-items" class="mt-8 space-y-3 text-slate-700"></div>
-            <div class="mt-8 rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
-              <div class="flex items-center justify-between text-sm text-slate-600"><span>Order total</span><span id="payment-total">$0.00</span></div>
-              <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                <button onclick="selectPaymentMethod(this)" data-method="card" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Card</button>
-                <button onclick="selectPaymentMethod(this)" data-method="bank" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Bank Transfer</button>
+
+            <div class="mt-8 grid gap-6 lg:grid-cols-[1fr_20rem]">
+              <div class="space-y-6">
+                <!-- Shipping address -->
+                <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                  <h3 class="text-lg font-semibold text-slate-900">Delivery address</h3>
+                  <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div class="sm:col-span-2">
+                      <label for="shipping-street" class="block text-sm font-semibold text-slate-700">Street address</label>
+                      <input id="shipping-street" type="text" maxlength="160" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label for="shipping-city" class="block text-sm font-semibold text-slate-700">City</label>
+                      <input id="shipping-city" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label for="shipping-state" class="block text-sm font-semibold text-slate-700">State / region</label>
+                      <input id="shipping-state" type="text" maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label for="shipping-phone" class="block text-sm font-semibold text-slate-700">Phone</label>
+                      <input id="shipping-phone" type="tel" maxlength="32" class="mt-1 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Payment method -->
+                <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                  <h3 class="text-lg font-semibold text-slate-900">Payment method</h3>
+                  <div class="mt-4 grid gap-3 sm:grid-cols-2">
+                    <button type="button" onclick="selectPaymentMethod(this, 'card')" data-method="card" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Card (Paystack)</button>
+                    <button type="button" onclick="selectPaymentMethod(this, 'bank')" data-method="bank" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Bank transfer</button>
+                    <button type="button" onclick="selectPaymentMethod(this, 'google_pay')" data-method="google_pay" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Google Pay</button>
+                    <button type="button" onclick="selectPaymentMethod(this, 'cod')" data-method="cod" class="payment-method-btn rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">Cash on delivery</button>
+                  </div>
+
+                  <div id="card-payment-form" class="mt-6 hidden">
+                    <button type="button" onclick="payWithPaystack()" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Pay with Paystack</button>
+                    <p class="mt-3 text-xs text-slate-500">You will be redirected to Paystack to complete the payment securely.</p>
+                  </div>
+
+                  <div id="bank-transfer-info" class="mt-6 hidden text-sm text-slate-600">
+                    <p class="font-semibold text-slate-900">Transfer the exact amount using your order reference, then confirm below.</p>
+                    <p class="mt-2">Amount due: <span id="bank-amount" class="font-semibold text-slate-900">0</span></p>
+                    <div class="mt-4 flex flex-wrap items-center gap-3">
+                      <label for="bank-transfer-reference" class="text-xs font-semibold uppercase tracking-wider text-slate-500">Reference</label>
+                      <input id="bank-transfer-reference" type="text" placeholder="Order reference" class="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 focus:border-rose-500 focus:outline-none" />
+                      <button type="button" onclick="verifyPayment('bank', (document.getElementById('bank-transfer-reference')||{}).value || '')" class="rounded-2xl border border-slate-200 bg-white px-5 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-50">I have transferred</button>
+                    </div>
+                  </div>
+
+                  <div id="google-pay-form" class="mt-6 hidden text-sm text-slate-600">
+                    <p>Google Pay is not configured on this deployment yet. Choose another method to continue.</p>
+                  </div>
+
+                  <div id="cod-confirmation" class="mt-6 hidden text-sm text-slate-600">
+                    <p class="font-semibold text-slate-900">Pay the delivery agent in cash on arrival.</p>
+                    <p class="mt-2">Amount due: <span id="cod-amount" class="font-semibold text-slate-900">0</span></p>
+                    <button type="button" onclick="confirmCashOnDelivery()" class="mt-4 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">Confirm cash on delivery</button>
+                  </div>
+
+                  <div id="alternative-payment-methods" class="mt-6 hidden"></div>
+                </div>
               </div>
-              <div id="card-payment-form" class="mt-6 hidden">
-                <button onclick="payWithPaystack()" class="w-full rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Pay with Paystack</button>
-              </div>
-              <div id="bank-transfer-info" class="mt-6 hidden text-sm text-slate-600">
-                <p>Transfer to:</p>
-                <p class="mt-2 font-semibold text-slate-900">GTBank • JovAli Online Store • 1234567890</p>
+
+              <!-- Order summary -->
+              <div class="rounded-3xl bg-slate-50 p-6 ring-1 ring-slate-200">
+                <h3 class="text-lg font-semibold text-slate-900">Order summary</h3>
+                <div id="payment-items" class="mt-4 space-y-3 text-sm text-slate-700"></div>
+                <div class="mt-4 flex items-center justify-between text-sm text-slate-600">
+                  <span>Subtotal</span><span id="summary-subtotal">0</span>
+                </div>
+                <div class="mt-2 flex items-center justify-between text-base font-semibold text-slate-900">
+                  <span>Total</span><span id="summary-total">0</span>
+                </div>
               </div>
             </div>
           </section>
@@ -834,6 +1221,136 @@
         </form>
       </div>
     </div>
+
+    <div id="reset-set-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4 py-8">
+      <div class="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl ring-1 ring-slate-200">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Password reset</p>
+            <h2 class="section-title text-2xl font-bold">Choose a new password</h2>
+          </div>
+          <button type="button" onclick="closeResetSetModal()" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Close</button>
+        </div>
+        <form id="reset-set-form" onsubmit="completePasswordReset(event)" class="mt-6 space-y-4">
+          <label class="block text-sm font-semibold text-slate-800">New password</label>
+          <div class="relative">
+            <input id="reset-new-pass" type="password" required minlength="8" placeholder="At least 8 characters" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" />
+            <button type="button" onclick="togglePasswordVisibility('reset-new-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">Show</button>
+          </div>
+          <p class="text-xs text-slate-500">Must include upper case, lower case and a number.</p>
+          <label class="block text-sm font-semibold text-slate-800">Confirm new password</label>
+          <div class="relative">
+            <input id="reset-new-pass-confirm" type="password" required minlength="8" placeholder="Repeat the new password" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 pr-24 text-slate-900 focus:border-rose-500 focus:outline-none" />
+            <button type="button" onclick="togglePasswordVisibility('reset-new-pass-confirm', this)" class="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-700">Show</button>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <button type="submit" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Update password</button>
+            <button type="button" onclick="closeResetSetModal()" class="rounded-2xl border border-slate-200 px-5 py-3 text-sm text-slate-700 transition hover:bg-slate-50">Cancel</button>
+          </div>
+          <div id="reset-set-result" class="text-sm text-slate-600"></div>
+        </form>
+      </div>
+    </div>
+
+    <div id="reset-otp-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center modal-backdrop px-4 py-8">
+      <div class="w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl ring-1 ring-slate-200">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-sm uppercase tracking-[0.3em] text-rose-500">Passwordless sign in</p>
+            <h2 class="section-title text-2xl font-bold">Enter your verification code</h2>
+          </div>
+          <button type="button" onclick="closeResetOtpModal()" class="rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">Close</button>
+        </div>
+        <form id="reset-otp-form" onsubmit="verifyOtp(event)" class="mt-6 space-y-4">
+          <label class="block text-sm font-semibold text-slate-800">Email address</label>
+          <input id="reset-otp-email" type="email" required autocomplete="email" placeholder="you@example.com" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+          <label class="block text-sm font-semibold text-slate-800">Verification code</label>
+          <input id="reset-otp-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" placeholder="123456" class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-center text-2xl tracking-[0.5em] text-slate-900 focus:border-rose-500 focus:outline-none" />
+          <div class="flex items-center justify-between gap-4">
+            <button type="submit" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Verify code</button>
+            <button type="button" id="resend-reset-code-btn" onclick="resendResetCode()" class="rounded-2xl border border-slate-200 px-5 py-3 text-sm text-slate-700 transition hover:bg-slate-50">Resend code</button>
+          </div>
+          <div id="reset-otp-result" class="text-sm text-slate-600"></div>
+        </form>
+      </div>
+    </div>
+
+  <!-- Global Loading Overlay -->
+  <div id="loading-overlay" class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-950/70 backdrop-blur-sm">
+    <div class="flex flex-col items-center gap-3 rounded-3xl bg-slate-900/95 px-8 py-6 ring-1 ring-white/10 shadow-2xl">
+      <span class="h-8 w-8 animate-spin rounded-full border-3 border-slate-700 border-t-rose-500"></span>
+      <p data-loading-text class="text-sm font-medium text-slate-200">Loading...</p>
+    </div>
+  </div>
+
+  <!-- Product Image Upload Progress Modal -->
+  <div id="upload-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="w-full max-w-md rounded-3xl bg-white p-6 text-slate-900 shadow-2xl ring-1 ring-slate-200">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-bold">Uploading images</h3>
+          <p class="mt-1 text-sm text-slate-500">Keep this window open until every file finishes.</p>
+        </div>
+        <button type="button" id="upload-close-btn" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Close</button>
+      </div>
+      <div id="upload-list" class="mt-5 space-y-3"></div>
+      <div class="mt-6 flex justify-end">
+        <button type="button" id="upload-cancel-btn" class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel uploads</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contact Support Modal -->
+  <div id="contact-modal" class="fixed inset-0 z-[70] hidden items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm">
+    <div class="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 text-slate-900 shadow-2xl ring-1 ring-slate-200">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-bold">Contact support</h3>
+          <p class="mt-1 text-sm text-slate-500">Send us a message and we will reply by email.</p>
+        </div>
+        <button type="button" onclick="closeContactModal()" class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">Close</button>
+      </div>
+      <form id="contact-form" onsubmit="submitContactForm(event)" class="mt-5 space-y-4">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="contact-name" class="block text-sm font-semibold text-slate-700">Your name</label>
+            <input id="contact-name" name="name" type="text" required maxlength="80" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+          </div>
+          <div>
+            <label for="contact-email" class="block text-sm font-semibold text-slate-700">Email</label>
+            <input id="contact-email" name="email" type="email" required maxlength="120" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+          </div>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label for="contact-phone" class="block text-sm font-semibold text-slate-700">Phone (optional)</label>
+            <input id="contact-phone" name="phone" type="tel" maxlength="32" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none" />
+          </div>
+          <div>
+            <label for="contact-region" class="block text-sm font-semibold text-slate-700">Region</label>
+            <select id="contact-region" name="region" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none">
+              <option value="global">Global</option>
+              <option value="nigeria">Nigeria</option>
+              <option value="ghana">Ghana</option>
+              <option value="kenya">Kenya</option>
+              <option value="south-africa">South Africa</option>
+              <option value="uk">United Kingdom</option>
+              <option value="us">United States</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="contact-msg" class="block text-sm font-semibold text-slate-700">Message</label>
+          <textarea id="contact-msg" name="message" required maxlength="2000" rows="4" class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-rose-500 focus:outline-none"></textarea>
+        </div>
+        <div class="flex items-center gap-3">
+          <button type="submit" id="contact-submit" class="rounded-2xl bg-rose-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-rose-400">Send message</button>
+          <p id="contact-success" class="text-sm text-emerald-600"></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
   </div>
 
   <div id="toast" class="fixed bottom-6 left-1/2 z-50 hidden -translate-x-1/2 rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-xl shadow-slate-900/20"></div>
@@ -846,6 +1363,7 @@
   <script src="js/my-store.js"></script>
   <script src="js/messages.js"></script>
   <script src="js/cart.js"></script>
+  <script src="js/payment.js"></script>
   <script src="js/chat.js"></script>
   <script src="js/profile.js"></script>
   <script src="js/dataSdk.js"></script>

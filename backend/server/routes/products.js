@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Product = require('../models/Product');
 const auth = require('../middleware/auth');
+const { escapeRegex, toObjectId } = require('../utils/security');
 
 // Whitelist of allowed fields
 const ALLOWED_FIELDS = ['name', 'price', 'category', 'description', 'images', 'primary_image', 'image_data', 'public'];
@@ -33,19 +34,22 @@ router.get('/', async (req, res) => {
       filter.seller_id = req.query.seller_id;
     }
 
-    // Search: name or description, case-insensitive
+    // Search: name or description, case-insensitive.
+    // The term is escaped before being handed to $regex. Passing raw user input
+    // lets an attacker supply a catastrophic-backtracking pattern and pin the
+    // database CPU (ReDoS).
     if (q && q.trim()) {
-      const term = q.trim();
+      const safeTerm = escapeRegex(q.trim().slice(0, 100));
       filter.$or = [
-        { name: { $regex: term, $options: 'i' } },
-        { description: { $regex: term, $options: 'i' } },
-        { category: { $regex: term, $options: 'i' } }
+        { name: { $regex: safeTerm, $options: 'i' } },
+        { description: { $regex: safeTerm, $options: 'i' } },
+        { category: { $regex: safeTerm, $options: 'i' } }
       ];
     }
 
     // Category filter
     if (category && category.trim()) {
-      filter.category = category;
+      filter.category = String(category).trim().slice(0, 100);
     }
 
     // Price range
@@ -72,7 +76,7 @@ router.get('/', async (req, res) => {
     const parsedLimit = Math.min(Math.max(parseInt(limit) || 0, 0), 100);
 
     const total = await Product.countDocuments(filter);
-    let query = Product.find(filter).sort(sortOptions);
+    let query = Product.find(filter).sort(sortOptions).select('-image_data');
 
     if (parsedLimit > 0) {
       query = query.skip((parsedPage - 1) * parsedLimit).limit(parsedLimit);
@@ -88,16 +92,36 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET seller's own products
+// NOTE: this must be declared before `/:id`, otherwise Express matches
+// "/seller/mine" against the id parameter and returns 404/500.
+router.get('/seller/mine', auth, async (req, res) => {
+  try {
+    const products = await Product.find({ seller: req.user.email })
+      .sort({ created_at: -1 })
+      .select('-image_data');
+    res.json(products);
+  } catch (err) {
+    console.error('Get my products error:', err && err.message);
+    res.status(500).json({ error: 'Failed to fetch your products' });
+  }
+});
+
 // GET single product
 router.get('/:id', async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const productId = toObjectId(req.params.id);
+    if (!productId) {
+      return res.status(400).json({ error: 'Invalid product id' });
+    }
+
+    const product = await Product.findById(productId).select('-image_data');
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
     res.json(product);
   } catch (err) {
-    console.error('Get product error:', err);
+    console.error('Get product error:', err && err.message);
     res.status(500).json({ error: 'Failed to fetch product' });
   }
 });
@@ -133,7 +157,12 @@ router.post('/', auth, async (req, res) => {
 // UPDATE product (protected, seller only, whitelisted fields)
 router.put('/:id', auth, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const productId = toObjectId(req.params.id);
+    if (!productId) {
+      return res.status(400).json({ error: 'Invalid product id' });
+    }
+
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -143,21 +172,21 @@ router.put('/:id', auth, async (req, res) => {
     }
 
     const updates = filterBody(req.body);
-    
+
     // Validate price if being updated
-    if (updates.price !== undefined && (typeof updates.price !== 'number' || updates.price <= 0)) {
+    if (updates.price !== undefined && (typeof updates.price !== 'number' || !isFinite(updates.price) || updates.price <= 0)) {
       return res.status(400).json({ error: 'Price must be a positive number' });
     }
 
     const updated = await Product.findByIdAndUpdate(
-      req.params.id,
+      productId,
       { $set: updates },
       { new: true, runValidators: true }
-    );
+    ).select('-image_data');
 
     res.json(updated);
   } catch (err) {
-    console.error('Update product error:', err);
+    console.error('Update product error:', err && err.message);
     res.status(500).json({ error: 'Failed to update product' });
   }
 });
@@ -165,7 +194,12 @@ router.put('/:id', auth, async (req, res) => {
 // DELETE product (protected, seller only)
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const productId = toObjectId(req.params.id);
+    if (!productId) {
+      return res.status(400).json({ error: 'Invalid product id' });
+    }
+
+    const product = await Product.findById(productId);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
@@ -174,22 +208,11 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ error: 'You can only delete your own products' });
     }
 
-    await Product.findByIdAndDelete(req.params.id);
+    await Product.findByIdAndDelete(productId);
     res.json({ success: true, message: 'Product deleted' });
   } catch (err) {
-    console.error('Delete product error:', err);
+    console.error('Delete product error:', err && err.message);
     res.status(500).json({ error: 'Failed to delete product' });
-  }
-});
-
-// GET seller's own products
-router.get('/seller/mine', auth, async (req, res) => {
-  try {
-    const products = await Product.find({ seller: req.user.email }).sort({ created_at: -1 });
-    res.json(products);
-  } catch (err) {
-    console.error('Get my products error:', err);
-    res.status(500).json({ error: 'Failed to fetch your products' });
   }
 });
 

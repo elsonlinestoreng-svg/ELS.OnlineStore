@@ -253,7 +253,8 @@ class AdminPanel {
       }
     } catch (error) {
       console.error(`Failed to load ${viewName}:`, error);
-      content.innerHTML = `<div class="alert alert-error">Failed to load this section. <button onclick="window.adminPanel.loadView('${viewName}')" class="underline">Retry</button></div>`;
+      const safeView = this.escapeHtml(String(viewName).replace(/[^a-zA-Z0-9_-]/g, ''));
+      content.innerHTML = `<div class="alert alert-error">Failed to load this section. <button onclick="window.adminPanel.loadView('${safeView}')" class="underline">Retry</button></div>`;
     }
   }
 

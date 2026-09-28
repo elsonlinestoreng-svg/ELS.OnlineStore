@@ -1,8 +1,12 @@
 node_modules/
 .env
-server/uploads/
+# User-uploaded files. The previous "server/uploads/" rule only matched the
+# repo root, so the real path backend/server/uploads/ was never ignored and
+# user uploads could be committed. "uploads/" (unanchored) matches any depth.
+uploads/
+backend/server/uploads/
 *.log
 .DS_Store
 serve.ps1
 server/routes/*.backup
-.env
+package-lock.json

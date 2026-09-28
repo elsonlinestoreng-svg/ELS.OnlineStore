@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const auth = require('../middleware/auth');
 const mongoose = require('mongoose');
+const { toObjectId, sameUser, cleanText } = require('../utils/security');
 
 // Recompute and store the product's average rating + count
 async function refreshProductRating(productId) {
@@ -37,7 +38,12 @@ router.post('/', auth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Rating must be a whole number between 1 and 5' });
     }
 
-    const product = await Product.findById(product_id);
+    const productObjectId = toObjectId(product_id);
+    if (!productObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid product id' });
+    }
+
+    const product = await Product.findById(productObjectId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -45,11 +51,15 @@ router.post('/', auth, async (req, res) => {
     // Verified purchase check: an order for this product where the buyer has paid
     const orderQuery = {
       buyer_id: req.user.userId,
-      'items.product_id': product_id,
+      'items.product_id': productObjectId,
       payment_status: 'paid'
     };
     if (order_id) {
-      orderQuery._id = order_id;
+      const orderObjectId = toObjectId(order_id);
+      if (!orderObjectId) {
+        return res.status(400).json({ success: false, message: 'Invalid order id' });
+      }
+      orderQuery._id = orderObjectId;
     }
 
     const order = await Order.findOne(orderQuery);
@@ -63,15 +73,15 @@ router.post('/', auth, async (req, res) => {
     }
 
     const review = new Review({
-      product_id,
+      product_id: productObjectId,
       buyer_id: req.user.userId,
       order_id: order._id,
       rating: parsedRating,
-      comment: comment || ''
+      comment: cleanText(comment, 2000)
     });
     await review.save();
 
-    await refreshProductRating(product_id);
+    await refreshProductRating(productObjectId);
 
     res.status(201).json({ success: true, message: 'Review submitted', review });
   } catch (err) {
@@ -83,15 +93,20 @@ router.post('/', auth, async (req, res) => {
 // GET /api/reviews/product/:productId — public reviews for a product
 router.get('/product/:productId', async (req, res) => {
   try {
-    const reviews = await Review.find({ product_id: req.params.productId })
+    const productId = toObjectId(req.params.productId);
+    if (!productId) {
+      return res.status(400).json({ success: false, message: 'Invalid product id' });
+    }
+
+    const reviews = await Review.find({ product_id: productId })
       .sort({ created_at: -1 })
       .populate('buyer_id', 'name');
 
-    const product = await Product.findById(req.params.productId).select('average_rating rating_count');
+    const product = await Product.findById(productId).select('average_rating rating_count');
 
     res.json({
       success: true,
-      product_id: req.params.productId,
+      product_id: productId,
       average_rating: product ? product.average_rating : 0,
       rating_count: product ? product.rating_count : reviews.length,
       reviews
@@ -119,12 +134,17 @@ router.get('/mine', auth, async (req, res) => {
 // PUT /api/reviews/:id — update own review
 router.put('/:id', auth, async (req, res) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const reviewId = toObjectId(req.params.id);
+    if (!reviewId) {
+      return res.status(400).json({ success: false, message: 'Invalid review id' });
+    }
+
+    const review = await Review.findById(reviewId);
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
-    if (review.buyer_id.toString() !== req.user.userId) {
+    if (!sameUser(review.buyer_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'You can only edit your own review' });
     }
 
@@ -136,7 +156,7 @@ router.put('/:id', auth, async (req, res) => {
       review.rating = parsedRating;
     }
     if (req.body.comment !== undefined) {
-      review.comment = req.body.comment;
+      review.comment = cleanText(req.body.comment, 2000);
     }
 
     await review.save();
@@ -152,12 +172,17 @@ router.put('/:id', auth, async (req, res) => {
 // DELETE /api/reviews/:id — delete own review
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const review = await Review.findById(req.params.id);
+    const reviewId = toObjectId(req.params.id);
+    if (!reviewId) {
+      return res.status(400).json({ success: false, message: 'Invalid review id' });
+    }
+
+    const review = await Review.findById(reviewId);
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
     }
 
-    if (review.buyer_id.toString() !== req.user.userId) {
+    if (!sameUser(review.buyer_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'You can only delete your own review' });
     }
 

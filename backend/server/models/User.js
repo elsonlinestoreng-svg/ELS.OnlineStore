@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -48,6 +49,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: 'email'
   },
+  // Incremented on password change. Tokens issued before the bump stop
+  // working, so a password reset logs out every existing session.
+  tokenVersion: {
+    type: Number,
+    default: 0
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -65,6 +72,13 @@ userSchema.pre('save', async function() {
 // Method to compare passwords
 userSchema.methods.matchPassword = async function(enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
+};
+
+/** Constant-time string comparison used for OTP verification. */
+userSchema.methods.matchesOtp = function(candidate) {
+  const a = Buffer.from(String(candidate));
+  const b = Buffer.from(String(this.otpCode || ''));
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
 };
 
 module.exports = mongoose.model('User', userSchema);

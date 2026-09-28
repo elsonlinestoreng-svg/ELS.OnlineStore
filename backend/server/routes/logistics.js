@@ -5,6 +5,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { notify } = require('../services/notify');
+const { toObjectId, sameUser } = require('../utils/security');
 
 function generateTrackingNumber() {
   return 'ELS-TRK-' + Date.now().toString(36).toUpperCase() + '-' +
@@ -16,12 +17,17 @@ router.post('/orders/:orderId/book', auth, async (req, res) => {
   try {
     const { logistics_fee, pickup_address } = req.body;
 
-    const order = await Order.findById(req.params.orderId);
+    const orderId = toObjectId(req.params.orderId);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Invalid order id' });
+    }
+
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (order.seller_id.toString() !== req.user.userId) {
+    if (!sameUser(order.seller_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Only the seller can book a pickup' });
     }
 
@@ -82,7 +88,7 @@ router.post('/orders/:orderId/accept', auth, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Shipment is not awaiting pickup' });
     }
 
-    if (shipment.buyer_id.toString() === req.user.userId || shipment.seller_id.toString() === req.user.userId) {
+    if (sameUser(shipment.buyer_id, req.user.userId) || sameUser(shipment.seller_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Buyer and seller cannot act as courier' });
     }
 
@@ -147,7 +153,7 @@ router.post('/orders/:orderId/update', auth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'No shipment found for this order' });
     }
 
-    if (!shipment.courier_id || shipment.courier_id.toString() !== req.user.userId) {
+    if (!shipment.courier_id || !sameUser(shipment.courier_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Only the assigned courier can update this shipment' });
     }
 
@@ -191,13 +197,17 @@ router.post('/orders/:orderId/update', auth, async (req, res) => {
 // GET /api/logistics/orders/:orderId — shipment for an order (buyer/seller/courier)
 router.get('/orders/:orderId', auth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.orderId);
+    const orderId = toObjectId(req.params.orderId);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Invalid order id' });
+    }
+
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const buyerId = order.buyer_id._id ? order.buyer_id._id.toString() : order.buyer_id.toString();
-    if (buyerId !== req.user.userId && order.seller_id.toString() !== req.user.userId) {
+    if (!sameUser(order.buyer_id, req.user.userId) && !sameUser(order.seller_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 

@@ -4,8 +4,18 @@
  */
 
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const nodemailer = require('nodemailer');
+const { escapeHtml, cleanText, isValidEmail } = require('../utils/security');
+
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many messages sent. Please try again later.' }
+});
 
 // Email configuration (using environment variables)
 const emailConfig = {
@@ -50,9 +60,9 @@ function initializeTransporter() {
  * POST /api/contact
  * Submit a contact inquiry
  */
-router.post('/', async (req, res) => {
+router.post('/', contactLimiter, async (req, res) => {
   try {
-    const { name, email, message, subject } = req.body;
+    const { name, email, message, subject } = req.body || {};
 
     // Validation
     if (!name || !email || !message) {
@@ -62,35 +72,26 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid email format',
       });
     }
 
-    // Message length validation
-    if (message.length < 10) {
+    if (message.length < 10 || message.length > 1000) {
       return res.status(400).json({
         success: false,
-        message: 'Message must be at least 10 characters long',
+        message: 'Message must be between 10 and 1000 characters',
       });
     }
 
-    if (message.length > 1000) {
-      return res.status(400).json({
-        success: false,
-        message: 'Message cannot exceed 1000 characters',
-      });
-    }
-
-    // Sanitize inputs to prevent injection
-    const sanitizedName = String(name).substring(0, 100).replace(/[<>]/g, '');
-    const sanitizedEmail = String(email).toLowerCase().trim();
-    const sanitizedMessage = String(message).substring(0, 1000);
-    const sanitizedSubject = String(subject || 'No subject provided').substring(0, 200).replace(/[<>]/g, '');
+    // Strip CR/LF so a crafted name/subject cannot inject extra mail headers
+    // (for example a Bcc: line) into the outgoing message.
+    const sanitizedName = cleanText(name, 100).replace(/[\r\n]+/g, ' ');
+    const sanitizedEmail = cleanText(email, 254).toLowerCase().trim();
+    const sanitizedMessage = cleanText(message, 1000);
+    const sanitizedSubject = cleanText(subject || 'No subject provided', 200).replace(/[\r\n]+/g, ' ');
 
     // Try to send email
     const emailSent = await sendContactEmail({
@@ -133,6 +134,14 @@ router.post('/', async (req, res) => {
  * Send email to admin with contact inquiry
  */
 async function sendContactEmail({ name, email, subject, message }) {
+  // HTML-escape every interpolated value. Previously the message body was
+  // injected raw into the HTML template, so a visitor could inject arbitrary
+  // markup/links into the admin's inbox.
+  const safeName = escapeHtml(name);
+  const safeEmail = escapeHtml(email);
+  const safeSubject = escapeHtml(subject);
+  const safeMessage = escapeHtml(message);
+
   try {
     // Initialize transporter if needed
     if (!transporter) {
@@ -157,15 +166,15 @@ async function sendContactEmail({ name, email, subject, message }) {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #6b7280; width: 120px;">Name:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #1f2937;">${name}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #1f2937;">${safeName}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #6b7280;">Email:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #1f2937;"><a href="mailto:${email}">${email}</a></td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #1f2937;"><a href="mailto:${safeEmail}">${safeEmail}</a></td>
               </tr>
               <tr>
                 <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; font-weight: bold; color: #6b7280;">Subject:</td>
-                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #1f2937;">${subject}</td>
+                <td style="padding: 10px; border-bottom: 1px solid #e5e7eb; color: #1f2937;">${safeSubject}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; font-weight: bold; color: #6b7280;">Received:</td>
@@ -177,7 +186,7 @@ async function sendContactEmail({ name, email, subject, message }) {
           <div style="background-color: white; padding: 20px; border-radius: 8px;">
             <h2 style="color: #1f2937; margin-top: 0; font-size: 18px;">Message</h2>
             <div style="background-color: #f3f4f6; padding: 15px; border-left: 4px solid #4f46e5; border-radius: 4px; white-space: pre-wrap; line-height: 1.6; color: #374151;">
-${message}
+${safeMessage}
             </div>
           </div>
 
@@ -206,7 +215,7 @@ Received: ${new Date().toLocaleString()}
 
 Message:
 --------
-${message}
+${safeMessage}
 
 ---
 Action Required: Please respond within 24 hours.
@@ -232,7 +241,7 @@ ELS Online Store - Customer Care Portal
         
         <div style="background-color: #f0fdf4; padding: 20px; border-radius: 0 0 8px 8px; border: 1px solid #bbf7d0;">
           <div style="background-color: white; padding: 20px; border-radius: 8px;">
-            <p style="color: #1f2937; font-size: 16px; margin-top: 0;">Hi ${name},</p>
+            <p style="color: #1f2937; font-size: 16px; margin-top: 0;">Hi ${safeName},</p>
             
             <p style="color: #4b5563; line-height: 1.6;">
               Thank you for reaching out to us! We've received your message and appreciate you taking the time to contact ELS Online Store.
@@ -250,11 +259,11 @@ ELS Online Store - Customer Care Portal
             <table style="width: 100%; margin: 20px 0; background-color: #f9fafb; border-radius: 8px; border-collapse: collapse;">
               <tr>
                 <td style="padding: 10px; color: #6b7280; font-weight: bold;">Your Email:</td>
-                <td style="padding: 10px; color: #1f2937;">${email}</td>
+                <td style="padding: 10px; color: #1f2937;">${safeEmail}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; color: #6b7280; font-weight: bold;">Subject:</td>
-                <td style="padding: 10px; color: #1f2937;">${subject}</td>
+                <td style="padding: 10px; color: #1f2937;">${safeSubject}</td>
               </tr>
               <tr>
                 <td style="padding: 10px; color: #6b7280; font-weight: bold;">Received:</td>

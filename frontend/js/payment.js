@@ -60,7 +60,7 @@ function backToPaystack() {
 // ============================================================================
 
 async function payWithPaystack() {
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   if (!token) {
     alert('Please login first');
     goTo('login');
@@ -109,7 +109,7 @@ async function payWithPaystack() {
     window.currentTransactionRef = checkoutData.transaction.parent_transaction_id;
 
     // Step 2: Get user email for Paystack
-    const userData = JSON.parse(localStorage.getItem('els_user') || '{}');
+    const userData = JSON.parse(getAuthItem('els_user') || '{}');
     const email = userData.email || 'customer@els.store';
 
     // Step 3: Redirect to Paystack if payment_url is available
@@ -151,7 +151,7 @@ async function payWithPaystack() {
 // ============================================================================
 
 async function initializeGooglePay() {
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   if (!token) {
     alert('Please login first');
     goTo('login');
@@ -247,7 +247,7 @@ async function initializeGooglePay() {
 
 async function processGooglePayment(paymentData, reference) {
   try {
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
     
     // Verify Google Pay payment on backend
     const verifyRes = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/payment/verify-google-pay', {
@@ -283,7 +283,7 @@ async function processGooglePayment(paymentData, reference) {
 // ============================================================================
 
 async function confirmCashOnDelivery() {
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   if (!token) {
     alert('Please login first');
     goTo('login');
@@ -362,7 +362,7 @@ async function confirmCashOnDelivery() {
 
 async function verifyPayment(method, reference) {
   try {
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
     const res = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/payment/callback', {
       method: 'POST',
       headers: {
@@ -395,7 +395,7 @@ async function verifyPayment(method, reference) {
 // ============================================================================
 
 async function loadPaymentPage() {
-  const token = localStorage.getItem('els_token');
+  const token = getAuthToken();
   
   if (token) {
     try {

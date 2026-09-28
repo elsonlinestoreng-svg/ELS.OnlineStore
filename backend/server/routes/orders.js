@@ -3,6 +3,7 @@ const router = express.Router();
 const Order = require('../models/Order');
 const auth = require('../middleware/auth');
 const { notify } = require('../services/notify');
+const { toObjectId, sameUser } = require('../utils/security');
 
 // ==========================================
 // 1. GET BUYER'S ORDERS
@@ -52,14 +53,18 @@ router.get('/seller', auth, async (req, res) => {
 // ==========================================
 router.get('/:id/track', auth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const orderId = toObjectId(req.params.id);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Invalid order id' });
+    }
+
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Tracking node not found' });
     }
 
-    // Authenticate visibility (Only assigned Buyer or Seller can intercept tracking arrays)
-    const buyerId = order.buyer_id._id ? order.buyer_id._id.toString() : order.buyer_id.toString();
-    if (buyerId !== req.user.userId && order.seller_id.toString() !== req.user.userId) {
+    // Authenticate visibility (only the assigned buyer or seller)
+    if (!sameUser(order.buyer_id, req.user.userId) && !sameUser(order.seller_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Access Denied' });
     }
 
@@ -92,11 +97,14 @@ router.get('/:id/track', auth, async (req, res) => {
 // ==========================================
 router.post('/:id/telemetry-stream-handshake', auth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const orderId = toObjectId(req.params.id);
+    if (!orderId) return res.status(400).json({ message: 'Invalid order id' });
+
+    const order = await Order.findById(orderId);
     if (!order) return res.status(404).json({ message: 'Order reference dead' });
 
     // Enforce matching status requirements (Livestream only functions while out for delivery)
-    if (order.order_status !== 'Shipped') {
+    if (String(order.order_status).toLowerCase() !== 'shipped') {
       return res.json({ activeBroadcastStreamToken: false });
     }
 
@@ -123,7 +131,12 @@ router.post('/:id/telemetry-stream-handshake/answer', auth, (req, res) => {
 // ==========================================
 router.get('/:id', auth, async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
+    const orderId = toObjectId(req.params.id);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Invalid order id' });
+    }
+
+    const order = await Order.findById(orderId)
       .populate('buyer_id', 'name email')
       .populate('store_id', 'store_name');
 
@@ -131,12 +144,12 @@ router.get('/:id', auth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    const buyerId = order.buyer_id._id ? order.buyer_id._id.toString() : order.buyer_id.toString();
-    if (buyerId !== req.user.userId && order.seller_id.toString() !== req.user.userId) {
+    const isBuyer = sameUser(order.buyer_id, req.user.userId);
+    if (!isBuyer && !sameUser(order.seller_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Access denied' });
     }
 
-    if (buyerId === req.user.userId) {
+    if (isBuyer) {
       order.commission_amount = undefined;
       order.seller_payout = undefined;
       order.payment_reference = undefined;
@@ -156,12 +169,17 @@ router.put('/:id/status', auth, async (req, res) => {
   try {
     const { status, tracking_number } = req.body;
 
-    const order = await Order.findById(req.params.id);
+    const orderId = toObjectId(req.params.id);
+    if (!orderId) {
+      return res.status(400).json({ success: false, message: 'Invalid order id' });
+    }
+
+    const order = await Order.findById(orderId);
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found' });
     }
 
-    if (order.seller_id.toString() !== req.user.userId) {
+    if (!sameUser(order.seller_id, req.user.userId)) {
       return res.status(403).json({ success: false, message: 'Only the seller can update order status' });
     }
 
@@ -171,7 +189,7 @@ router.put('/:id/status', auth, async (req, res) => {
     // Auto-normalize common casing formats sent via raw testing agents to preserve system synchronization
     let standardizedInput = status;
     if (status) {
-      standardizedInput = status.trim().toLowerCase();
+      standardizedInput = String(status).trim().toLowerCase();
     }
 
     if (!validStatuses.includes(standardizedInput)) {
@@ -179,7 +197,7 @@ router.put('/:id/status', auth, async (req, res) => {
     }
 
     order.order_status = standardizedInput;
-    if (tracking_number) order.tracking_number = tracking_number;
+    if (tracking_number) order.tracking_number = String(tracking_number).slice(0, 60);
     await order.save();
 
     // Notify the buyer of the status change

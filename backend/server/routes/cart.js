@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const Store = require('../models/Store');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { toObjectId } = require('../utils/security');
 
 // Helper: Find store by product
 async function findStoreForProduct(product) {
@@ -78,13 +79,14 @@ router.get('/', auth, async (req, res) => {
 // Add item to cart
 router.post('/add', auth, async (req, res) => {
   try {
-    const { product_id, quantity } = req.body;
+    const { product_id, quantity } = req.body || {};
 
-    if (!product_id) {
+    const productObjectId = toObjectId(product_id);
+    if (!productObjectId) {
       return res.status(400).json({ success: false, message: 'Product ID is required' });
     }
 
-    const product = await Product.findById(product_id);
+    const product = await Product.findById(productObjectId);
     if (!product) {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
@@ -102,9 +104,9 @@ router.post('/add', auth, async (req, res) => {
       });
     }
 
-    const qty = parseInt(quantity) || 1;
-    if (qty < 1) {
-      return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
+    const qty = parseInt(quantity, 10) || 1;
+    if (qty < 1 || qty > 100) {
+      return res.status(400).json({ success: false, message: 'Quantity must be between 1 and 100' });
     }
 
     let cart = await Cart.findOne({ buyer_id: req.user.userId });
@@ -113,7 +115,7 @@ router.post('/add', auth, async (req, res) => {
     }
 
     const existingIndex = cart.items.findIndex(
-      item => item.product_id.toString() === product_id
+      item => item.product_id.toString() === productObjectId.toString()
     );
 
     if (existingIndex > -1) {
@@ -147,11 +149,16 @@ router.post('/add', auth, async (req, res) => {
 // Update item quantity
 router.put('/item/:productId', auth, async (req, res) => {
   try {
-    const { quantity } = req.body;
-    const qty = parseInt(quantity);
+    const { quantity } = req.body || {};
+    const qty = parseInt(quantity, 10);
 
-    if (!qty || qty < 1) {
-      return res.status(400).json({ success: false, message: 'Quantity must be at least 1' });
+    if (!qty || qty < 1 || qty > 100) {
+      return res.status(400).json({ success: false, message: 'Quantity must be between 1 and 100' });
+    }
+
+    const productObjectId = toObjectId(req.params.productId);
+    if (!productObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid product id' });
     }
 
     const cart = await Cart.findOne({ buyer_id: req.user.userId });
@@ -160,14 +167,14 @@ router.put('/item/:productId', auth, async (req, res) => {
     }
 
     const item = cart.items.find(
-      item => item.product_id.toString() === req.params.productId
+      item => item.product_id.toString() === productObjectId.toString()
     );
 
     if (!item) {
       return res.status(404).json({ success: false, message: 'Item not in cart' });
     }
 
-    const product = await Product.findById(req.params.productId);
+    const product = await Product.findById(productObjectId);
     if (product) {
       item.price = product.price;
     }
@@ -185,13 +192,18 @@ router.put('/item/:productId', auth, async (req, res) => {
 // Remove item from cart
 router.delete('/item/:productId', auth, async (req, res) => {
   try {
+    const productObjectId = toObjectId(req.params.productId);
+    if (!productObjectId) {
+      return res.status(400).json({ success: false, message: 'Invalid product id' });
+    }
+
     const cart = await Cart.findOne({ buyer_id: req.user.userId });
     if (!cart) {
       return res.status(404).json({ success: false, message: 'Cart not found' });
     }
 
     cart.items = cart.items.filter(
-      item => item.product_id.toString() !== req.params.productId
+      item => item.product_id.toString() !== productObjectId.toString()
     );
 
     await cart.save();

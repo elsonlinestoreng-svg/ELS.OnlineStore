@@ -17,7 +17,7 @@ if (!window.API_BASE) {
 }
 
 function getToken() {
-  return localStorage.getItem('els_token') || '';
+  return typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('els_token') || sessionStorage.getItem('els_token') || '');
 }
 
 window.dataSdk = {

@@ -4,7 +4,7 @@
   async function authFetch(url, opts) {
     opts = opts || {};
     opts.headers = opts.headers || {};
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
     if (token) opts.headers.Authorization = 'Bearer ' + token;
     const res = await fetch(url, opts);
     const text = await res.text();
@@ -23,7 +23,7 @@
 
   async function loadBuyerOrders() {
     const container = document.getElementById('orders-list');
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
 
     if (!token) {
       container.innerHTML = '<p class="text-center text-gray-400 py-16">Please login to view your orders.</p>';

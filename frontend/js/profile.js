@@ -7,7 +7,7 @@
  */
 function loadUserFromLocal() {
   try {
-    const raw = localStorage.getItem('els_user');
+    const raw = getAuthItem('els_user');
     if (!raw) return;
 
     const u = JSON.parse(raw);
@@ -56,7 +56,7 @@ function updateHeaderAvatar() {
  */
 function loadUserIfExists(email) {
   try {
-    const raw = localStorage.getItem('els_user');
+    const raw = getAuthItem('els_user');
     if (!raw) return false;
 
     const u = JSON.parse(raw);
@@ -181,7 +181,7 @@ async function saveProfile(e, options = {}) {
   const logisticsId = (document.getElementById('profile-logistics-id')?.value || '').trim();
   currentUser.logistics_id = logisticsId || currentUser.logistics_id || '';
 
-  const token = localStorage.getItem('els_token') || sessionStorage.getItem('els_token');
+  const token = getAuthToken() || sessionStorage.getItem('els_token');
   if (token) {
     try {
       const payload = {
@@ -217,7 +217,7 @@ async function saveProfile(e, options = {}) {
   }
 
   try {
-    const storage = localStorage.getItem('els_token') ? localStorage : (sessionStorage.getItem('els_token') ? sessionStorage : localStorage);
+    const storage = getAuthToken() ? localStorage : (sessionStorage.getItem('els_token') ? sessionStorage : localStorage);
     storage.setItem('els_user', JSON.stringify(currentUser));
   } catch (e) {}
 
@@ -301,8 +301,16 @@ async function uploadFileToServer(file) {
     fd.append('file', file);
 
     const baseEndpoint = (window.API_BASE || 'http://localhost:8001/api').replace('/api', '');
-    const res = await fetch(baseEndpoint + '/upload', { method: 'POST', body: fd });
-    if (!res.ok) return null;
+    // /upload now requires an authenticated user, so attach the same token
+    // the rest of the app uses. Without this every upload silently returned
+    // null and the avatar/logo never updated.
+    const token = getAuthToken() || sessionStorage.getItem('els_token');
+    const headers = token ? { Authorization: 'Bearer ' + token } : {};
+    const res = await fetch(baseEndpoint + '/upload', { method: 'POST', body: fd, headers });
+    if (!res.ok) {
+      if (res.status === 401) console.warn('upload rejected: not authenticated');
+      return null;
+    }
 
     const data = await res.json(); 
     return data.url || null;
@@ -407,7 +415,7 @@ async function createStoreRecord(payload, btn) {
     console.warn('image upload failed', e); 
   }
 
-  const activeUser = window.currentUser || JSON.parse(localStorage.getItem('els_user') || 'null') || {};
+  const activeUser = window.currentUser || JSON.parse(getAuthItem('els_user') || 'null') || {};
   const defaultStoreName = activeUser.name ? `${activeUser.name}'s Store` : (activeUser.email ? `${activeUser.email.split('@')[0]}'s Store` : 'My Store');
 
   const storePayload = { 
@@ -436,7 +444,7 @@ async function createStoreRecord(payload, btn) {
       btn.innerHTML = 'Saving...'; 
     }
 
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
     const API = window.API_BASE || 'http://localhost:8001/api';
     let existingStore = null;
     if (token) {
@@ -453,7 +461,7 @@ async function createStoreRecord(payload, btn) {
     const method = existingStore && existingStore.success && existingStore.store ? 'PUT' : 'POST';
 
     if (window.localSdk && window.localSdk.stores) {
-      const activeUser = window.currentUser || JSON.parse(localStorage.getItem('els_user') || 'null') || {};
+      const activeUser = window.currentUser || JSON.parse(getAuthItem('els_user') || 'null') || {};
       const store = Object.assign({}, storePayload, { 
         _id: 's-' + Date.now().toString(36), 
         created_at: new Date().toISOString(), 
@@ -557,18 +565,40 @@ function renderOpenStoreStatus() {
   const status = document.getElementById('open-store-status');
   if (!status) return;
 
-  const raw = localStorage.getItem('local_stores_v1');
-  const stores = raw ? JSON.parse(raw) : [];
-  const me = JSON.parse(localStorage.getItem('els_user') || 'null');
+  // Store fields are attacker-controllable (anyone can create a store with an
+  // arbitrary name/description), so they must be escaped before being placed
+  // in an HTML template.
+  const esc = (v) => {
+    const d = document.createElement('div');
+    d.textContent = v === undefined || v === null ? '' : String(v);
+    return d.innerHTML;
+  };
+
+  let stores = [];
+  try {
+    const raw = localStorage.getItem('local_stores_v1');
+    stores = raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    stores = [];
+  }
+  if (!Array.isArray(stores)) stores = [];
+
+  let me = null;
+  try {
+    me = JSON.parse(getAuthItem('els_user') || 'null');
+  } catch (e) {
+    me = null;
+  }
+
   const mine = stores.filter(s => String(s.owner_email || '').toLowerCase() === String((me?.email || me?.name || '').toLowerCase()));
 
   if (mine.length) {
     const store = mine[mine.length - 1];
     status.innerHTML = `
       <div class="rounded-2xl bg-slate-50 p-4 text-slate-700">
-        <p class="font-semibold text-slate-900">${store.store_name}</p>
-        <p class="text-sm mt-1">${store.description || 'Your newly created store is ready.'}</p>
-        <p class="text-xs text-slate-500 mt-3">Bank: ${store.bank_name} • ${store.bank_account_name}</p>
+        <p class="font-semibold text-slate-900">${esc(store.store_name)}</p>
+        <p class="text-sm mt-1">${esc(store.description || 'Your newly created store is ready.')}</p>
+        <p class="text-xs text-slate-500 mt-3">Bank: ${esc(store.bank_name)} • ${esc(store.bank_account_name)}</p>
         <p class="text-xs text-slate-500 mt-1">Payout status: ${store.bank_verification_status === 'verified' ? 'Verified' : 'Pending verification'}</p>
       </div>
       <div class="rounded-2xl bg-slate-50 p-4 text-slate-700">
@@ -590,7 +620,7 @@ function renderOpenStoreStatus() {
 
 // Global Core UI Event Listener Injections
 async function loadOpenStoreDetails() {
-    const token = localStorage.getItem('els_token');
+    const token = getAuthToken();
     if (!token) return;
     try {
       const res = await fetch(`${window.API_BASE || 'http://localhost:8001/api'}/stores/mine`, {
@@ -637,81 +667,3 @@ async function loadOpenStoreDetails() {
 
     renderOpenStoreStatus();
   });
-
-
-// ============================================================================
-// MODULE 3: MESSAGING INTERFACE ORCHESTRATION
-// ============================================================================
-
-/**
- * Writes messages out across dynamic remote communication channels.
- */
-async function sendMessage() {
-  const input = document.getElementById('message-input');
-  const btn = document.getElementById('send-btn');
-  if (!input || !btn) return;
-
-  const text = input.value.trim();
-  if (!text || !currentConversation) return;
-
-  const msg = { sender: currentUser.name, text: text, time: new Date().toISOString() };
-
-  // Realtime Data Layer Sync Strategy
-  if (window.FIREBASE_CONFIG) {
-    try {
-      await writeMessageToFirestore(currentConversation.id, msg);
-    } catch (err) {
-      console.warn('firestore write failed, falling back to local', err);
-      currentConversation.messages.push(msg);
-    }
-  } else {
-    currentConversation.messages.push(msg);
-  }
-
-  // Sync timeline streams if sender acts as a courier driver node
-  if (currentConversation.orderId && isLogisticsProvider) {
-    const ord = allOrders.find(o => o.order_id === currentConversation.orderId);
-    if (ord) {
-      ord._timeline = ord._timeline || [];
-      ord._timeline.push({ actor: currentUser.name, text: msg.text, time: msg.time });
-    }
-  }
-
-  input.value = '';
-  updateSendButtonState();
-  renderMessages();
-  renderConversations();
-  showToast('✓ Message sent!');
-  input.focus();
-}
-
-/**
- * Adjusts structural visual indicators for the thread submission target CTA.
- */
-function updateSendButtonState() {
-  const input = document.getElementById('message-input');
-  const btn = document.getElementById('send-btn');
-  if (!btn || !input) return;
-
-  const disabled = !input.value.trim() || !currentConversation;
-  btn.disabled = disabled;
-  btn.style.opacity = disabled ? '0.6' : '1';
-  btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-}
-
-/**
- * Isolated contextual input processing configuration execution block.
- */
-(function() {
-  const input = document.getElementById('message-input');
-  if (!input) return;
-
-  input.addEventListener('input', () => updateSendButtonState());
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      const btn = document.getElementById('send-btn');
-      if (btn && !btn.disabled) sendMessage();
-    }
-  });
-})();
