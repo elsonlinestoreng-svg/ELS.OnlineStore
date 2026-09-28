@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const nodemailer = require('nodemailer');
 const { escapeHtml, cleanText, isValidEmail } = require('../utils/security');
+const env = require('../config/env');
 
 const contactLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -17,19 +18,26 @@ const contactLimiter = rateLimit({
   message: { success: false, message: 'Too many messages sent. Please try again later.' }
 });
 
-// Email configuration (using environment variables)
+// Email configuration, read through the shared config module so this route
+// agrees with the OTP and password-reset senders.
 const emailConfig = {
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true' || false,
+  host: env.SMTP_HOST || 'smtp.gmail.com',
+  port: env.SMTP_PORT || 587,
+  secure: env.SMTP_SECURE,
   auth: {
-    user: process.env.SMTP_USER || process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASS || process.env.SMTP_PASSWORD,
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
   },
 };
 
-// Admin contact email
-const ADMIN_EMAIL = 'jovalistore@gmail.com';
+// Where inquiries are delivered. Configurable because the previous hardcoded
+// address meant a deployment could not redirect support mail to its own inbox.
+const ADMIN_EMAIL = env.ADMIN_EMAIL || process.env.ADMIN_EMAIL || 'jovalistore@gmail.com';
+
+// The From header must be a real address. Using a bare login name (for example
+// a relay credential of "test") makes the relay reject the message with
+// "553 not a valid RFC 5321 address", so prefer an explicit From address.
+const FROM_ADDRESS = env.FROM_EMAIL || env.SMTP_USER;
 
 // Initialize transporter (will be created on first use or if configured)
 let transporter = null;
@@ -224,7 +232,7 @@ ELS Online Store - Customer Care Portal
 
     // Send email to admin
     await transporter.sendMail({
-      from: `"ELS Support" <${emailConfig.auth.user}>`,
+      from: `"ELS Support" <${FROM_ADDRESS}>`,
       to: ADMIN_EMAIL,
       replyTo: email,
       subject: `[ELS Inquiry] ${subject}`,
@@ -315,7 +323,7 @@ For urgent matters, call us at +234 (902) 505-8674
 
     // Send customer confirmation
     await transporter.sendMail({
-      from: `"ELS Support" <${emailConfig.auth.user}>`,
+      from: `"ELS Support" <${FROM_ADDRESS}>`,
       to: email,
       subject: 'We Received Your Message - ELS Online Store Support',
       text: customerEmailText,

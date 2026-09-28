@@ -54,45 +54,131 @@ function closeContactModal() {
   }
 }
 
-function submitContactForm(event) {
+/**
+ * Sends the support form to POST /api/contact so the message actually reaches
+ * the support inbox. The form previously only saved a local delivery contact
+ * and silently discarded the email and message fields.
+ *
+ * The local contact is still recorded (a phone number is what the direct-call
+ * and direct-chat features read), but that is now a side effect of a real
+ * submission rather than the whole behaviour.
+ */
+async function submitContactForm(event) {
   event?.preventDefault();
+
   const name = document.getElementById('contact-name')?.value?.trim();
+  const email = document.getElementById('contact-email')?.value?.trim();
   const phone = document.getElementById('contact-phone')?.value?.trim();
   const region = document.getElementById('contact-region')?.value?.trim() || 'global';
+  const message = document.getElementById('contact-msg')?.value?.trim();
+
   if (!name) {
-    showToast('Please enter a contact name');
+    showToast('Please enter your name');
     return;
   }
-  const contact = { id: `contact-${Date.now()}`, name, phone, region, role: 'Delivery contact' };
-  window.contactDirectory.push(contact);
-  const convId = `contact-${contact.id}`;
-  let conv = conversations.find(c => c.id === convId);
-  if (!conv) {
-    conv = {
-      id: convId,
-      title: `Direct contact • ${name}`,
-      participants: [name, currentUser?.name || 'You'],
-      region,
-      channel: 'direct contact',
-      isOnline: true,
-      phone,
-      messages: []
-    };
-    conversations.unshift(conv);
+  if (!email) {
+    showToast('Please enter your email so we can reply');
+    return;
   }
-  currentConversation = conv;
-  closeContactModal();
-  goTo('messages');
-  renderConversations();
-  showToast(`Contact added and chat opened for ${name}`);
-  
-  // Save to localStorage
+  if (!message || message.length < 10) {
+    showToast('Please describe your issue (at least 10 characters)');
+    return;
+  }
+
+  const submitBtn = document.getElementById('contact-submit');
+  const successEl = document.getElementById('contact-success');
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+  }
+  if (successEl) {
+    successEl.className = 'text-sm text-slate-500';
+    successEl.textContent = '';
+  }
+
+  const base = window.API_BASE || (location.port === '8081' || location.hostname === 'localhost'
+    ? 'http://localhost:8001/api'
+    : `${location.origin}/api`);
+
   try {
-    localStorage.setItem('contactDirectory', JSON.stringify(window.contactDirectory));
-    localStorage.setItem('conversations', JSON.stringify(conversations));
-  } catch (e) {
-    console.log('Could not save contacts to localStorage:', e);
+    const res = await fetch(`${base}/contact`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        message,
+        subject: `Support request from ${name} (${region})`,
+      }),
+    });
+
+    let payload = {};
+    try {
+      payload = await res.json();
+    } catch (e) {
+      payload = {};
+    }
+
+    if (!res.ok || payload.success === false) {
+      throw new Error(payload.message || `Request failed (${res.status})`);
+    }
+
+    if (successEl) {
+      successEl.className = 'text-sm text-emerald-600';
+      successEl.textContent = 'Message sent. We will reply by email shortly.';
+    }
+    showToast('Message sent to support');
+
+    const form = document.getElementById('contact-form');
+    if (form) form.reset();
+
+    // Record the contact locally so direct call/chat keep working.
+    const contact = { id: `contact-${Date.now()}`, name, phone, email, region, role: 'Delivery contact' };
+    window.contactDirectory.push(contact);
+    const convId = `contact-${contact.id}`;
+    let conv = conversations.find(c => c.id === convId);
+    if (!conv) {
+      conv = {
+        id: convId,
+        title: `Direct contact • ${name}`,
+        participants: [name, currentUser?.name || 'You'],
+        region,
+        channel: 'direct contact',
+        isOnline: true,
+        phone,
+        messages: []
+      };
+      conversations.unshift(conv);
+    }
+    currentConversation = conv;
+    renderConversations();
+    try {
+      localStorage.setItem('contactDirectory', JSON.stringify(window.contactDirectory));
+      localStorage.setItem('conversations', JSON.stringify(conversations));
+    } catch (e) {
+      console.log('Could not save contacts to localStorage:', e);
+    }
+
+    setTimeout(() => {
+      closeContactModal();
+      goTo('messages');
+    }, 900);
+  } catch (err) {
+    console.error('Contact form submission failed:', err);
+    if (successEl) {
+      successEl.className = 'text-sm text-rose-600';
+      successEl.textContent = err.message === 'Failed to fetch'
+        ? 'Could not reach the server. Check your connection and try again.'
+        : (err.message || 'Something went wrong. Please try again.');
+    }
+    showToast('Could not send your message');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send message';
+    }
   }
+  return;
 }
 
 function startQuickCall() {
