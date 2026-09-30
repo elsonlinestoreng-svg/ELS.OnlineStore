@@ -5,6 +5,39 @@ window.currentPaymentTotal = 0;
 window.currentTransactionRef = '';
 window.currentPaymentMethod = 'card';
 
+/**
+ * Solve the payment captcha and prepare the token for a /checkout call.
+ *
+ * Every payment method (card, Google Pay, cash on delivery) creates its
+ * transaction through the same /checkout endpoint, and that endpoint is
+ * captcha-gated, so all three need this. Centralised because a method that
+ * forgets it fails with an opaque 400 at the moment the customer is trying to
+ * pay.
+ *
+ * Resets the widget as soon as the token is in hand: Google tokens are
+ * single-use, so a retry with a spent token is rejected even when the customer
+ * did nothing wrong.
+ *
+ * @returns {Promise<{ok: boolean, token?: string, message?: string}>}
+ */
+async function prepareCheckoutCaptcha() {
+  if (typeof elsRecaptcha === 'undefined') return { ok: true, token: '' };
+
+  const token = await elsRecaptcha.token('recaptcha-payment');
+  elsRecaptcha.reset('recaptcha-payment');
+
+  if (token === elsRecaptcha.DISABLED) return { ok: true, token: '' };
+
+  if (token === elsRecaptcha.LOAD_FAILED) {
+    return {
+      ok: false,
+      message: 'The security check could not load. Please refresh the page and try again.'
+    };
+  }
+
+  return { ok: true, token };
+}
+
 // ============================================================================
 // PAYMENT METHOD SELECTION
 // ============================================================================
@@ -78,6 +111,17 @@ async function payWithPaystack() {
   altMethods?.classList.remove('hidden');
 
   try {
+    // The payment captcha. Solved before the checkout call so the token's
+    // ~2 minute lifetime is spent on the request rather than on the user
+    // staring at a spinner.
+    const captcha = await prepareCheckoutCaptcha();
+    if (!captcha.ok) {
+      alert(captcha.message);
+      btn.textContent = originalText;
+      btn.disabled = false;
+      return;
+    }
+
     // Step 1: Call checkout with card payment method
     const checkoutRes = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/checkout', {
       method: 'POST',
@@ -93,7 +137,8 @@ async function payWithPaystack() {
           country: 'Nigeria',
           phone: document.getElementById('shipping-phone')?.value || ''
         },
-        payment_method: 'card'
+        payment_method: 'card',
+        recaptcha_token: captcha.token
       })
     });
 
@@ -159,6 +204,12 @@ async function initializeGooglePay() {
   }
 
   try {
+    const captcha = await prepareCheckoutCaptcha();
+    if (!captcha.ok) {
+      alert(captcha.message);
+      return;
+    }
+
     // Step 1: Checkout with Google Pay method
     const checkoutRes = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/checkout', {
       method: 'POST',
@@ -174,7 +225,8 @@ async function initializeGooglePay() {
           country: 'Nigeria',
           phone: document.getElementById('shipping-phone')?.value || ''
         },
-        payment_method: 'google_pay'
+        payment_method: 'google_pay',
+        recaptcha_token: captcha.token
       })
     });
 
@@ -296,6 +348,14 @@ async function confirmCashOnDelivery() {
   btn.disabled = true;
 
   try {
+    const captcha = await prepareCheckoutCaptcha();
+    if (!captcha.ok) {
+      alert(captcha.message);
+      btn.textContent = originalText;
+      btn.disabled = false;
+      return;
+    }
+
     // Step 1: Checkout with COD method
     const checkoutRes = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/checkout', {
       method: 'POST',
@@ -311,7 +371,8 @@ async function confirmCashOnDelivery() {
           country: 'Nigeria',
           phone: document.getElementById('shipping-phone')?.value || ''
         },
-        payment_method: 'cod'
+        payment_method: 'cod',
+        recaptcha_token: captcha.token
       })
     });
 
@@ -431,7 +492,16 @@ async function loadPaymentPage() {
         if (cardButton && !document.getElementById('card-payment-form').classList.contains('hidden')) {
           // Already visible, no need to select again
         }
-        
+
+        // Render the payment captcha now, while the payment page is actually
+        // visible. token() would otherwise render it lazily on the first pay
+        // attempt, which means the widget appearing *after* the customer
+        // clicked "Pay" and, for a v2 checkbox, an interruptive challenge
+        // popup over the button they just pressed.
+        if (typeof elsRecaptcha !== 'undefined') {
+          elsRecaptcha.render('recaptcha-payment').catch(() => {});
+        }
+
         return;
       }
     } catch (err) {

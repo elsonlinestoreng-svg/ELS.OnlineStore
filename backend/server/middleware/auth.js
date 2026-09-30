@@ -20,11 +20,12 @@ async function resolveUser(req) {
   const userId = toObjectId(decoded && decoded.userId);
   if (!userId) return null;
 
-  const user = await User.findById(userId).select('role email name region provider tokenVersion');
+  const user = await User.findById(userId).select('role email name region provider tokenVersion status is_verified');
   if (!user) return null;
 
   const tokenVersion = typeof decoded.tokenVersion === 'number' ? decoded.tokenVersion : 0;
   if ((user.tokenVersion || 0) !== tokenVersion) return null;
+  if (user.status === 'suspended') return null;
 
   return {
     userId: user._id.toString(),
@@ -32,7 +33,8 @@ async function resolveUser(req) {
     name: user.name,
     role: user.role,
     region: user.region,
-    provider: user.provider
+    provider: user.provider,
+    is_verified: Boolean(user.is_verified)
   };
 }
 
@@ -66,7 +68,7 @@ module.exports = async function requireAuth(req, res, next) {
       return res.status(401).json({ success: false, message: 'Invalid or expired token.' });
     }
 
-    const user = await User.findById(userId).select('role email name region provider tokenVersion');
+    const user = await User.findById(userId).select('role email name region provider tokenVersion status is_verified');
     if (!user) {
       return res.status(401).json({ success: false, message: 'Account no longer exists.' });
     }
@@ -78,6 +80,17 @@ module.exports = async function requireAuth(req, res, next) {
       return res.status(401).json({ success: false, message: 'Session expired. Please sign in again.' });
     }
 
+    // A suspension must take effect immediately, not at the next login. Without
+    // this check a super admin suspending an abuser would leave that user's
+    // still-unexpired JWT fully usable for the rest of its lifetime.
+    if (user.status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'This account has been suspended. Contact support if you think this is a mistake.',
+        suspended: true
+      });
+    }
+
     // Attach the authoritative database values. Never trust role/email from
     // the token payload, which is attacker-controlled until expiry.
     req.user = {
@@ -86,7 +99,8 @@ module.exports = async function requireAuth(req, res, next) {
       name: user.name,
       role: user.role,
       region: user.region,
-      provider: user.provider
+      provider: user.provider,
+      is_verified: Boolean(user.is_verified)
     };
 
     next();

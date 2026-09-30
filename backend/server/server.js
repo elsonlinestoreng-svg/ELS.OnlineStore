@@ -27,9 +27,12 @@ const notificationRoutes = require('./routes/notifications');
 const messageRoutes = require('./routes/messages');
 const logisticsRoutes = require('./routes/logistics');
 const reviewRoutes = require('./routes/reviews');
-const adminRoutes = require('./routes/admin');
+const superAdminRoutes = require('./routes/superAdmin');
+const configRoutes = require('./routes/config');
 const connectDB = require('./config/db');
 const User = require('./models/User');
+const audit = require('./services/audit');
+const { reportSmtpStatus } = require('./utils/mail-verify');
 const { start: startReconciliationCron } = require('./services/reconciliation');
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
@@ -41,13 +44,31 @@ app.disable('x-powered-by');
 // Rate limiting keys off the real client IP. 'trust proxy' is only safe when
 // the app genuinely sits behind exactly one reverse proxy; trusting X-Forwarded-For
 // blindly would let any client spoof its address and bypass every limit below.
-if (process.env.TRUST_PROXY === '1') {
-  app.set('trust proxy', 1);
+// TRUST_PROXY is parsed in config/env.js so a numeric hop count works too.
+if (env.TRUST_PROXY) {
+  app.set('trust proxy', env.TRUST_PROXY);
 }
 
+// Auth endpoints share one budget per IP. That is deliberate — splitting the
+// budget per route would let an attacker multiply their attempts by cycling
+// endpoints — but it has a cost worth naming: the limit is keyed on IP, so
+// everyone behind a single carrier-grade NAT or office gateway draws from the
+// same 10 attempts. On a busy deployment that locks out legitimate customers
+// who never did anything wrong.
+//
+// The default stays strict. The override exists so an operator who has actually
+// hit that failure can widen it knowingly, and so the end-to-end suites can
+// exercise the auth flows without the limiter deciding the outcome first.
+const AUTH_RATE_LIMIT_MAX = Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX || '', 10);
+const AUTH_RATE_LIMIT_WINDOW_MS = Number.parseInt(process.env.AUTH_RATE_LIMIT_WINDOW_MS || '', 10);
+
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 10,
+  windowMs: Number.isFinite(AUTH_RATE_LIMIT_WINDOW_MS) && AUTH_RATE_LIMIT_WINDOW_MS > 0
+    ? AUTH_RATE_LIMIT_WINDOW_MS
+    : 15 * 60 * 1000,
+  max: Number.isFinite(AUTH_RATE_LIMIT_MAX) && AUTH_RATE_LIMIT_MAX > 0
+    ? AUTH_RATE_LIMIT_MAX
+    : 10,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, message: 'Too many attempts. Try again in 15 minutes.' }
@@ -95,11 +116,14 @@ app.use(cors(corsOptions));
 
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/verify-email', authLimiter);
+app.use('/api/auth/resend-verification', authLimiter);
 app.use('/api/auth/send-otp', authLimiter);
 app.use('/api/auth/verify-otp', authLimiter);
 app.use('/api/auth/send-reset', authLimiter);
 app.use('/api/auth/reset-complete', authLimiter);
 app.use('/api/contact', authLimiter);
+app.use('/api/checkout', authLimiter);
 app.use('/api/', generalLimiter);
 
 app.use(express.json({ limit: '1mb' }));
@@ -174,6 +198,7 @@ app.use('/uploads', express.static(UPLOAD_DIR, {
 }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/config', configRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/stores', storeRoutes);
 app.use('/api/cart', cartRoutes);
@@ -187,7 +212,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/logistics', logisticsRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/admin', adminRoutes);
+app.use('/api/admin', superAdminRoutes);
+app.use('/api/superadmin', superAdminRoutes);
 
 // ---------------------------------------------------------------------------
 // Legacy password-reset endpoints
@@ -354,23 +380,118 @@ app.use((err, req, res, next) => {
   });
 });
 
+/**
+ * Idempotent data migrations, run on every boot.
+ *
+ * Each one is written so that running it twice is a no-op. They exist because
+ * two schema changes cannot be expressed as a code-only rollout:
+ *
+ *  1. role "admin" -> "super_admin". The old role is gone from the enum, so
+ *     leaving rows behind would make them un-settable and strand the platform
+ *     with no one able to reach the dashboard.
+ *
+ *  2. is_verified backfill. The field defaults to false, which would lock out
+ *     every account that already exists. Existing users are grandfathered in:
+ *     they already proved they could receive mail at least once, and silently
+ *     locking out a live customer base to satisfy a new rule is not an
+ *     acceptable migration. Only NEW registrations must verify from now on.
+ */
+async function runMigrations() {
+  // 1. Retire the old admin role.
+  const promotedRoles = await User.updateMany(
+    { role: 'admin' },
+    { $set: { role: 'super_admin' } }
+  );
+  if (promotedRoles.modifiedCount > 0) {
+    console.log(`[migration] Promoted ${promotedRoles.modifiedCount} account(s) from "admin" to "super_admin".`);
+  }
+
+  // 2. Grandfather existing accounts as verified and active.
+  const backfilled = await User.updateMany(
+    { is_verified: { $exists: false } },
+    { $set: { is_verified: true } }
+  );
+  if (backfilled.modifiedCount > 0) {
+    console.log(`[migration] Marked ${backfilled.modifiedCount} existing account(s) as verified.`);
+  }
+
+  const statusBackfill = await User.updateMany(
+    { status: { $exists: false } },
+    { $set: { status: 'active' } }
+  );
+  if (statusBackfill.modifiedCount > 0) {
+    console.log(`[migration] Set ${statusBackfill.modifiedCount} account(s) to active.`);
+  }
+
+  // 3. Super admin bootstrap. Runs on every boot so the role can always be
+  //    recovered by setting the env var, without touching the database by hand.
+  //
+  //    is_verified is forced on as well: an account promoted to super_admin that
+  //    still had to pass the verification gate could not sign in, so setting this
+  //    variable would have produced a super admin who can never reach the
+  //    dashboard they were just granted.
+  if (env.SUPER_ADMIN_EMAIL) {
+    const bootstrap = await User.findOneAndUpdate(
+      { email: env.SUPER_ADMIN_EMAIL },
+      { $set: { role: 'super_admin', status: 'active', is_verified: true } },
+      { returnDocument: 'after' }
+    );
+
+    if (bootstrap) {
+      console.log(`[bootstrap] Super admin ready: ${bootstrap.email}`);
+    } else {
+      console.warn(
+        `[bootstrap] SUPER_ADMIN_EMAIL (${env.SUPER_ADMIN_EMAIL}) does not match any account. ` +
+          'Register with that address first, then restart to grant super admin. ' +
+          'To create it directly instead, run: npm run make-admin -- ' + env.SUPER_ADMIN_EMAIL
+      );
+    }
+  } else {
+    console.warn(
+      '[WARN] SUPER_ADMIN_EMAIL is not set. If no account has the "super_admin" role, ' +
+        'nobody will be able to open the dashboard.'
+    );
+  }
+}
+
+/**
+ * Prove the mail relay is usable, and refuse to open the shop if it is not.
+ *
+ * config/env.js only checks that the credentials are non-empty. A revoked or
+ * mistyped password passes that check, so the server would report email
+ * verification as "required" and boot happily — and then strand every new
+ * account unverified, with no way to sign in. This runs after the migrations
+ * and before listen(), and is fatal in production only.
+ */
+async function verifyMailOnBoot() {
+  try {
+    await reportSmtpStatus({ strict: true });
+  } catch (err) {
+    console.error(err && err.message);
+    process.exit(1);
+  }
+}
+
 const port = env.PORT;
 
 connectDB()
   .then(async () => {
-    await User.updateMany({ role: { $exists: false } }, { $set: { role: 'buyer' } });
+    await runMigrations();
 
-    if (env.ADMIN_EMAIL) {
-      const admin = await User.findOneAndUpdate(
-        { email: env.ADMIN_EMAIL },
-        { $set: { role: 'admin' } },
-        { new: true }
-      );
-      if (admin) console.log('Admin ready: ' + admin.email);
-    }
+    // Before listen(), so an unreachable relay never produces a server that
+    // looks healthy and accepts registrations it cannot activate.
+    await verifyMailOnBoot();
+
+    audit.recordSystem({
+      action: 'system.boot',
+      description: `Server started on port ${port}`,
+      metadata: { port, recaptcha: env.RECAPTCHA_ENABLED, email_verification: env.EMAIL_VERIFICATION_REQUIRED }
+    });
 
     app.listen(port, () => {
       console.log(`ELS server running on http://localhost:${port}`);
+      console.log(`[config] reCAPTCHA: ${env.RECAPTCHA_ENABLED ? 'ENABLED' : 'disabled (no keys configured)'}`);
+      console.log(`[config] Email verification: ${env.EMAIL_VERIFICATION_REQUIRED ? 'required' : 'optional'}`);
       startReconciliationCron();
     });
   })

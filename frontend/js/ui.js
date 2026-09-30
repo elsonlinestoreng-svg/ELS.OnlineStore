@@ -414,6 +414,31 @@ function switchAuthTab(tab) {
   }
 }
 
+/**
+ * Read a captcha token for a form, or report why we cannot.
+ *
+ * Returns { ok: true, token } or { ok: false }. The DISABLED sentinel is a
+ * legitimate pass-through: the server has no captcha configured, so there is
+ * nothing to prove. LOAD_FAILED is not — the server expects a token we could
+ * not produce, and sending an empty one would produce an unexplained 400.
+ */
+async function getCaptchaToken(widgetId) {
+  if (typeof elsRecaptcha === 'undefined') return { ok: true, token: '' };
+
+  const token = await elsRecaptcha.token(widgetId);
+
+  if (token === elsRecaptcha.DISABLED) return { ok: true, token: '' };
+
+  if (token === elsRecaptcha.LOAD_FAILED) {
+    return {
+      ok: false,
+      message: 'The security check could not load. Please refresh the page and try again.'
+    };
+  }
+
+  return { ok: true, token };
+}
+
 async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('login-email').value.trim();
@@ -427,10 +452,21 @@ async function handleLogin(e) {
     return;
   }
 
+  const submitBtn = document.querySelector('#login-form button[type="submit"]');
+
   try {
     setAppLoading(true, 'Signing you in...');
-    setButtonLoading(document.querySelector('#login-form button[type="submit"]'), true, 'Signing in');
+    setButtonLoading(submitBtn, true, 'Signing in');
     showToast('Logging in...', 'loading');
+
+    // Solved before the fetch so the ~2 minute token lifetime is spent on the
+    // request rather than on the user staring at the form.
+    const captcha = await getCaptchaToken('recaptcha-login');
+    if (!captcha.ok) {
+      showToast(captcha.message, 'error');
+      return;
+    }
+
     const response = await fetch(window.API_BASE + '/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -439,6 +475,7 @@ async function handleLogin(e) {
         password,
         role,
         region,
+        recaptcha_token: captcha.token,
         provider: /@gmail\.com$/i.test(email) ? 'gmail' : 'email'
       })
     });
@@ -452,7 +489,29 @@ async function handleLogin(e) {
       return;
     }
 
+    // A rejected captcha token is single-use, so the widget must be reset
+    // before the user can try again. Done on every non-success path.
     if (!data.success) {
+      if (typeof elsRecaptcha !== 'undefined') elsRecaptcha.reset('recaptcha-login');
+
+      // Unverified address: offer the fix instead of a dead end. The password
+      // was correct, so the user only needs the emailed code.
+      if (data.requires_verification) {
+        showToast('Please verify your email to finish signing in.', 'error');
+        openVerifyEmailModal(data.email || email, data.dev_code, { delivered: data.email_delivered });
+        return;
+      }
+
+      if (data.suspended) {
+        showToast(data.message || 'This account has been suspended.', 'error');
+        return;
+      }
+
+      if (data.captcha) {
+        showToast(data.message || 'Please complete the security check.', 'error');
+        return;
+      }
+
       showToast(data.message || 'Login failed', 'error');
       return;
     }
@@ -472,7 +531,7 @@ async function handleLogin(e) {
     showToast(`Connection error to ${attempted}. Is the backend running?`, 'error');
   } finally {
     setAppLoading(false);
-    setButtonLoading(document.querySelector('#login-form button[type="submit"]'), false);
+    setButtonLoading(submitBtn, false);
   }
 }
 
@@ -497,19 +556,31 @@ async function handleRegister(e) {
     return;
   }
 
-  if (password.length < 6) {
-    showToast('Password must be at least 6 characters');
+  // Match the server's rule exactly. The old client check allowed 6 characters
+  // while the API demanded 8 plus upper/lower/digit, so a 7-character password
+  // passed this form and was then rejected by the API with a confusing message.
+  if (password.length < 8 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
+    showToast('Password needs 8+ characters with upper case, lower case and a number');
     return;
   }
 
+  const submitBtn = document.querySelector('#register-form button[type="submit"]');
+
   try {
     setAppLoading(true, 'Creating your account...');
-    setButtonLoading(document.querySelector('#register-form button[type="submit"]'), true, 'Creating account');
+    setButtonLoading(submitBtn, true, 'Creating account');
     showToast('Creating account...', 'loading');
+
+    const captcha = await getCaptchaToken('recaptcha-register');
+    if (!captcha.ok) {
+      showToast(captcha.message, 'error');
+      return;
+    }
+
     const response = await fetch(window.API_BASE + '/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password, confirmPassword, role, region, provider })
+      body: JSON.stringify({ name, email, password, confirmPassword, role, region, provider, recaptcha_token: captcha.token })
     });
 
     const text = await response.text();
@@ -522,27 +593,52 @@ async function handleRegister(e) {
     }
 
     if (!data.success) {
+      if (typeof elsRecaptcha !== 'undefined') elsRecaptcha.reset('recaptcha-register');
+      if (data.captcha) {
+        showToast(data.message || 'Please complete the security check.', 'error');
+        return;
+      }
       showToast(data.message || 'Registration failed', 'error');
       return;
     }
 
-    const userPayload = {
-      ...(data.user || {}),
-      role: (data.user && data.user.role) || role,
-      region: (data.user && data.user.region) || region,
-      provider: (data.user && data.user.provider) || provider
-    };
+    // The API deliberately does NOT return a token here. The address is not
+    // proven yet, so there is no session to persist — entering the app now
+    // would defeat the point of verifying at all. The modal exchanges the code
+    // for the session instead.
+    if (data.requires_verification) {
+      if (typeof elsRecaptcha !== 'undefined') elsRecaptcha.reset('recaptcha-register');
+      // The account exists either way; only the delivery state differs, so the
+      // toast must not claim an email is on its way when it is not.
+      if (data.email_delivered === false) {
+        showToast('Account created, but the verification email could not be sent.', 'error');
+      } else {
+        showToast('Account created. Enter the code we emailed you.', 'success');
+      }
+      openVerifyEmailModal(data.email, data.dev_code, { delivered: data.email_delivered });
+      return;
+    }
 
-    persistAuthSession(userPayload, data.token, rememberMe);
-    showToast('Account created successfully!', 'success');
-    enterApp();
+    // Only reachable when EMAIL_VERIFICATION_REQUIRED is turned off
+    // server-side, in which case the API still hands back a session.
+    if (data.token) {
+      const userPayload = {
+        ...(data.user || {}),
+        role: (data.user && data.user.role) || role,
+        region: (data.user && data.user.region) || region,
+        provider: (data.user && data.user.provider) || provider
+      };
+      persistAuthSession(userPayload, data.token, rememberMe);
+      showToast('Account created successfully!', 'success');
+      enterApp();
+    }
   } catch (err) {
     console.error('Register error:', err);
     const attempted = window.API_BASE || 'http://localhost:8001/api';
     showToast(`Connection error to ${attempted}. Is the backend running?`, 'error');
   } finally {
     setAppLoading(false);
-    setButtonLoading(document.querySelector('#register-form button[type="submit"]'), false);
+    setButtonLoading(submitBtn, false);
   }
 }
 
@@ -576,19 +672,31 @@ function handleLogout() {
   currentUser = { name: 'User', email: '' };
   window.currentUser = currentUser;
   
-  document.getElementById('main-app').classList.add('hidden');
-  document.getElementById('auth-screen').classList.remove('hidden');
-  toggleSidebar();
+  const mainApp = document.getElementById('main-app');
+  const authScreen = document.getElementById('auth-screen');
+  if (mainApp) mainApp.classList.add('hidden');
+  if (authScreen) authScreen.classList.remove('hidden');
+
   conversations = [];
   currentConversation = null;
-  
+
   const badge = document.getElementById('cart-badge');
   if (badge) badge.classList.add('hidden');
-  
-  document.getElementById('login-form').reset();
-  document.getElementById('register-form').reset();
+
+  // Close the drawer explicitly. A bare toggle depended on whether the drawer
+  // happened to be open, so signing out from inside the menu could leave it
+  // open behind the auth screen.
+  toggleSidebar('close');
+
+  // Hides the sign-out button and the super admin link, which now have no
+  // session behind them.
+  if (typeof updateHeaderChrome === 'function') updateHeaderChrome();
+
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  if (loginForm) loginForm.reset();
+  if (registerForm) registerForm.reset();
   switchAuthTab('login');
-  goTo('home');
   showToast('Logged out successfully');
 }
 
@@ -607,10 +715,9 @@ function goTo(page) {
     l.style.color = l.dataset.nav === page ? 'white' : '#d1d5db';
   });
 
-  const mobileSidebar = document.getElementById('sidebar');
-  const sidebarOverlay = document.getElementById('sidebar-overlay');
-  if (mobileSidebar) mobileSidebar.classList.remove('open');
-  if (sidebarOverlay) sidebarOverlay.classList.remove('open');
+  // Navigating always closes the drawer, including the aria/icon state — the
+  // old code removed the class directly and left the button claiming to be open.
+  toggleSidebar('close');
 
   if (page === 'cart') renderCart();
   if (page === 'payment') renderPayment();
@@ -622,31 +729,68 @@ function goTo(page) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-function toggleSidebar() {
+/**
+ * Open / close the slide-in navigation drawer.
+ *
+ * `force` is what makes this safe to call from more than one place: 'open',
+ * 'close' and true/false set an explicit state, while no argument flips the
+ * current one. Without it, two handlers on the same click (an inline onclick
+ * plus a listener) each flipped the drawer and it appeared to do nothing.
+ */
+function toggleSidebar(force) {
   const sidebar = document.getElementById('sidebar');
   const overlay = document.getElementById('sidebar-overlay');
-  if (!sidebar || !overlay) return;
+  if (!sidebar) return;
+
   const isOpen = sidebar.classList.contains('open');
-  sidebar.classList.toggle('open', !isOpen);
-  overlay.classList.toggle('open', !isOpen);
+  const next = (force === 'open') ? true
+    : (force === 'close') ? false
+    : (typeof force === 'boolean' ? force : !isOpen);
+
+  sidebar.classList.toggle('open', next);
+  if (overlay) overlay.classList.toggle('open', next);
+
+  // aria-expanded has to agree with what the user sees, and the icon has to
+  // change too: a menu button that stays identical whether the drawer is open
+  // or shut is indistinguishable from the one that does nothing.
+  const toggle = document.getElementById('sidebar-toggle');
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', String(next));
+    const icon = toggle.querySelector('[data-lucide]');
+    if (icon) icon.setAttribute('data-lucide', next ? 'x' : 'menu');
+    if (window.lucide) {
+      try { window.lucide.createIcons(); } catch (err) { /* icon refresh is cosmetic */ }
+    }
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const sidebarToggle = document.getElementById('sidebar-toggle');
   const sidebarOverlay = document.getElementById('sidebar-overlay');
+
+  // The drawer is opened by this listener ONLY. index.html used to also carry
+  // onclick="toggleSidebar()" on the same button, so a single click fired both
+  // handlers: the drawer opened and closed in the same tick and the button
+  // looked completely dead. The inline attribute is gone.
   if (sidebarToggle) sidebarToggle.addEventListener('click', (event) => {
     event.stopPropagation();
     toggleSidebar();
   });
-  if (sidebarOverlay) sidebarOverlay.addEventListener('click', toggleSidebar);
+
+  if (sidebarOverlay) sidebarOverlay.addEventListener('click', () => toggleSidebar('close'));
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    toggleSidebar('close');
+  });
+
   document.addEventListener('click', (event) => {
     const sidebar = document.getElementById('sidebar');
-    const isOpen = sidebar && sidebar.classList.contains('open');
-    if (!isOpen) return;
-    const insideSidebar = sidebar.contains(event.target);
+    if (!sidebar || !sidebar.classList.contains('open')) return;
+    if (sidebar.contains(event.target)) return;
     const toggleButton = document.getElementById('sidebar-toggle');
     if (toggleButton && toggleButton.contains(event.target)) return;
-    if (!insideSidebar) toggleSidebar();
+    toggleSidebar('close');
   });
 });
 
@@ -786,6 +930,21 @@ async function restoreSession() {
 document.addEventListener('DOMContentLoaded', async () => {
 
   initHomeCarousel();
+
+  // Ask the API whether the captcha is on and, if so, render the login and
+  // register widgets. Both containers stay hidden until this resolves, so a
+  // deployment without keys looks exactly as it did before. Deliberately not
+  // awaited together with the session restore: a slow captcha CDN must not
+  // delay the storefront from rendering.
+  if (typeof elsRecaptcha !== 'undefined') {
+    elsRecaptcha.init().then((enabled) => {
+      if (!enabled) return;
+      elsRecaptcha.render('recaptcha-login');
+      elsRecaptcha.render('recaptcha-register');
+    }).catch((err) => {
+      console.warn('reCAPTCHA init failed:', err && err.message);
+    });
+  }
 
   try {
 

@@ -96,9 +96,12 @@ router.put('/:id/online', auth, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
-    // Only an admin or the partner themselves may change availability.
+    // Only a super admin or the partner themselves may change availability.
+    // 'admin' is deliberately not accepted: the role no longer exists, so
+    // keeping it here would read as support for a role that cannot be assigned
+    // and would quietly deny every elevated account.
     const isSelf = partner.email === req.user.email;
-    if (req.user.role !== 'admin' && !isSelf) {
+    if (req.user.role !== 'super_admin' && !isSelf) {
       return res.status(403).json({ success: false, message: 'You can only update your own availability' });
     }
 

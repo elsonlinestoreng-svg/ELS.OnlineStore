@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const env = require('../config/env');
+const { escapeHtml } = require('./security');
 
 /**
  * Shared outbound email helper.
@@ -118,9 +119,75 @@ async function sendOtpEmail({ to, code }) {
   });
 }
 
+/**
+ * Address-ownership proof sent at sign-up.
+ *
+ * This is the gate that makes a registration mean something: until the address
+ * is proven, the account cannot obtain a session at all.
+ *
+ * The name is interpolated into HTML, so it is escaped — an unescaped display
+ * name would otherwise be an HTML injection into the recipient's mail client.
+ * `to` is the recipient address and is not interpolated into the body at all.
+ */
+async function sendVerificationEmail({ to, name, code, ttlMinutes }) {
+  const safeName = escapeHtml(name || 'there');
+  const minutes = Number(ttlMinutes) > 0 ? Number(ttlMinutes) : 15;
+
+  return sendMail({
+    to,
+    subject: 'Verify your ELS Online Store email address',
+    text: [
+      `Hi ${name || 'there'},`,
+      '',
+      'Welcome to ELS Online Store. Confirm this email address to activate your account:',
+      '',
+      code,
+      '',
+      `The code expires in ${minutes} minutes.`,
+      'If you did not create an ELS account, you can safely ignore this email.'
+    ].join('\n'),
+    html: [
+      '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#1f2937">',
+      `<p style="font-size:20px;font-weight:700;margin:0 0 16px">ELS Online Store</p>`,
+      `<p style="margin:0 0 12px">Hi ${safeName},</p>`,
+      '<p style="margin:0 0 16px">Welcome. Confirm this email address to activate your account.</p>',
+      `<p style="font-size:32px;font-weight:700;letter-spacing:8px;background:#f4f7fb;border-radius:12px;padding:18px;text-align:center;margin:0 0 16px">${escapeHtml(code)}</p>`,
+      `<p style="margin:0 0 16px;color:#64748b;font-size:14px">The code expires in ${minutes} minutes.</p>`,
+      '<p style="margin:0;color:#64748b;font-size:14px">If you did not create an ELS account, you can safely ignore this email.</p>',
+      '</div>'
+    ].join('')
+  });
+}
+
+/** Sent once an address is proven, so verification visibly completed. */
+async function sendWelcomeEmail({ to, name }) {
+  const safeName = escapeHtml(name || 'there');
+
+  return sendMail({
+    to,
+    subject: 'Your ELS Online Store account is active',
+    text: [
+      `Hi ${name || 'there'},`,
+      '',
+      'Your email address is confirmed and your account is now active.',
+      'You can sign in and start shopping on ELS Online Store.'
+    ].join('\n'),
+    html: [
+      '<div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;color:#1f2937">',
+      '<p style="font-size:20px;font-weight:700;margin:0 0 16px">ELS Online Store</p>',
+      `<p style="margin:0 0 12px">Hi ${safeName},</p>`,
+      '<p style="margin:0 0 16px">Your email address is confirmed and your account is now active.</p>',
+      '<p style="margin:0;color:#64748b;font-size:14px">You can sign in and start shopping on ELS Online Store.</p>',
+      '</div>'
+    ].join('')
+  });
+}
+
 module.exports = {
   isConfigured,
   sendMail,
   sendPasswordResetEmail,
-  sendOtpEmail
+  sendOtpEmail,
+  sendVerificationEmail,
+  sendWelcomeEmail
 };

@@ -4,26 +4,32 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <title>Support Inbox &middot; ELS Admin</title>
+  <title>Super Admin &middot; ELS Online Store</title>
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
-  <!-- Must load before admin-panel.js: settles window.API_BASE. -->
+  <!-- Must load before super-admin.js: settles window.API_BASE. -->
   <script src="js/config.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
 </head>
 <body class="min-h-screen bg-slate-100 font-sans text-slate-900">
-  <header class="border-b border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-4">
+  <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div class="mx-auto flex max-w-[100rem] flex-wrap items-center justify-between gap-4 px-6 py-3">
       <div class="flex items-center gap-3">
         <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-900 text-white">
-          <i data-lucide="shield" class="h-5 w-5"></i>
+          <i data-lucide="shield-check" class="h-5 w-5"></i>
         </span>
         <div>
-          <h1 class="text-lg font-bold text-slate-900">Support Inbox</h1>
-          <p class="text-xs text-slate-500">Contact form inquiries stored in MongoDB</p>
+          <h1 class="text-lg font-bold leading-tight text-slate-900">Super Admin</h1>
+          <p class="text-xs text-slate-500">Every user, order, payment and action on the platform</p>
         </div>
       </div>
       <div class="flex items-center gap-3">
-        <button type="button" onclick="window.location.reload()"
+        <span id="header-identity" class="hidden text-right sm:block">
+          <span id="header-name" class="block text-sm font-semibold text-slate-900"></span>
+          <span id="header-email" class="block text-xs text-slate-500"></span>
+        </span>
+        <button type="button" id="refresh-btn" onclick="superAdmin.refresh()"
           class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
           <i data-lucide="refresh-cw" class="h-4 w-4"></i>
           Refresh
@@ -33,45 +39,343 @@
           <i data-lucide="arrow-left" class="h-4 w-4"></i>
           Store
         </a>
+        <button type="button" id="admin-signout" onclick="superAdmin.signOut()"
+          class="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+          <i data-lucide="log-out" class="h-4 w-4"></i>
+          Sign out
+        </button>
       </div>
     </div>
+
+    <!-- View navigation. Each button targets a section by id; the controller
+         owns which one is visible so the URL hash and the DOM cannot disagree. -->
+    <nav id="view-nav" class="mx-auto max-w-[100rem] overflow-x-auto px-6">
+      <div class="flex gap-1 border-t border-slate-200 py-2" role="tablist">
+        <button type="button" data-view="overview"  class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Overview</button>
+        <button type="button" data-view="activity"  class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Activity</button>
+        <button type="button" data-view="users"     class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Users</button>
+        <button type="button" data-view="stores"    class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Stores</button>
+        <button type="button" data-view="orders"    class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Orders</button>
+        <button type="button" data-view="payments"  class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Payments</button>
+        <button type="button" data-view="inbox"     class="nav-tab rounded-full px-4 py-2 text-sm font-semibold transition">Support</button>
+      </div>
+    </nav>
   </header>
 
-  <main class="mx-auto max-w-7xl px-6 py-6">
-    <div id="inbox-content">
-      <div id="inbox-summary" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"></div>
+  <main class="mx-auto max-w-[100rem] px-6 py-6">
 
-      <div class="mt-6 overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200">
-        <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
-          <div class="relative min-w-[14rem] flex-1">
-            <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
-            <input type="search" id="inbox-search" placeholder="Search name, email or reference"
-              class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+    <!-- Shown instead of every view when the caller is not a super admin. -->
+    <section id="access-gate" class="hidden">
+      <div class="mx-auto max-w-lg rounded-3xl bg-white p-10 text-center ring-1 ring-slate-200">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+          <i data-lucide="lock" class="h-7 w-7"></i>
+        </span>
+        <h2 class="mt-5 text-2xl font-bold text-slate-900">Super admin access required</h2>
+        <p id="access-gate-message" class="mt-2 text-sm text-slate-600">
+          Sign in with a super admin account to open the dashboard.
+        </p>
+        <a href="index.html" class="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">
+          <i data-lucide="log-in" class="h-4 w-4"></i>
+          Go to sign in
+        </a>
+      </div>
+    </section>
+
+    <div id="dashboard-content" class="hidden">
+
+      <!-- ============================ OVERVIEW ============================ -->
+      <section id="view-overview" data-view-panel="overview">
+        <div id="overview-tiles" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+
+        <!-- Security strip: the counters that indicate an attack in progress.
+             Sits above the commercial numbers on purpose. -->
+        <div id="security-banner" class="mt-6 hidden"></div>
+
+        <div class="mt-6 grid gap-6 lg:grid-cols-3">
+          <div class="lg:col-span-2">
+            <div class="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">Revenue</p>
+                  <h2 class="mt-1 text-xl font-bold text-slate-900">Paid sales, last 7 days</h2>
+                </div>
+                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Daily</span>
+              </div>
+              <div id="revenue-chart" class="mt-6 flex h-52 items-end gap-2"></div>
+              <div id="revenue-axis" class="mt-3 flex justify-between text-xs text-slate-400"></div>
+            </div>
           </div>
-          <select id="inbox-status"
-            class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
-            <option value="">All statuses</option>
-            <option value="new">New</option>
-            <option value="in_progress">In progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="spam">Spam</option>
+
+          <div>
+            <div class="rounded-3xl bg-white p-6 ring-1 ring-slate-200">
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">Sellers</p>
+              <h2 class="mt-1 text-xl font-bold text-slate-900">Top by revenue</h2>
+              <div id="top-sellers" class="mt-5 space-y-3"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 rounded-3xl bg-white ring-1 ring-slate-200">
+          <div class="flex items-center justify-between border-b border-slate-200 p-5">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.3em] text-rose-500">Live feed</p>
+              <h2 class="mt-1 text-xl font-bold text-slate-900">Latest activity</h2>
+            </div>
+            <button type="button" data-goto-view="activity" class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+              View all
+            </button>
+          </div>
+          <div id="overview-activity" class="divide-y divide-slate-100"></div>
+        </div>
+      </section>
+
+      <!-- ============================ ACTIVITY ============================ -->
+      <section id="view-activity" data-view-panel="activity" class="hidden">
+        <div class="rounded-3xl bg-white ring-1 ring-slate-200">
+          <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+            <div class="relative min-w-[14rem] flex-1">
+              <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+              <input type="search" id="activity-search" placeholder="Search description, actor or action"
+                class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+            </div>
+            <select id="action-filter" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">All activity</option>
+            </select>
+            <select id="outcome-filter" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">All outcomes</option>
+              <option value="success">Success only</option>
+              <option value="failure">Failures only</option>
+              <option value="denied">Denied only</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[52rem] text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">When</th>
+                  <th class="px-4 py-3 font-semibold">Action</th>
+                  <th class="px-4 py-3 font-semibold">Who</th>
+                  <th class="px-4 py-3 font-semibold">Detail</th>
+                  <th class="px-4 py-3 font-semibold">Outcome</th>
+                  <th class="px-4 py-3 font-semibold">IP</th>
+                </tr>
+              </thead>
+              <tbody id="activity-rows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="activity-empty" class="hidden px-4 py-12 text-center text-sm text-slate-500"></div>
+          <div id="activity-pager" class="flex items-center justify-between border-t border-slate-200 p-4 text-sm"></div>
+        </div>
+      </section>
+
+      <!-- ============================= USERS ============================= -->
+      <section id="view-users" data-view-panel="users" class="hidden">
+        <div class="rounded-3xl bg-white ring-1 ring-slate-200">
+          <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+            <div class="relative min-w-[14rem] flex-1">
+              <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+              <input type="search" id="users-search" placeholder="Search name or email"
+                class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+            </div>
+            <select id="users-role" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">All roles</option>
+              <option value="buyer">Buyer</option>
+              <option value="seller">Seller</option>
+              <option value="delivery">Delivery</option>
+              <option value="user">User</option>
+              <option value="super_admin">Super admin</option>
+            </select>
+            <select id="users-status" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">Any status</option>
+              <option value="active">Active</option>
+              <option value="suspended">Suspended</option>
+            </select>
+            <select id="users-verified" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">Any verification</option>
+              <option value="true">Verified</option>
+              <option value="false">Unverified</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[60rem] text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">User</th>
+                  <th class="px-4 py-3 font-semibold">Role</th>
+                  <th class="px-4 py-3 font-semibold">Verified</th>
+                  <th class="px-4 py-3 font-semibold">Status</th>
+                  <th class="px-4 py-3 font-semibold">Logins</th>
+                  <th class="px-4 py-3 font-semibold">Last seen</th>
+                  <th class="px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-rows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="users-empty" class="hidden px-4 py-12 text-center text-sm text-slate-500"></div>
+          <div id="users-pager" class="flex items-center justify-between border-t border-slate-200 p-4 text-sm"></div>
+        </div>
+      </section>
+
+      <!-- ============================= STORES ============================= -->
+      <section id="view-stores" data-view-panel="stores" class="hidden">
+        <div class="mb-4 flex flex-wrap items-center gap-3">
+          <select id="stores-status" class="rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+            <option value="">All stores</option>
+            <option value="pending_review">Pending review</option>
+            <option value="active">Active</option>
+            <option value="suspended">Suspended</option>
           </select>
         </div>
+        <div id="stores-list" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"></div>
+        <p id="stores-empty" class="hidden rounded-3xl bg-white px-4 py-12 text-center text-sm text-slate-500 ring-1 ring-slate-200"></p>
+      </section>
 
-        <div class="grid lg:grid-cols-[22rem_1fr]">
-          <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
-            <div id="inbox-list" class="max-h-[36rem] overflow-y-auto"></div>
-            <p id="inbox-empty" class="hidden px-4 py-10 text-center text-sm text-slate-500"></p>
+      <!-- ============================= ORDERS ============================= -->
+      <section id="view-orders" data-view-panel="orders" class="hidden">
+        <div class="rounded-3xl bg-white ring-1 ring-slate-200">
+          <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+            <div class="relative min-w-[14rem] flex-1">
+              <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+              <input type="search" id="orders-search" placeholder="Search order reference"
+                class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+            </div>
+            <select id="orders-status" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">Any order status</option>
+              <option value="pending">Pending</option>
+              <option value="confirmed">Confirmed</option>
+              <option value="processing">Processing</option>
+              <option value="shipped">Shipped</option>
+              <option value="delivered">Delivered</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="disputed">Disputed</option>
+            </select>
+            <select id="orders-payment" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">Any payment status</option>
+              <option value="pending">Unpaid</option>
+              <option value="paid">Paid</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
           </div>
-          <div id="inbox-detail" class="max-h-[36rem] overflow-y-auto">
-            <p class="px-6 py-16 text-center text-sm text-slate-500">Select an inquiry to read it.</p>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[56rem] text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">Reference</th>
+                  <th class="px-4 py-3 font-semibold">Buyer</th>
+                  <th class="px-4 py-3 font-semibold">Seller</th>
+                  <th class="px-4 py-3 font-semibold">Total</th>
+                  <th class="px-4 py-3 font-semibold">Payment</th>
+                  <th class="px-4 py-3 font-semibold">Status</th>
+                  <th class="px-4 py-3 font-semibold">Placed</th>
+                </tr>
+              </thead>
+              <tbody id="orders-rows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="orders-empty" class="hidden px-4 py-12 text-center text-sm text-slate-500"></div>
+          <div id="orders-pager" class="flex items-center justify-between border-t border-slate-200 p-4 text-sm"></div>
+        </div>
+      </section>
+
+      <!-- ============================ PAYMENTS ============================ -->
+      <section id="view-payments" data-view-panel="payments" class="hidden">
+        <div id="payments-tiles" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"></div>
+        <div class="mt-6 rounded-3xl bg-white ring-1 ring-slate-200">
+          <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+            <div class="relative min-w-[14rem] flex-1">
+              <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+              <input type="search" id="payments-search" placeholder="Search transaction reference"
+                class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+            </div>
+            <select id="payments-status" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">Any gateway status</option>
+              <option value="pending">Pending</option>
+              <option value="success">Success</option>
+              <option value="failed">Failed</option>
+              <option value="reversed">Reversed</option>
+            </select>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[52rem] text-left text-sm">
+              <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">Reference</th>
+                  <th class="px-4 py-3 font-semibold">Buyer</th>
+                  <th class="px-4 py-3 font-semibold">Store</th>
+                  <th class="px-4 py-3 font-semibold">Amount</th>
+                  <th class="px-4 py-3 font-semibold">Commission</th>
+                  <th class="px-4 py-3 font-semibold">Method</th>
+                  <th class="px-4 py-3 font-semibold">Status</th>
+                  <th class="px-4 py-3 font-semibold">When</th>
+                </tr>
+              </thead>
+              <tbody id="payments-rows" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+          <div id="payments-empty" class="hidden px-4 py-12 text-center text-sm text-slate-500"></div>
+          <div id="payments-pager" class="flex items-center justify-between border-t border-slate-200 p-4 text-sm"></div>
+        </div>
+      </section>
+
+      <!-- ============================= SUPPORT ============================= -->
+      <section id="view-inbox" data-view-panel="inbox" class="hidden">
+        <div id="inbox-summary" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5"></div>
+        <div class="mt-6 overflow-hidden rounded-3xl bg-white ring-1 ring-slate-200">
+          <div class="flex flex-wrap items-center gap-3 border-b border-slate-200 p-4">
+            <div class="relative min-w-[14rem] flex-1">
+              <i data-lucide="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"></i>
+              <input type="search" id="inbox-search" placeholder="Search name, email or reference"
+                class="w-full rounded-2xl border border-slate-300 py-2.5 pl-9 pr-3 text-sm focus:border-rose-500 focus:outline-none">
+            </div>
+            <select id="inbox-status" class="rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+              <option value="">All statuses</option>
+              <option value="new">New</option>
+              <option value="in_progress">In progress</option>
+              <option value="resolved">Resolved</option>
+              <option value="spam">Spam</option>
+            </select>
+          </div>
+          <div class="grid lg:grid-cols-[22rem_1fr]">
+            <div class="border-b border-slate-200 lg:border-b-0 lg:border-r">
+              <div id="inbox-list" class="max-h-[36rem] overflow-y-auto"></div>
+              <p id="inbox-empty" class="hidden px-4 py-10 text-center text-sm text-slate-500"></p>
+            </div>
+            <div id="inbox-detail" class="max-h-[36rem] overflow-y-auto">
+              <p class="px-6 py-16 text-center text-sm text-slate-500">Select an inquiry to read it.</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
+
     </div>
   </main>
 
-  <script src="js/admin-panel.js"></script>
+  <!-- Generic action dialog. Used for suspending, reinstating, changing roles
+       and manual verification so every destructive action asks for a reason
+       and states exactly what it will do. -->
+  <div id="action-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+    <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-200">
+      <h3 id="action-modal-title" class="text-lg font-bold text-slate-900"></h3>
+      <p id="action-modal-body" class="mt-2 text-sm text-slate-600"></p>
+      <label id="action-modal-reason-label" for="action-modal-reason" class="mt-4 block text-sm font-semibold text-slate-700">Reason</label>
+      <input id="action-modal-reason" type="text" maxlength="300" placeholder="Recorded in the activity log"
+        class="mt-1 w-full rounded-2xl border border-slate-300 px-4 py-2.5 text-sm focus:border-rose-500 focus:outline-none">
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" onclick="superAdmin.closeActionModal()"
+          class="rounded-2xl border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">Cancel</button>
+        <button type="button" id="action-modal-confirm"
+          class="rounded-2xl bg-rose-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-400">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container. admin.html loads no stylesheet, so the app's showToast
+       in ui.js is unavailable here; this mirrors its behaviour locally. -->
+  <div id="toast" class="fixed bottom-6 left-1/2 z-[70] hidden -translate-x-1/2 rounded-full bg-slate-900 px-6 py-3 text-sm font-medium text-white shadow-xl"></div>
+
+  <script src="js/super-admin.js"></script>
   <script>if (window.lucide) window.lucide.createIcons();</script>
 </body>
 </html>

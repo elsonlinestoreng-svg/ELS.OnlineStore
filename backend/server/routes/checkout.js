@@ -6,6 +6,8 @@ const Transaction = require('../models/Transaction');
 const Product = require('../models/Product');
 const Store = require('../models/Store');
 const auth = require('../middleware/auth');
+const requireRecaptcha = require('../middleware/recaptcha');
+const audit = require('../services/audit');
 const { initializePayment } = require('../services/payment-methods');
 const { notify } = require('../services/notify');
 
@@ -17,7 +19,14 @@ function generateRef(prefix) {
 }
 
 // Checkout
-router.post('/', auth, async (req, res) => {
+//
+// The captcha sits here, on the order/payment creation call, rather than on
+// /api/payment/callback. This is the request that actually commits money and
+// creates an order, so it is the one worth protecting. The callback is excluded
+// on purpose: the buyer is returning from Paystack's domain minutes later, by
+// which point any widget token is long expired, so gating it would guarantee a
+// failed payment rather than prevent a fraudulent one.
+router.post('/', auth, requireRecaptcha('checkout.pay'), async (req, res) => {
   try {
     const { shipping_address, payment_method = 'card' } = req.body;
 
@@ -215,6 +224,20 @@ router.post('/', auth, async (req, res) => {
       console.error('Payment initialization error:', err);
       // Don't fail checkout for payment gateway issues - client can retry
     }
+
+    audit.record(req, {
+      action: 'order.checkout',
+      outcome: 'success',
+      description: `Checkout of ${orderIds.length} order(s) totalling ${currency} ${totalAmount}`,
+      entityType: 'transaction',
+      entityId: parentTxnId,
+      metadata: {
+        amount: totalAmount,
+        currency,
+        payment_method: selectedMethod,
+        order_count: orderIds.length
+      }
+    });
 
     res.status(201).json({
       success: true,

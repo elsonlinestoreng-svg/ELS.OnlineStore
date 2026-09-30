@@ -1,0 +1,16 @@
+{
+  "name": "els-online-store-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Verification harnesses for ELS Online Store. The application itself runs from ./backend (npm start); this package exists only to pin the test dependency used by qa_ui.js.",
+  "scripts": {
+    "qa": "npm run qa:ui && npm run qa:e2e && npm run qa:captcha && npm run qa:smtp",
+    "qa:ui": "node qa_ui.js",
+    "qa:e2e": "node qa_e2e.js",
+    "qa:captcha": "node qa_captcha.js",
+    "qa:smtp": "node qa_smtp.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}

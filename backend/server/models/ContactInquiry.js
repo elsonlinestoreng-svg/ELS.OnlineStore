@@ -47,6 +47,14 @@ const contactInquirySchema = new mongoose.Schema({
     trim: true,
     maxlength: 32
   },
+  // Submission IP, for spam and abuse triage in the support inbox. Optional:
+  // historical inquiries predate this field and have no value.
+  ip: {
+    type: String,
+    default: '',
+    trim: true,
+    maxlength: 64
+  },
   region: {
     type: String,
     default: 'global',

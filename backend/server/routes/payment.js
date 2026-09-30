@@ -3,6 +3,7 @@ const router = express.Router();
 const Transaction = require('../models/Transaction');
 const Order = require('../models/Order');
 const auth = require('../middleware/auth');
+const audit = require('../services/audit');
 const { verifyPayment } = require('../services/payment-methods');
 const { notify } = require('../services/notify');
 const { sameUser, cleanText } = require('../utils/security');
@@ -71,6 +72,14 @@ router.post('/callback', auth, async (req, res) => {
 
       if (!verification || verification.status !== true ||
           !verification.data || verification.data.status !== 'success') {
+        audit.record(req, {
+          action: 'order.payment_failed',
+          outcome: 'failure',
+          description: `Gateway verification failed for ${transaction.parent_transaction_id}`,
+          entityType: 'transaction',
+          entityId: transaction.parent_transaction_id,
+          metadata: { method: transaction.payment_method, reason: 'gateway_rejected' }
+        });
         return res.status(400).json({
           success: false,
           message: 'Payment could not be verified with the payment provider'
@@ -108,6 +117,19 @@ router.post('/callback', auth, async (req, res) => {
     } catch (err) {
       console.error('Payment confirmation notification error:', err && err.message);
     }
+
+    audit.record(req, {
+      action: 'order.paid',
+      outcome: 'success',
+      description: `Payment settled: ${transaction.currency} ${transaction.total_amount} via ${transaction.payment_method}`,
+      entityType: 'transaction',
+      entityId: transaction.parent_transaction_id,
+      metadata: {
+        amount: transaction.total_amount,
+        currency: transaction.currency,
+        method: transaction.payment_method
+      }
+    });
 
     res.json({
       success: true,

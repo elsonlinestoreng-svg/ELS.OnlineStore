@@ -73,6 +73,40 @@ function updateHeaderAvatar() {
 
   const nameEl = document.getElementById('header-user-name');
   if (nameEl) nameEl.textContent = name || 'Member';
+
+  updateHeaderChrome();
+}
+
+/**
+ * Shows the header controls that only make sense for a signed-in account.
+ *
+ * Two things depend on this and previously had nowhere to live:
+ *   - the super admin dashboard link, which is only useful with that role
+ *   - the sign-out button, which is meaningless without a session
+ *
+ * Called from updateHeaderAvatar() so every existing call site that refreshes
+ * the header (sign-in, session restore, profile save) also refreshes these.
+ * This is presentation only: the dashboard itself is gated by the server, and
+ * hiding a button is not an access control.
+ */
+function updateHeaderChrome() {
+  const signedIn = Boolean(getAuthToken());
+  const role = String((window.currentUser && window.currentUser.role) || currentUser?.role || '').toLowerCase();
+
+  const adminLink = document.getElementById('header-admin-link');
+  if (adminLink) {
+    const show = signedIn && (role === 'super_admin' || role === 'admin');
+    adminLink.classList.toggle('hidden', !show);
+    // The icon markup is display:flex via a utility class; restoring the flex
+    // layout has to happen alongside removing `hidden`.
+    if (show) adminLink.classList.add('flex');
+  }
+
+  const signOut = document.getElementById('header-signout');
+  if (signOut) {
+    signOut.classList.toggle('hidden', !signedIn);
+    if (signedIn) signOut.classList.add('flex');
+  }
 }
 
 /**
@@ -161,17 +195,23 @@ function renderProfile() {
 }
 
 /**
- * Reveals the admin panel link for admin accounts only.
+ * Reveals the super admin dashboard link for super_admin accounts only.
  *
  * This is presentation, not security: the value comes from the cached session
- * user and could be stale or tampered with. The support inbox itself is gated
- * by the server, which returns 403 for a non-admin token.
+ * user and could be stale or tampered with. The dashboard itself is gated by
+ * the server, which returns 403 for any token that is not a super_admin.
  */
 function renderAdminEntry() {
   const entry = document.getElementById('admin-entry');
   if (!entry) return;
   const role = String(currentUser?.role || '').toLowerCase();
-  entry.classList.toggle('hidden', role !== 'admin');
+  // "admin" is the pre-migration role name, still present in the localStorage
+  // copy of the session on devices that have not re-signed-in since the
+  // database was migrated. Tolerating it here only keeps the link visible;
+  // the API still accepts super_admin alone, so such a session is told to sign
+  // in again rather than silently failing. Drop this branch once no live
+  // session predates the migration.
+  entry.classList.toggle('hidden', role !== 'super_admin' && role !== 'admin');
 }
 
 /**

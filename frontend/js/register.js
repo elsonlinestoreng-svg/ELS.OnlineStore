@@ -1,5 +1,210 @@
 // Auth functions (switchAuthTab / handleLogin / handleRegister) live in ui.js.
-// This file only contains the password reset helpers.
+// This file only contains the password reset helpers and the email
+// verification exchange.
+
+// ---------------------------------------------------------------------------
+// Email verification
+//
+// Registration deliberately hands back no session, so this modal is the step
+// that actually signs a new customer in: it posts the emailed code to
+// /auth/verify-email and receives the token.
+// ---------------------------------------------------------------------------
+
+/** Held in memory only. The address is already in the form field. */
+let pendingVerificationEmail = '';
+
+/**
+ * @param {string} email
+ * @param {string} [devCode]  supplied by the server in development only
+ * @param {{delivered?: boolean}} [options] `delivered: false` means the relay
+ *   was reached but rejected the message, so no code is coming. The customer is
+ *   told that explicitly instead of waiting on mail that will never arrive.
+ */
+function openVerifyEmailModal(email, devCode, options = {}) {
+  const modal = document.getElementById('verify-email-modal');
+  if (!modal) return false;
+
+  pendingVerificationEmail = (email || '').trim();
+
+  const target = document.getElementById('verify-email-target');
+  if (target) target.textContent = pendingVerificationEmail;
+
+  const result = document.getElementById('verify-email-result');
+  if (result) result.textContent = '';
+
+  const codeInput = document.getElementById('verify-email-code');
+  if (codeInput) codeInput.value = '';
+
+  // Only ever populated by the server in development, when no SMTP relay is
+  // configured and therefore no mail can be sent. Shown so a developer is not
+  // left waiting for an email that will never arrive.
+  const devNotice = document.getElementById('verify-email-dev-notice');
+  const devCodeEl = document.getElementById('verify-email-dev-code');
+  if (devCode && devNotice && devCodeEl) {
+    devCodeEl.textContent = devCode;
+    devNotice.classList.remove('hidden');
+  } else if (devNotice) {
+    devNotice.classList.add('hidden');
+  }
+
+  // A rejected send is a different failure from an unconfigured relay, and the
+  // fix is different too: the operator has to repair the SMTP credentials, not
+  // add them.
+  const failedNotice = document.getElementById('verify-email-failed-notice');
+  if (failedNotice) {
+    failedNotice.classList.toggle('hidden', options.delivered !== false);
+  }
+
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  setTimeout(() => codeInput && codeInput.focus(), 60);
+  return true;
+}
+
+function closeVerifyEmailModal() {
+  const modal = document.getElementById('verify-email-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+  }
+  const result = document.getElementById('verify-email-result');
+  if (result) result.textContent = '';
+}
+
+function setVerifyEmailMessage(text, tone) {
+  const out = document.getElementById('verify-email-result');
+  if (!out) return;
+  out.textContent = text;
+  out.className = 'text-sm font-semibold ' + (tone === 'error' ? 'text-rose-600' : 'text-emerald-700');
+}
+
+async function submitEmailVerification(e) {
+  e.preventDefault();
+
+  const codeInput = document.getElementById('verify-email-code');
+  const code = (codeInput && codeInput.value ? codeInput.value : '').trim();
+
+  if (!/^[0-9]{6}$/.test(code)) {
+    setVerifyEmailMessage('Enter the 6-digit code from your email.', 'error');
+    if (codeInput) codeInput.focus();
+    return;
+  }
+
+  if (!pendingVerificationEmail) {
+    setVerifyEmailMessage('We lost track of which address to verify. Please sign in again.', 'error');
+    return;
+  }
+
+  const submitBtn = document.getElementById('verify-email-submit');
+  const originalLabel = submitBtn ? submitBtn.textContent : '';
+
+  try {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Verifying...';
+    }
+    setVerifyEmailMessage('Checking your code...', 'info');
+
+    const response = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/auth/verify-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingVerificationEmail, code })
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (err) {
+      setVerifyEmailMessage('The server sent an unexpected response. Try again.', 'error');
+      return;
+    }
+
+    if (!data.success) {
+      setVerifyEmailMessage(data.message || 'That code is not valid.', 'error');
+      if (codeInput) {
+        codeInput.value = '';
+        codeInput.focus();
+      }
+      return;
+    }
+
+    // Verified: the API returned a session, so the user goes straight in.
+    setVerifyEmailMessage('Verified. Taking you in...', 'success');
+    closeVerifyEmailModal();
+
+    const rememberMe = Boolean(document.getElementById('remember-login')?.checked)
+      || Boolean(document.getElementById('remember-register')?.checked);
+
+    if (typeof persistAuthSession === 'function') {
+      persistAuthSession(data.user, data.token, rememberMe);
+    }
+    if (typeof enterApp === 'function') enterApp();
+  } catch (err) {
+    console.error('Email verification error:', err);
+    setVerifyEmailMessage('Could not reach the server. Check your connection and try again.', 'error');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalLabel;
+    }
+  }
+}
+
+/** Rate limited server-side to 5 per 15 minutes, so this cannot be spammed. */
+async function resendVerificationCode() {
+  if (!pendingVerificationEmail) {
+    setVerifyEmailMessage('No address to resend to. Please sign in again.', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('resend-verification-btn');
+  const originalLabel = btn ? btn.textContent : '';
+
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+    }
+
+    const response = await fetch((window.API_BASE || 'http://localhost:8001/api') + '/auth/resend-verification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingVerificationEmail })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!data.success) {
+      setVerifyEmailMessage(data.message || 'Could not send a new code.', 'error');
+      return;
+    }
+
+    // The dev_code is only present when SMTP is unconfigured, mirroring the
+    // registration response.
+    if (data.dev_code) {
+      const devNotice = document.getElementById('verify-email-dev-notice');
+      const devCodeEl = document.getElementById('verify-email-dev-code');
+      if (devNotice && devCodeEl) {
+        devCodeEl.textContent = data.dev_code;
+        devNotice.classList.remove('hidden');
+      }
+    }
+
+    const codeInput = document.getElementById('verify-email-code');
+    if (codeInput) codeInput.value = '';
+
+    setVerifyEmailMessage('A new code is on its way. Check your inbox.', 'success');
+  } catch (err) {
+    console.error('Resend verification error:', err);
+    setVerifyEmailMessage('Could not reach the server. Try again in a moment.', 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = originalLabel;
+    }
+  }
+}
 
 // Password reset helpers
 function openResetRequestModal() {

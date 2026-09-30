@@ -10,6 +10,7 @@ const nodemailer = require('nodemailer');
 const { escapeHtml, cleanText, isValidEmail, toObjectId } = require('../utils/security');
 const env = require('../config/env');
 const ContactInquiry = require('../models/ContactInquiry');
+const audit = require('../services/audit');
 const optionalAuth = require('../middleware/auth').optionalAuth;
 
 const contactLimiter = rateLimit({
@@ -125,6 +126,7 @@ router.post('/', contactLimiter, optionalAuth, async (req, res) => {
       message: sanitizedMessage,
       phone: sanitizedPhone,
       region: sanitizedRegion,
+      ip: audit.clientIp(req),
       user_id: toObjectId(req.user && req.user.userId),
       email_status: emailResult.delivered ? 'sent' : (emailResult.reason === 'smtp-not-configured' ? 'not_configured' : 'failed'),
       email_error: emailResult.delivered ? '' : cleanText(String(emailResult.reason || ''), 300),
