@@ -34,6 +34,7 @@ const User = require('./models/User');
 const audit = require('./services/audit');
 const { reportSmtpStatus } = require('./utils/mail-verify');
 const { start: startReconciliationCron } = require('./services/reconciliation');
+const mongoose = require('mongoose');
 
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -214,6 +215,20 @@ app.use('/api/logistics', logisticsRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', superAdminRoutes);
 app.use('/api/superadmin', superAdminRoutes);
+
+// Liveness/readiness probe. Used by Render's health check and any uptime
+// monitor. Intentionally unauthenticated and cheap: it reports process uptime
+// and the live Mongo connection state, never any secret.
+app.get('/api/health', (req, res) => {
+  const dbState = ['disconnected', 'connected', 'connecting', 'disconnecting'][mongoose.connection.readyState] || 'unknown';
+  res.json({
+    success: true,
+    status: 'ok',
+    uptime: Math.round(process.uptime()),
+    db: dbState,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Legacy password-reset endpoints

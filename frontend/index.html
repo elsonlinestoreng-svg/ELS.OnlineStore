@@ -9,6 +9,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://js.paystack.co/v1/inline.js"></script>
+  <!-- Deployment API base. Must load before config.js, which honours
+       window.API_BASE if the page set it. -->
+  <script src="js/env.js"></script>
   <!-- Must load before any feature script: settles window.API_BASE. -->
   <script src="js/config.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
@@ -1472,6 +1475,10 @@
 
   <script src="js/els2app.js"></script>
   <script src="js/cloudupload.js"></script>
+  <!-- dataSdk.js must load BEFORE ui.js: ui.js runs its init IIFE at load
+       time and returns early if window.dataSdk is undefined, which silently
+       sent the shop back to its local fallback product list. -->
+  <script src="js/dataSdk.js"></script>
   <!-- Must load before ui.js and payment.js, which both call into it. -->
   <script src="js/recaptcha.js"></script>
   <script src="js/ui.js"></script>
@@ -1484,7 +1491,6 @@
   <script src="js/chat.js"></script>
   <script src="js/profile.js"></script>
   <script src="js/notifications.js"></script>
-  <script src="js/dataSdk.js"></script>
   <script src="js/register.js"></script>
 </body>
 </html>

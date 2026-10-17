@@ -1,0 +1,72 @@
+# Render Blueprint for the ELS Online Store backend (Express + MongoDB Atlas).
+#
+# Deploy: Render Dashboard -> New + -> Blueprint -> pick this repo. Render reads
+# this file and creates the web service below. Variables marked `sync: false`
+# are secrets/values Render will prompt you for on first deploy; they are NOT in
+# the repo.
+#
+# After the frontend is on Vercel, set CORS_ORIGINS to its origin (e.g.
+# https://els-store.vercel.app) or the browser will be blocked in production.
+
+services:
+  - type: web
+    name: els-online-store-api
+    runtime: node
+    plan: free
+    region: oregon
+    branch: zohan-work
+    autoDeploy: true
+    healthCheckPath: /api/health
+    buildCommand: cd backend && npm install
+    startCommand: node backend/server/server.js
+    envVars:
+      # --- Fixed deployment settings -------------------------------------
+      - key: NODE_ENV
+        value: production
+      # Email verification is OFF for this launch: the SMTP relay credentials
+      # are not valid yet. With this false the API creates already-verified
+      # accounts and hands back a session on register, so the shop is sellable.
+      # Flip to "true" (and set working SMTP_* values) to re-enable it.
+      - key: EMAIL_VERIFICATION_REQUIRED
+        value: "false"
+      - key: JWT_EXPIRE
+        value: 7d
+      # Render sits behind one proxy hop; without this every visitor shares one
+      # rate-limit bucket and the audit log records Render's IP for everyone.
+      - key: TRUST_PROXY
+        value: "true"
+
+      # --- Secrets / values you must provide (not stored in the repo) -----
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: RECAPTCHA_SITE_KEY
+        sync: false
+      - key: RECAPTCHA_SECRET_KEY
+        sync: false
+      - key: SUPER_ADMIN_EMAIL
+        sync: false
+      # The Vercel frontend origin, e.g. https://els-store.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+      # Used to build password-reset links. Set to the frontend origin.
+      - key: APP_ORIGIN
+        sync: false
+      # Optional: uncomment once real SMTP keys exist and verification is on.
+      # - key: SMTP_HOST
+      #   sync: false
+      # - key: SMTP_PORT
+      #   value: "587"
+      # - key: SMTP_SECURE
+      #   value: "false"
+      # - key: SMTP_USER
+      #   sync: false
+      # - key: SMTP_PASS
+      #   sync: false
+      # - key: FROM_EMAIL
+      #   sync: false

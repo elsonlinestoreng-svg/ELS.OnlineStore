@@ -212,6 +212,17 @@ router.post('/register', requireRecaptcha('auth.register'), async (req, res) => 
       return res.status(400).json({ success: false, message: 'Invalid role' });
     }
 
+    // Email verification can be turned off entirely (EMAIL_VERIFICATION_REQUIRED
+    // =false), which is the supported way to run without a working SMTP relay.
+    // In that mode the account is created already verified and handed a session
+    // immediately — exactly what the storefront expects: ui.js reads data.token
+    // when the response carries no requires_verification flag. With the gate on,
+    // the account starts unverified and no session is issued until the emailed
+    // code is returned. Without this branch the API always returned
+    // requires_verification:true and never a token, so a verification-disabled
+    // deployment left every new account stuck at the code modal.
+    const verificationRequired = env.EMAIL_VERIFICATION_REQUIRED;
+
     const user = new User({
       name: cleanText(name, 120),
       email: normalizedEmail,
@@ -219,9 +230,30 @@ router.post('/register', requireRecaptcha('auth.register'), async (req, res) => 
       role: 'buyer',
       region: cleanText(region, 50) || 'global',
       provider: cleanText(provider, 30) || (/@gmail\.com$/i.test(normalizedEmail) ? 'gmail' : 'email'),
-      is_verified: false,
+      is_verified: !verificationRequired,
       status: 'active'
     });
+
+    if (!verificationRequired) {
+      await user.save();
+
+      audit.record(req, {
+        action: 'auth.register',
+        outcome: 'success',
+        description: `Account created for ${user.email} (email verification disabled)`,
+        actor: { userId: user._id, email: user.email, role: user.role },
+        entityType: 'user',
+        entityId: user._id.toString(),
+        metadata: { region: user.region, provider: user.provider, verification: 'disabled' }
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Account created successfully.',
+        token: signToken(user),
+        user: publicUser(user)
+      });
+    }
 
     const code = user.issueVerificationCode(
       env.EMAIL_VERIFICATION_TTL_MINUTES,
