@@ -14,7 +14,7 @@ services:
     runtime: node
     plan: free
     region: oregon
-    branch: zohan-work
+    branch: branch-main
     autoDeploy: true
     healthCheckPath: /api/health
     buildCommand: cd backend && npm install
