@@ -13,7 +13,7 @@
  * Whichever origin is set here must also appear in the backend's CORS_ORIGINS.
  */
 (function () {
-  var API_BASE_URL = 'https://els-online-store-api.onrender.com/api';
+  var API_BASE_URL = 'https://els-onlinestore.onrender.com/api';
   if (API_BASE_URL) {
     window.API_BASE = API_BASE_URL;
   }
