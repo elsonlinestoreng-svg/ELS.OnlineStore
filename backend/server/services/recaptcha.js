@@ -2,11 +2,17 @@ const env = require('../config/env');
 const audit = require('./audit');
 
 /**
- * Google reCAPTCHA v2/v3 server-side verification.
+ * Google reCAPTCHA v3 server-side verification.
  *
  * Talks to Google's siteverify endpoint with the raw token the browser produced.
  * The browser is never trusted to decide whether it passed the captcha — a
  * client-side-only check is trivially skipped by calling the API directly.
+ *
+ * v3 reports success:true together with a 0.0–1.0 score even for obvious
+ * bots, so a successful verify is not enough on its own: anything scoring
+ * below env.RECAPTCHA_MIN_SCORE is rejected here. (A v2-style response
+ * carries no score field and skips the threshold, so swapping the keys to a
+ * v2 pair cannot lock every user out.)
  *
  * Failure modes are all explicit, because "the captcha silently did nothing" is
  * the worst possible outcome:
@@ -15,11 +21,12 @@ const audit = require('./audit');
  *                     app is usable before keys are added. In production
  *                     config/env.js has already thrown at boot, so this branch
  *                     is unreachable there.
- *   missing_token  -> the browser never solved the widget. Always a rejection.
+ *   missing_token  -> the browser never produced a token. Always a rejection.
  *   timeout        -> Google did not answer in time. Treated as a rejection,
  *                     because failing open on an outage hands the attacker the
  *                     one moment they were waiting for.
  *   network_error  -> same reasoning as timeout.
+ *   low_score      -> Google said yes but the score is below RECAPTCHA_MIN_SCORE.
  *   invalid        -> Google said no. Always a rejection.
  *
  * @returns {Promise<{ok: boolean, skipped?: boolean, reason: string, score?: number, hostname?: string, 'error-codes'?: string[]}>}
@@ -86,10 +93,23 @@ async function verifyRecaptcha(token, req) {
       };
     }
 
+    const score = typeof result.score === 'number' ? result.score : undefined;
+
+    // v3 only: a verified response below the configured threshold is still a
+    // bot. A response with no score (v2-style key) skips this check.
+    if (typeof score === 'number' && score < env.RECAPTCHA_MIN_SCORE) {
+      return {
+        ok: false,
+        reason: 'low_score',
+        score,
+        hostname: typeof result.hostname === 'string' ? result.hostname : undefined
+      };
+    }
+
     return {
       ok: true,
       reason: 'verified',
-      score: typeof result.score === 'number' ? result.score : undefined,
+      score,
       hostname: typeof result.hostname === 'string' ? result.hostname : undefined
     };
   } catch (err) {

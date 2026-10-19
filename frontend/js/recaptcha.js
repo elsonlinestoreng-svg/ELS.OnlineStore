@@ -1,20 +1,27 @@
 /**
- * reCAPTCHA integration for the storefront.
+ * reCAPTCHA v3 integration for the storefront.
  *
  * Two design rules drive everything here:
  *
- *  1. The widget is invisible to the developer until keys exist. The site key
- *     is served by the API at GET /api/config/public, so this file contains no
- *     key and no environment-specific URL. Drop the keys into .env and the
- *     widgets appear; leave them out and the app works exactly as it did.
+ *  1. The integration is invisible to the developer until keys exist. The site
+ *     key is served by the API at GET /api/config/public, so this file contains
+ *     no key and no environment-specific URL. Drop the keys into .env and the
+ *     captcha starts scoring every submit; leave them out and the app works
+ *     exactly as it did.
  *
- *  2. A missing widget must never silently skip verification. If the API says
- *     the captcha is enabled but the widget failed to load (blocked CDN, network
- *     hiccup), getToken() returns a sentinel that the server rejects, so the
- *     user is told to retry instead of the request being quietly unprotected.
+ *  2. A missing captcha must never silently skip verification. If the API says
+ *     the captcha is enabled but the script failed to load (blocked CDN,
+ *     network hiccup), token() returns a sentinel that the server rejects, so
+ *     the user is told to retry instead of the request being quietly
+ *     unprotected.
+ *
+ * v3 is invisible: there is no widget and no checkbox. execute() mints a
+ * fresh, single-use token scored by Google; the server rejects scores below
+ * RECAPTCHA_MIN_SCORE. render() is kept as a harmless no-op so existing call
+ * sites (ui.js, payment.js) work unchanged.
  *
  * Usage:
- *   const token = await elsRecaptcha.token('login');
+ *   const token = await elsRecaptcha.token('recaptcha-login');
  *   if (token === elsRecaptcha.LOAD_FAILED) { ...tell the user to reload... }
  */
 (function () {
@@ -24,47 +31,64 @@
   const DISABLED = 'els-recaptcha-disabled';
   const LOAD_FAILED = 'els-recaptcha-load-failed';
 
-  const SCRIPT_SRC = 'https://www.google.com/recaptcha/api.js?render=explicit';
+  const SCRIPT_BASE = 'https://www.google.com/recaptcha/api.js';
 
   const state = {
     loaded: false,
     loading: null,
     enabled: false,
     siteKey: '',
-    ready: false,       // config has been fetched at least once
-    widgets: new Map(), // id -> widgetId
-    attempts: 0
+    ready: false // config has been fetched at least once
   };
-
-  const MAX_LOAD_ATTEMPTS = 3;
 
   function log(...args) {
     if (window.console && console.warn) console.warn('[recaptcha]', ...args);
   }
 
-  /** Inject Google's script once. Resolves false if it cannot be loaded. */
+  /**
+   * v3 action names must match /^[a-zA-Z0-9_]+$/. Callers pass container ids
+   * like 'recaptcha-login'; strip the widget prefix and sanitise the rest so
+   * 'recaptcha-login' becomes 'login', 'recaptcha-payment' becomes 'payment'.
+   */
+  function actionName(containerId) {
+    const base = String(containerId || 'action').replace(/^recaptcha-/, '');
+    const safe = base.replace(/[^a-zA-Z0-9_]/g, '_');
+    return safe || 'action';
+  }
+
+  /**
+   * Inject Google's script once, pinned to the configured site key (v3 loads
+   * with ?render=<sitekey>). Resolves false if it cannot be loaded.
+   */
   function loadScript() {
     if (state.loaded) return Promise.resolve(true);
     if (state.loading) return state.loading;
+    if (!state.siteKey) return Promise.resolve(false);
 
     state.loading = new Promise((resolve) => {
-      if (window.grecaptcha && window.grecaptcha.render) {
+      const ready = () => {
         state.loaded = true;
-        return resolve(true);
+        resolve(true);
+      };
+
+      // The script may already be on the page (e.g. re-injected by a
+      // extension or a previous boot in a SPA-style navigation).
+      if (window.grecaptcha && typeof window.grecaptcha.execute === 'function') {
+        return ready();
       }
 
-      const existing = document.querySelector(`script[src^="${SCRIPT_SRC}"]`);
+      const existing = document.querySelector(`script[src^="${SCRIPT_BASE}"]`);
       if (existing) {
-        existing.addEventListener('load', () => { state.loaded = true; resolve(true); });
+        existing.addEventListener('load', ready);
         existing.addEventListener('error', () => resolve(false));
         return;
       }
 
       const script = document.createElement('script');
-      script.src = SCRIPT_SRC;
+      script.src = `${SCRIPT_BASE}?render=${encodeURIComponent(state.siteKey)}`;
       script.async = true;
       script.defer = true;
-      script.onload = () => { state.loaded = true; resolve(true); };
+      script.onload = ready;
       script.onerror = () => resolve(false);
       document.head.appendChild(script);
     });
@@ -112,49 +136,17 @@
   }
 
   /**
-   * Render (once) the widget for a container id.
-   *
-   * Explicit rendering rather than the data attribute scan, because the payment
-   * page widget is created long after DOMContentLoaded.
+   * Kept for API compatibility with the v2 widget version. v3 has no visible
+   * widget, so this only verifies the script is reachable and resolves true.
+   * The hidden containers in index.html stay hidden.
    */
   async function render(containerId) {
     if (!state.enabled) return null;
-    if (state.widgets.has(containerId)) return state.widgets.get(containerId);
-
-    const container = document.getElementById(containerId);
-    if (!container) return null;
+    if (!state.ready) await init();
+    if (!state.enabled) return null;
 
     const ok = await loadScript();
-    if (!ok || !window.grecaptcha || !window.grecaptcha.render) return null;
-
-    try {
-      const widgetId = window.grecaptcha.render(container, {
-        sitekey: state.siteKey,
-        theme: 'light',
-        size: 'normal',
-        callback: () => {
-          // Clear any stale "please complete the captcha" state once solved.
-          const banner = document.getElementById(`recaptcha-error-${containerId}`);
-          if (banner) banner.classList.add('hidden');
-        },
-        'expired-callback': () => {
-          // Tokens expire after ~2 minutes. Surfacing this early beats the user
-          // filling the form and being rejected for a token that aged out.
-          showInlineError(containerId, 'That captcha expired. Please solve it again.');
-        },
-        'error-callback': () => {
-          showInlineError(containerId, 'The captcha could not be loaded. Please refresh the page.');
-        }
-      });
-
-      state.widgets.set(containerId, widgetId);
-      container.classList.remove('hidden');
-      return widgetId;
-    } catch (err) {
-      // Thrown when the same container is rendered twice, which is harmless.
-      log('render failed for', containerId, err && err.message);
-      return null;
-    }
+    return ok ? true : null;
   }
 
   function showInlineError(containerId, message) {
@@ -170,7 +162,7 @@
   }
 
   /**
-   * Get a token for the named widget.
+   * Mint a fresh v3 token for the named action.
    *
    * @returns {Promise<string>} the token, DISABLED when no captcha is
    *   configured, or LOAD_FAILED when one is configured but unusable.
@@ -179,22 +171,14 @@
     if (!state.ready) await init();
     if (!state.enabled) return DISABLED;
 
-    const widgetId = await render(containerId);
-
-    if (widgetId === null || widgetId === undefined) {
-      // Configured server-side but no usable widget. Refuse rather than
+    const ok = await loadScript();
+    if (!ok || !window.grecaptcha || typeof window.grecaptcha.execute !== 'function') {
+      // Configured server-side but no usable script. Refuse rather than
       // submitting an empty token that the server would (correctly) reject.
       return LOAD_FAILED;
     }
 
-    // v2 checkboxes can sit unsolved; v3 fires on execute. Both are resolved
-    // through getResponse so a single call covers either version.
-    try {
-      const value = window.grecaptcha.getResponse(widgetId);
-      if (value) return value;
-    } catch (err) {
-      /* fall through to execute */
-    }
+    const action = actionName(containerId);
 
     return new Promise((resolve) => {
       let settled = false;
@@ -205,32 +189,30 @@
       };
 
       try {
-        window.grecaptcha.execute(widgetId, { action: containerId }, done);
+        // grecaptcha.ready defers until the v3 API has finished initialising,
+        // which is not guaranteed to have happened at script.onload time.
+        window.grecaptcha.ready(() => {
+          // v3 execute resolves with the token string; there is no widget id.
+          Promise.resolve(window.grecaptcha.execute(state.siteKey, { action }))
+            .then((value) => done(value))
+            .catch(() => done(null));
+        });
       } catch (err) {
         done(null);
       }
 
-      // Google's callback does not fire on network failure, so without this
-      // timeout the submit button would spin forever.
+      // Google's promise does not reject on every network failure mode, so
+      // without this timeout the submit button would spin forever.
       setTimeout(() => done(null), 8000);
     });
   }
 
   /**
-   * Clear the widget so the next attempt gets a fresh token.
-   *
-   * Required after every submit attempt: Google tokens are single-use, so
-   * replaying one produces a confusing "verification failed" on an attempt
-   * where the user did nothing wrong.
+   * Clear any stale error state. v3 tokens are minted fresh on every execute,
+   * so there is no widget to reset — this exists so existing call sites that
+   * reset after each submit attempt keep working.
    */
   function reset(containerId) {
-    const widgetId = state.widgets.get(containerId);
-    if (widgetId === null || widgetId === undefined) return;
-    try {
-      if (window.grecaptcha && window.grecaptcha.reset) window.grecaptcha.reset(widgetId);
-    } catch (err) {
-      /* nothing to reset */
-    }
     clearInlineError(containerId);
   }
 

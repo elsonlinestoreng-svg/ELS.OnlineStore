@@ -153,6 +153,17 @@ function resolveRecaptchaEnabled() {
 
 const RECAPTCHA_ENABLED = resolveRecaptchaEnabled();
 
+// v3 returns a 0.0–1.0 score on every successful verify. Google's own
+// guidance is to start at 0.5 and tune; without a threshold a bot that
+// clears Google's default checks would still pass with success:true.
+// Unset or malformed -> 0.5. Clamped to [0, 1] so a typo like "5" cannot
+// reject every legitimate user.
+const RECAPTCHA_MIN_SCORE = (() => {
+  const raw = parseFloat(process.env.RECAPTCHA_MIN_SCORE);
+  if (!Number.isFinite(raw)) return 0.5;
+  return Math.min(1, Math.max(0, raw));
+})();
+
 // ---------------------------------------------------------------------------
 // Email verification
 // ---------------------------------------------------------------------------
@@ -205,6 +216,7 @@ module.exports = {
   RECAPTCHA_ENABLED,
   RECAPTCHA_SITE_KEY,
   RECAPTCHA_SECRET_KEY,
+  RECAPTCHA_MIN_SCORE,
   RECAPTCHA_VERIFY_URL: 'https://www.google.com/recaptcha/api/siteverify',
   EMAIL_VERIFICATION_REQUIRED,
   EMAIL_VERIFICATION_TTL_MINUTES,
